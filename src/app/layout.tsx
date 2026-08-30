@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 import ThemeToggle from "@/components/ThemeToggle";
+import { BROKER_SIGNUP_URL } from "@/lib/navigation";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,10 +42,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </span>
             </div>
             <nav className="hidden items-center gap-7 text-sm font-medium text-gray-600 md:flex">
-              <a href="/properties" className="hover:text-[var(--zcanopy-primary)]">Properties</a>
-              <ThemeToggle />
+              <a href="#properties" className="hover:text-[var(--zcanopy-primary)]">Properties</a>
+              <a href="#features" className="hover:text-[var(--zcanopy-primary)]">Features</a>
+              <a href="#how" className="hover:text-[var(--zcanopy-primary)]">How it works</a>
+              <a href={BROKER_SIGNUP_URL} className="hover:text-[var(--zcanopy-primary)]">For brokers</a>
             </nav>
-            <div className="md:hidden">
+            <div className="flex items-center gap-4">
+              <Link
+                href="/properties"
+                className="hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90 sm:inline-block"
+                style={{ backgroundColor: "#A9710E" }}
+              >
+                Browse Properties
+              </Link>
               <ThemeToggle />
             </div>
           </div>
