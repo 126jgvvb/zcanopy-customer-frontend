@@ -21,6 +21,7 @@ declare module "next/font/google" {
 
   export const Geist: FontFunction;
   export const Geist_Mono: FontFunction;
+  export const Cormorant_Garamond: FontFunction;
 }
 
 declare module "*.css" {
