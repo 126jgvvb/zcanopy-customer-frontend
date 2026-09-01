@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Calendar, DollarSign, Video, Image as ImageIcon } from "lucide-react";
+import { MapPin, Calendar, Video } from "lucide-react";
 import { COLORS } from "@/lib/theme";
 
 function formatUGX(n: number) {
@@ -48,32 +48,33 @@ export default function PropertyCard({
   const lng = postgis_spatial_field?.lng;
 
   return (
-    <Link href={`/properties/${id}`} className="group block rounded-2xl border border-gray-100 bg-[var(--zcanopy-surface)] shadow-sm transition-all hover:shadow-md">
-      <div className="aspect-video w-full overflow-hidden rounded-t-2xl bg-gray-100 relative">
-        <img src={mainImage} alt={title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+    <Link href={`/properties/${id}`} className="group surface-card block overflow-hidden">
+      <div className="aspect-video w-full overflow-hidden bg-gray-100 relative">
+        <img src={mainImage} alt={title} className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-80" />
         {videos.length > 0 && (
-          <span className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-xs font-semibold text-white">
+          <span className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm">
             <Video size={12} />
             {videos.length}
           </span>
         )}
-        <span className={`absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-semibold ${isAvailable ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+        <span className={`absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-semibold backdrop-blur-sm ${isAvailable ? "bg-emerald-50/90 text-emerald-800" : "bg-red-50/90 text-red-700"}`}>
           {isAvailable ? "Available" : "Booked"}
         </span>
       </div>
 
-      <div className="p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{propertyType}</p>
-        <h3 className="mt-1 text-lg font-semibold text-[var(--zcanopy-card-brown)]">{title}</h3>
-        <p className="mt-1 line-clamp-2 text-sm text-gray-500">{description}</p>
+      <div className="p-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">{propertyType}</p>
+        <h3 className="mt-1.5 text-xl">{title}</h3>
+        <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-gray-500">{description}</p>
 
-        <div className="mt-3 flex items-center justify-between">
+        <div className="mt-4 flex items-center justify-between">
           <span className="flex items-center gap-1 text-sm text-gray-500">
             <MapPin size={14} />
             {location}
           </span>
           {price !== undefined && (
-            <span className="text-lg font-bold text-[var(--zcanopy-card-brown)]">
+            <span className="font-display text-xl" style={{ color: COLORS.primary }}>
               {formatUGX(price)}
             </span>
           )}

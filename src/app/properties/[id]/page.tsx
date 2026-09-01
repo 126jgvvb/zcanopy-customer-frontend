@@ -145,7 +145,7 @@ export default function PropertyDetailPage() {
   const lng = property.postgis_spatial_field?.lng;
 
   return (
-    <div className="mx-auto max-w-7xl px-6 md:px-10 space-y-8">
+    <div className="mx-auto max-w-7xl space-y-8 px-6 py-10 md:px-10">
       <Link href="/properties" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[var(--zcanopy-primary)]">
         <ArrowLeft size={16} />
         Back to properties
@@ -153,7 +153,7 @@ export default function PropertyDetailPage() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-8">
-          <div className="rounded-2xl border border-gray-100 bg-[var(--zcanopy-surface)] p-6 shadow-sm">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
             <div className="aspect-video w-full overflow-hidden rounded-t-2xl bg-gray-100">
               <img
                 src={selectedImage || images[0] || "https://via.placeholder.com/400x200?text=No+Image"}
@@ -176,8 +176,8 @@ export default function PropertyDetailPage() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-gray-100 bg-[var(--zcanopy-surface)] p-6 shadow-sm">
-            <h1 className="text-2xl font-bold text-[var(--zcanopy-card-brown)]">{property.title}</h1>
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
+            <h1 className="text-3xl">{property.title}</h1>
             <p className="mt-2 text-gray-600">{property.description}</p>
 
             <div className="mt-4 grid grid-cols-2 gap-4">
@@ -203,7 +203,7 @@ export default function PropertyDetailPage() {
           </div>
 
           {videos.length > 0 && (
-            <div className="rounded-2xl border border-gray-100 bg-[var(--zcanopy-surface)] p-6 shadow-sm">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
               <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--zcanopy-card-brown)]">
                 <Video size={18} />
                 Videos
@@ -223,7 +223,7 @@ export default function PropertyDetailPage() {
           )}
 
           {lat !== undefined && lng !== undefined && (
-            <div className="rounded-2xl border border-gray-100 bg-[var(--zcanopy-surface)] p-6 shadow-sm">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
               <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--zcanopy-card-brown)]">
                 <MapPin size={18} />
                 Location
@@ -242,7 +242,7 @@ export default function PropertyDetailPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-2xl border border-gray-100 bg-[var(--zcanopy-surface)] p-6 shadow-sm">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
             <h3 className="text-lg font-semibold text-[var(--zcanopy-card-brown)]">Booking Info</h3>
             <div className="mt-4 space-y-3">
               <div className="flex items-center justify-between">
@@ -279,7 +279,7 @@ export default function PropertyDetailPage() {
             {property.isAvailable && (
               <button
                 onClick={openBooking}
-                className="mt-4 w-full rounded-xl bg-[var(--zcanopy-primary)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90"
+                className="btn-primary mt-4 w-full px-4 py-2.5 text-sm"
               >
                 Book Now
               </button>
@@ -289,8 +289,8 @@ export default function PropertyDetailPage() {
       </div>
 
       {selectedProperty && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-gray-100 bg-[var(--zcanopy-surface)] p-5 shadow-sm max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-lift)]">
             {bookedProperty ? (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-[var(--zcanopy-card-brown)]">Booking Confirmed</h3>
@@ -311,7 +311,7 @@ export default function PropertyDetailPage() {
                   <button
                     type="button"
                     onClick={closeBooking}
-                    className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+                    className="btn-ghost px-4 py-2 text-sm"
                   >
                     Close
                   </button>
@@ -332,7 +332,7 @@ export default function PropertyDetailPage() {
                       required
                       value={form.customerName}
                       onChange={(e) => setForm({ ...form, customerName: e.target.value })}
-                      className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm focus:border-[var(--zcanopy-primary)] focus:outline-none"
+                      className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
                       placeholder="Your full name"
                     />
                   </div>
@@ -344,7 +344,7 @@ export default function PropertyDetailPage() {
                       required
                       value={form.customerPhone}
                       onChange={(e) => setForm({ ...form, customerPhone: e.target.value })}
-                      className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm focus:border-[var(--zcanopy-primary)] focus:outline-none"
+                      className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
                       placeholder="+256 700 000000"
                     />
                   </div>
@@ -356,7 +356,7 @@ export default function PropertyDetailPage() {
                       required
                       value={form.customerEmail}
                       onChange={(e) => setForm({ ...form, customerEmail: e.target.value })}
-                      className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm focus:border-[var(--zcanopy-primary)] focus:outline-none"
+                      className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
                       placeholder="you@example.com"
                     />
                   </div>
@@ -376,14 +376,14 @@ export default function PropertyDetailPage() {
                     <button
                       type="button"
                       onClick={closeBooking}
-                      className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+                      className="btn-ghost px-4 py-2 text-sm"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="rounded-xl bg-[var(--zcanopy-primary)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
+                      className="btn-primary px-4 py-2 text-sm disabled:opacity-50"
                     >
                       {submitting ? "Submitting..." : "Confirm Booking"}
                     </button>

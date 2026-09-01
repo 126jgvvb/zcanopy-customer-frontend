@@ -100,4 +100,32 @@ export const webApi = {
 
   createBooking: (token: string, body: unknown) =>
     apiFetch("/web/customer/bookings", { method: "POST", token, body, fallback: { success: true, booking: { id: "mock-booking-1", status: "pending" } } }),
+
+  brokerLogin: (brokerCode: string, password: string) =>
+    apiFetch<{ id: string; username: string; email: string; role: string; brokerCode: string; token: string }>(
+      "/web/auth/broker/login",
+      { method: "POST", body: { brokerCode, password, deviceId: "web-dashboard" }, fallback: { id: "brk-mock-1", username: "Demo Broker", email: "broker@example.com", role: "broker", brokerCode, token: "mock-token-broker" } },
+    ),
+
+  registerBroker: (payload: {
+    fullName: string;
+    email: string;
+    phoneNumber: string;
+    idFrontUrl?: string;
+    idBackUrl?: string;
+  }) =>
+    apiFetch<{ brokerId: string; email: string; phoneNumber: string; brokerCode: string }>(
+      "/broker/register",
+      { method: "POST", body: payload, fallback: { brokerId: "brk-mock-1", email: payload.email, phoneNumber: payload.phoneNumber, brokerCode: payload.email } },
+    ),
+
+  sendBrokerOtp: (email: string, phoneNumber: string) =>
+    apiFetch("/broker/otp/send", { method: "POST", body: { email, phoneNumber }, fallback: { success: true, message: "OTP sent (mock)", devCode: "123456" } }),
+
+  verifyBrokerOtp: (email: string, phoneNumber: string, emailCode: string, phoneCode: string) =>
+    apiFetch("/broker/otp/verify", {
+      method: "POST",
+      body: { email, phoneNumber, emailCode, phoneCode },
+      fallback: { success: true, message: "Verified (mock)" },
+    }),
 };

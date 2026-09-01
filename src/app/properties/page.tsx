@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import PropertyCard from "@/components/PropertyCard";
 import { webApi } from "@/lib/api";
-import { MapPin, Calendar, DollarSign, Video, Image as ImageIcon } from "lucide-react";
 
 function formatUGX(n: number) {
   try {
@@ -183,13 +182,13 @@ export default function PropertiesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-3 md:px-6 space-y-6">
+    <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 md:px-6">
       <div>
-        <h2 className="text-2xl font-bold text-[var(--zcanopy-card-brown)]">Browse Properties</h2>
-        <p className="text-gray-500">Find your next home or investment and book directly.</p>
+        <h2 className="text-3xl">Browse Properties</h2>
+        <p className="mt-2 text-gray-500">Find your next home or investment and book directly.</p>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-[var(--zcanopy-surface)] p-4 shadow-sm">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-5 shadow-[var(--shadow-soft)]">
         <div className="flex flex-col gap-4 md:flex-row md:items-end">
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700">Search</label>
@@ -198,7 +197,7 @@ export default function PropertiesPage() {
               value={localSearch}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search by title, location, broker..."
-              className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm transition-colors focus:border-[var(--zcanopy-primary)] focus:outline-none"
+              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
             />
           </div>
           <div>
@@ -206,7 +205,7 @@ export default function PropertiesPage() {
             <select
               value={locationFilter}
               onChange={(e) => setLocationFilter(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm focus:border-[var(--zcanopy-primary)] focus:outline-none"
+              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
             >
               <option value="">All locations</option>
               {uniqueLocations.map((loc) => (
@@ -221,7 +220,7 @@ export default function PropertiesPage() {
             <select
               value={brokerFilter}
               onChange={(e) => setBrokerFilter(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm focus:border-[var(--zcanopy-primary)] focus:outline-none"
+              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
             >
               <option value="">All brokers</option>
               {uniqueBrokers.map((b) => (
@@ -237,7 +236,7 @@ export default function PropertiesPage() {
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm focus:border-[var(--zcanopy-primary)] focus:outline-none"
+              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
             />
           </div>
           <div>
@@ -246,16 +245,16 @@ export default function PropertiesPage() {
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm focus:border-[var(--zcanopy-primary)] focus:outline-none"
+              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
             />
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 border-t border-gray-100 pt-3">
+        <div className="flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-4">
           <span className="text-sm font-medium text-gray-700">View:</span>
           <button
             onClick={() => { setViewMode("all"); setSelectedBrokerCode(""); }}
-            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${viewMode === "all" ? "bg-[var(--zcanopy-primary)] text-white" : "border border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${viewMode === "all" ? "btn-primary" : "btn-ghost"}`}
           >
             All Properties
           </button>
@@ -263,7 +262,7 @@ export default function PropertiesPage() {
             <button
               key={b.code}
               onClick={() => { setViewMode("broker"); setSelectedBrokerCode(b.code); }}
-              className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${viewMode === "broker" && selectedBrokerCode === b.code ? "bg-[var(--zcanopy-primary)] text-white" : "border border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${viewMode === "broker" && selectedBrokerCode === b.code ? "btn-primary" : "btn-ghost"}`}
             >
               {b.name}
             </button>
@@ -272,7 +271,7 @@ export default function PropertiesPage() {
       </div>
 
       {filteredProperties.length === 0 ? (
-        <div className="rounded-2xl border border-gray-100 bg-[var(--zcanopy-surface)] p-5 shadow-sm">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-5 shadow-[var(--shadow-soft)]">
           <div className="py-12 text-center">
             <p className="text-gray-500">No properties found.</p>
           </div>
@@ -286,8 +285,8 @@ export default function PropertiesPage() {
       )}
 
       {selectedProperty && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-gray-100 bg-[var(--zcanopy-surface)] p-5 shadow-sm max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-lift)]">
             {bookedProperty ? (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-[var(--zcanopy-card-brown)]">Booking Confirmed</h3>
@@ -308,7 +307,7 @@ export default function PropertiesPage() {
                   <button
                     type="button"
                     onClick={closeBooking}
-                    className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+                    className="btn-ghost px-4 py-2 text-sm"
                   >
                     Close
                   </button>
@@ -329,7 +328,7 @@ export default function PropertiesPage() {
                       required
                       value={form.customerName}
                       onChange={(e) => setForm({ ...form, customerName: e.target.value })}
-                      className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm focus:border-[var(--zcanopy-primary)] focus:outline-none"
+                      className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
                       placeholder="Your full name"
                     />
                   </div>
@@ -341,7 +340,7 @@ export default function PropertiesPage() {
                       required
                       value={form.customerPhone}
                       onChange={(e) => setForm({ ...form, customerPhone: e.target.value })}
-                      className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm focus:border-[var(--zcanopy-primary)] focus:outline-none"
+                      className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
                       placeholder="+256 700 000000"
                     />
                   </div>
@@ -353,7 +352,7 @@ export default function PropertiesPage() {
                       required
                       value={form.customerEmail}
                       onChange={(e) => setForm({ ...form, customerEmail: e.target.value })}
-                      className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 shadow-sm focus:border-[var(--zcanopy-primary)] focus:outline-none"
+                      className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
                       placeholder="you@example.com"
                     />
                   </div>
@@ -373,14 +372,14 @@ export default function PropertiesPage() {
                     <button
                       type="button"
                       onClick={closeBooking}
-                      className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+                      className="btn-ghost px-4 py-2 text-sm"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="rounded-xl bg-[var(--zcanopy-primary)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
+                      className="btn-primary px-4 py-2 text-sm disabled:opacity-50"
                     >
                       {submitting ? "Submitting..." : "Confirm Booking"}
                     </button>

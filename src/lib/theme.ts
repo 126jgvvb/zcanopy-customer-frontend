@@ -1,10 +1,10 @@
 export const COLORS = {
   primary: "#A9710E",
-  primaryAlt: "#A9610E",
+  primaryAlt: "#8F5D0B",
   cardBrown: "#5D4037",
   accentGold: "#D1A054",
-  background: "#F5F5F5",
-  surface: "#FFFFFF",
-  surfaceDark: "#1E1E1E",
-  scaffoldDark: "#121212",
+  background: "#F6F1EA",
+  surface: "#FFFCF8",
+  surfaceDark: "#1C1916",
+  scaffoldDark: "#12100E",
 } as const;

@@ -1,13 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f5f5;
-  --foreground: #171717;
+  --background: #f6f1ea;
+  --foreground: #2a221c;
+  --muted: #6f6258;
+  --muted-soft: #8a7c71;
+  --border: rgba(93, 64, 55, 0.12);
+  --border-strong: rgba(93, 64, 55, 0.22);
+  --ring: rgba(169, 113, 14, 0.28);
   --zcanopy-primary: #a9710e;
-  --zcanopy-primary-alt: #a9610e;
+  --zcanopy-primary-alt: #8f5d0b;
   --zcanopy-card-brown: #5d4037;
   --zcanopy-accent-gold: #d1a054;
-  --zcanopy-surface: #ffffff;
+  --zcanopy-surface: #fffcf8;
+  --zcanopy-background: #f6f1ea;
+  --zcanopy-muted: #6f6258;
+  --zcanopy-border: rgba(93, 64, 55, 0.12);
+  --zcanopy-shadow: 0 1px 2px rgba(45, 32, 24, 0.04), 0 12px 32px -16px rgba(45, 32, 24, 0.18);
+  --shadow-soft: 0 1px 2px rgba(45, 32, 24, 0.04), 0 12px 32px rgba(45, 32, 24, 0.06);
+  --shadow-lift: 0 8px 28px rgba(45, 32, 24, 0.1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @theme inline {
@@ -18,61 +30,65 @@
   --color-zcanopy-card-brown: var(--zcanopy-card-brown);
   --color-zcanopy-accent-gold: var(--zcanopy-accent-gold);
   --color-zcanopy-surface: var(--zcanopy-surface);
+  --color-zcanopy-muted: var(--zcanopy-muted);
+  --color-zcanopy-border: var(--zcanopy-border);
+  --shadow-zcanopy: var(--zcanopy-shadow);
   --font-sans: var(--font-geist-sans);
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
   --font-mono: var(--font-geist-mono);
   --animate-letter-drop: letterDrop 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 html.dark {
-  --background: #0f0f0f;
-  --foreground: #e5e5e5;
-  --zcanopy-surface: #1a1a1a;
-  --zcanopy-card-brown: #795548;
+  --background: #12100e;
+  --foreground: #f3ece3;
+  --muted: #b8aba0;
+  --muted-soft: #9c8f84;
+  --border: rgba(209, 160, 84, 0.14);
+  --border-strong: rgba(209, 160, 84, 0.28);
+  --ring: rgba(209, 160, 84, 0.35);
+  --zcanopy-surface: #1c1916;
+  --zcanopy-card-brown: #e8c48a;
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.35), 0 16px 40px rgba(0, 0, 0, 0.35);
+  --shadow-lift: 0 12px 36px rgba(0, 0, 0, 0.45);
 }
 
-html.dark .border-gray-100 {
-  border-color: #262626;
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-gray-200\/60 {
+  border-color: var(--border);
 }
 
 html.dark .bg-white {
-  background-color: #1a1a1a;
+  background-color: var(--zcanopy-surface);
 }
 
-html.dark .text-gray-500 {
-  color: #a3a3a3;
+html.dark .text-gray-400 {
+  color: var(--muted-soft);
 }
 
-html.dark .text-gray-600 {
-  color: #d4d4d4;
-}
-
+html.dark .text-gray-500,
+html.dark .text-gray-600,
 html.dark .text-gray-700 {
-  color: #e5e5e5;
+  color: var(--muted);
 }
 
-html.dark .bg-gray-50 {
-  background-color: #262626;
-}
-
+html.dark .bg-gray-50,
 html.dark .bg-gray-100 {
-  background-color: #262626;
+  background-color: #26211c;
 }
 
 html.dark .divide-gray-100 {
   --tw-divide-opacity: 1;
-  border-color: rgb(38 38 38 / var(--tw-divide-opacity));
+  border-color: rgb(38 33 28 / var(--tw-divide-opacity));
 }
 
 html.dark .hover\:bg-gray-50:hover {
-  background-color: #262626;
-}
-
-html.dark .border-gray-200 {
-  border-color: #404040;
+  background-color: #2a241f;
 }
 
 html.dark .border-gray-300 {
-  border-color: #525252;
+  border-color: #4a423b;
 }
 
 html.dark .bg-red-50 {
@@ -96,15 +112,18 @@ html.dark .text-green-700 {
 }
 
 html.dark .text-\[var\(--zcanopy-card-brown\)\] {
-  color: #D1A054;
+  color: #e8c48a;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 html {
-  transition: background-color 0.25s ease, color 0.25s ease;
-}
-
-* {
-  box-sizing: border-box;
+  scroll-behavior: smooth;
+  transition: background-color 0.35s var(--ease-out), color 0.35s var(--ease-out);
 }
 
 html,
@@ -117,25 +136,177 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-feature-settings: "ss01" on, "cv11" on;
+  letter-spacing: -0.011em;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--zcanopy-accent-gold) 42%, transparent);
+  color: var(--zcanopy-card-brown);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--zcanopy-card-brown);
+  text-wrap: balance;
+}
+
+.font-display {
+  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+h1 {
+  font-weight: 600;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  transition: color 0.25s var(--ease-out);
+}
+
+:focus-visible {
+  outline: 2px solid var(--zcanopy-accent-gold);
+  outline-offset: 3px;
 }
 
 input,
 textarea,
 select {
   color: var(--foreground);
+  background-color: var(--zcanopy-surface);
+  transition: border-color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--zcanopy-primary);
+  box-shadow: 0 0 0 3px var(--ring);
+  outline: none;
 }
 
 html.dark input,
 html.dark textarea,
 html.dark select {
-  background-color: #262626;
-  border-color: #404040;
-  color: #e5e5e5;
+  background-color: #26211c;
+  border-color: var(--border-strong);
+  color: var(--foreground);
 }
 
 html.dark input::placeholder,
 html.dark textarea::placeholder {
-  color: #a3a3a3;
+  color: var(--muted-soft);
+}
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--zcanopy-surface) 78%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+}
+
+.nav-link {
+  position: relative;
+  color: var(--muted);
+  transition: color 0.25s var(--ease-out);
+}
+
+.nav-link:hover {
+  color: var(--zcanopy-primary);
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  width: 100%;
+  height: 1px;
+  background: var(--zcanopy-accent-gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.28s var(--ease-out);
+}
+
+.nav-link:hover::after {
+  transform: scaleX(1);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.9rem;
+  background: linear-gradient(180deg, #bc8120 0%, var(--zcanopy-primary) 100%);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 8px 18px rgba(169, 113, 14, 0.28);
+  transition: transform 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out), filter 0.25s var(--ease-out);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.22) inset, 0 12px 24px rgba(169, 113, 14, 0.34);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.9rem;
+  border: 1px solid var(--border-strong);
+  color: var(--zcanopy-card-brown);
+  font-weight: 600;
+  background: transparent;
+  transition: border-color 0.25s var(--ease-out), color 0.25s var(--ease-out), background-color 0.25s var(--ease-out);
+}
+
+.btn-ghost:hover {
+  border-color: var(--zcanopy-primary);
+  color: var(--zcanopy-primary);
+  background: color-mix(in srgb, var(--zcanopy-accent-gold) 10%, transparent);
+}
+
+.surface-card {
+  background: var(--zcanopy-surface);
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out), border-color 0.35s var(--ease-out);
+}
+
+.surface-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift);
+  border-color: color-mix(in srgb, var(--zcanopy-accent-gold) 45%, var(--border));
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--zcanopy-accent-gold) 16%, transparent);
+  color: var(--zcanopy-primary);
 }
 
 .line-clamp-2 {
@@ -145,10 +316,25 @@ html.dark textarea::placeholder {
   overflow: hidden;
 }
 
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--zcanopy-card-brown) 28%, transparent);
+  border-radius: 999px;
+  border: 2px solid var(--background);
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;

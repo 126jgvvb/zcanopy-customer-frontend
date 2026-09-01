@@ -3,6 +3,7 @@ import { COLORS } from "@/lib/theme";
 import { BROKER_SIGNUP_URL } from "@/lib/navigation";
 import FeaturedSlideshow from "@/components/FeaturedSlideshow";
 import GlowFallingText from "@/components/GlowFallingText";
+import Footer from "@/components/Footer";
 import { Home as HomeIcon, Handshake, BarChart3, Shield, MessageSquare, Zap } from "lucide-react";
 
 const FEATURES = [
@@ -58,33 +59,24 @@ export default function Home() {
         />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 lg:grid-cols-2 lg:py-28">
           <div>
-            <span
-              className="inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide"
-              style={{ backgroundColor: `${COLORS.accentGold}22`, color: COLORS.primary }}
-            >
-              Real estate, reimagined
-            </span>
-            <h1 className="mt-5 text-4xl font-bold leading-tight sm:text-5xl" style={{ color: COLORS.cardBrown }}>
+            <span className="eyebrow">Real estate, reimagined</span>
+            <h1 className="mt-6 text-4xl leading-tight sm:text-5xl lg:text-[3.4rem]">
               Find your next home in Uganda.
             </h1>
-            <p className="mt-5 max-w-lg text-base text-gray-600">
+            <p className="mt-5 max-w-lg text-base leading-relaxed text-gray-600">
               Browse verified properties from trusted brokers, view details, and book directly — all in one place.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href="/properties"
-                className="rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90"
-                style={{ backgroundColor: COLORS.primary }}
-              >
+              <Link href="/properties" className="btn-primary px-6 py-3 text-sm">
                 Browse Properties
+              </Link>
+              <Link href="/login" className="rounded-xl border border-gray-300 px-5 py-3 text-sm font-semibold text-gray-700 transition-colors hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)]">
+                Broker Login
               </Link>
             </div>
           </div>
           <div className="hidden lg:block">
-            <div
-              className="overflow-hidden rounded-3xl bg-[var(--zcanopy-surface)] p-3 shadow-2xl"
-              style={{ border: `1px solid ${COLORS.accentGold}55` }}
-            >
+            <div className="overflow-hidden rounded-3xl border border-[var(--zcanopy-accent-gold)]/40 bg-[var(--zcanopy-surface)] p-3 shadow-[var(--shadow-lift)]">
               <div className="flex items-center justify-between px-2 pb-2 pt-1">
                 <div className="flex items-center gap-2">
                   <span
@@ -106,14 +98,11 @@ export default function Home() {
 
       <section id="properties" className="mx-auto max-w-6xl px-6 py-20">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold" style={{ color: COLORS.cardBrown }}>Latest Properties</h2>
+          <h2 className="text-3xl sm:text-4xl">Latest Properties</h2>
           <p className="mt-3 text-gray-600">Explore available homes, apartments, and land across Uganda.</p>
         </div>
         <div className="mt-12 text-center">
-          <Link
-            href="/properties"
-            className="inline-block rounded-xl border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-700 transition-colors hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)]"
-          >
+          <Link href="/properties" className="btn-ghost px-6 py-3 text-sm">
             View all properties
           </Link>
         </div>
@@ -122,7 +111,7 @@ export default function Home() {
       <section id="how" className="bg-[var(--zcanopy-surface)]">
         <div className="mx-auto max-w-6xl px-6 py-20">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold" style={{ color: COLORS.cardBrown }}>How it works</h2>
+            <h2 className="text-3xl sm:text-4xl">How it works</h2>
             <p className="mt-3 text-gray-600">From browsing to booking in three simple steps.</p>
           </div>
           <div className="mt-12 grid gap-6 md:grid-cols-3">
@@ -131,10 +120,10 @@ export default function Home() {
               { n: "02", t: "Book a viewing", d: "Select a property and submit a booking request with your details." },
               { n: "03", t: "Connect with broker", d: "A verified broker will reach out to confirm and complete the process." },
             ].map((step) => (
-              <div key={step.n} className="relative rounded-2xl border border-gray-100 bg-[var(--background)] p-6">
-                <span className="text-4xl font-bold" style={{ color: `${COLORS.accentGold}` }}>{step.n}</span>
-                <h3 className="mt-3 text-lg font-semibold" style={{ color: COLORS.cardBrown }}>{step.t}</h3>
-                <p className="mt-2 text-sm text-gray-600">{step.d}</p>
+              <div key={step.n} className="surface-card relative p-7">
+                <span className="font-display text-4xl" style={{ color: COLORS.accentGold }}>{step.n}</span>
+                <h3 className="mt-3 text-xl">{step.t}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-gray-600">{step.d}</p>
               </div>
             ))}
           </div>
@@ -144,7 +133,7 @@ export default function Home() {
       {/* Full-width video */}
       <section className="relative">
         <div className="mx-auto max-w-6xl px-6 py-12">
-          <div className="relative overflow-hidden rounded-3xl shadow-2xl ring-1 ring-black/5">
+          <div className="relative overflow-hidden rounded-3xl shadow-[var(--shadow-lift)] ring-1 ring-black/5">
             <video
               className="h-[320px] w-full object-cover sm:h-[440px]"
               autoPlay
@@ -168,11 +157,11 @@ export default function Home() {
       </section>
 
       {/* Stats */}
-      <section id="stats" className="border-y border-gray-200/60 bg-[var(--zcanopy-surface)]">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-12 md:grid-cols-4">
+      <section id="stats" className="border-y border-[var(--border)] bg-[var(--zcanopy-surface)]">
+        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-14 md:grid-cols-4">
           {STATS.map((s) => (
             <div key={s.label} className="text-center">
-              <p className="text-3xl font-bold" style={{ color: COLORS.primary }}>{s.value}</p>
+              <p className="font-display text-3xl sm:text-4xl" style={{ color: COLORS.primary }}>{s.value}</p>
               <p className="mt-1 text-sm text-gray-500">{s.label}</p>
             </div>
           ))}
@@ -182,13 +171,8 @@ export default function Home() {
       {/* Payment flow */}
       <section className="mx-auto max-w-6xl px-6 py-20">
         <div className="mx-auto max-w-2xl text-center">
-          <span
-            className="inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide"
-            style={{ backgroundColor: `${COLORS.accentGold}22`, color: COLORS.primary }}
-          >
-            Payments
-          </span>
-          <h2 className="mt-4 text-3xl font-bold" style={{ color: COLORS.cardBrown }}>
+          <span className="eyebrow">Payments</span>
+          <h2 className="mt-4 text-3xl sm:text-4xl">
             A payment flow you can trust
           </h2>
           <p className="mt-3 text-gray-600">
@@ -203,10 +187,10 @@ export default function Home() {
             { n: "03", t: "Commission split", d: "The platform commission is calculated and the broker's share is earmarked." },
             { n: "04", t: "Payout", d: "Verified brokers withdraw earnings straight to their mobile money wallet." },
           ].map((s) => (
-            <div key={s.n} className="rounded-2xl border border-black/5 bg-[var(--zcanopy-surface)] p-6 shadow-sm transition-all duration-300 hover:scale-105 hover:border-yellow-400 hover:shadow-lg">
-              <span className="text-3xl font-bold" style={{ color: COLORS.accentGold }}>{s.n}</span>
-              <h3 className="mt-3 text-base font-semibold" style={{ color: COLORS.cardBrown }}>{s.t}</h3>
-              <p className="mt-2 text-sm text-gray-600">{s.d}</p>
+            <div key={s.n} className="surface-card p-6">
+              <span className="font-display text-3xl" style={{ color: COLORS.accentGold }}>{s.n}</span>
+              <h3 className="mt-3 text-lg">{s.t}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">{s.d}</p>
             </div>
           ))}
         </div>
@@ -217,7 +201,7 @@ export default function Home() {
         >
           <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
             <div>
-              <h3 className="text-xl font-bold text-white">Carriers we support today</h3>
+              <h3 className="text-xl font-semibold text-white" style={{ color: "#fff" }}>Carriers we support today</h3>
               <p className="mt-2 max-w-md text-sm text-white/80">
                 ZCanopy settles payments through Uganda&apos;s most widely used mobile money networks,
                 with card and bank rails on the roadmap.
@@ -230,7 +214,7 @@ export default function Home() {
               ].map((c) => (
                 <span
                   key={c.name}
-                  className="flex items-center gap-2 rounded-2xl bg-white/95 px-4 py-2.5 shadow"
+                  className="flex items-center gap-2 rounded-2xl bg-white/95 px-4 py-2.5 shadow-sm ring-1 ring-white/40"
                 >
                   <img
                     src={c.logo}
@@ -247,25 +231,21 @@ export default function Home() {
       {/* Features */}
       <section id="features" className="mx-auto max-w-6xl px-6 py-20">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold" style={{ color: COLORS.cardBrown }}>Everything brokers need</h2>
+          <h2 className="text-3xl sm:text-4xl">Everything brokers need</h2>
           <p className="mt-3 text-gray-600">
             A complete toolkit to list, connect, and earn — built for clarity and trust.
           </p>
         </div>
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
-            <div
-              key={f.title}
-              className="rounded-2xl bg-[var(--zcanopy-surface)] p-6 shadow-sm transition-all hover:shadow-md"
-              style={{ border: "1px solid rgba(0,0,0,0.05)" }}
-            >
+            <div key={f.title} className="surface-card p-7">
               <div
                 className="flex h-12 w-12 items-center justify-center rounded-2xl"
                 style={{ backgroundColor: `${COLORS.accentGold}22` }}
               >
                 <f.icon className="h-6 w-6" style={{ color: COLORS.primary }} />
               </div>
-              <h3 className="mt-4 text-lg font-semibold" style={{ color: COLORS.cardBrown }}>{f.title}</h3>
+              <h3 className="mt-4 text-xl">{f.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-gray-600">{f.text}</p>
             </div>
           ))}
@@ -276,7 +256,7 @@ export default function Home() {
       <section id="brokers" className="bg-[var(--zcanopy-surface)]">
         <div className="mx-auto max-w-6xl px-6 py-20">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold" style={{ color: COLORS.cardBrown }}>List your properties with ZCanopy</h2>
+            <h2 className="text-3xl sm:text-4xl">List your properties with ZCanopy</h2>
             <p className="mt-3 text-gray-600">From sign-up to your first payout in three simple steps.</p>
           </div>
           <div className="mt-12 grid gap-6 md:grid-cols-3">
@@ -285,10 +265,10 @@ export default function Home() {
               { n: "02", t: "Get verified", d: "Our team reviews your documents, then emails your confirmation and broker code." },
               { n: "03", t: "List & earn", d: "Finish setup in the mobile app, publish properties, and track commissions live." },
             ].map((step) => (
-              <div key={step.n} className="relative rounded-2xl border border-gray-100 bg-[var(--background)] p-6">
-                <span className="text-4xl font-bold" style={{ color: `${COLORS.accentGold}` }}>{step.n}</span>
-                <h3 className="mt-3 text-lg font-semibold" style={{ color: COLORS.cardBrown }}>{step.t}</h3>
-                <p className="mt-2 text-sm text-gray-600">{step.d}</p>
+              <div key={step.n} className="surface-card relative p-7">
+                <span className="font-display text-4xl" style={{ color: COLORS.accentGold }}>{step.n}</span>
+                <h3 className="mt-3 text-xl">{step.t}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-gray-600">{step.d}</p>
               </div>
             ))}
           </div>
@@ -297,26 +277,30 @@ export default function Home() {
             className="mt-12 overflow-hidden rounded-3xl p-10 text-center shadow-xl sm:p-14"
             style={{ background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.cardBrown})` }}
           >
-            <h2 className="text-3xl font-bold text-white">Ready to grow your brokerage?</h2>
+            <h2 className="text-3xl text-white sm:text-4xl" style={{ color: "#fff" }}>Ready to grow your brokerage?</h2>
             <p className="mx-auto mt-3 max-w-xl text-white/80">
               Join thousands of verified brokers on Uganda&apos;s most elegant property marketplace.
             </p>
-            <a
-              href={BROKER_SIGNUP_URL}
-              className="mt-7 inline-block rounded-xl bg-white px-6 py-3 text-sm font-semibold shadow transition-opacity hover:opacity-90"
-              style={{ color: COLORS.primary }}
-            >
-              Become a broker today
-            </a>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+              <a
+                href={BROKER_SIGNUP_URL}
+                className="inline-block rounded-xl bg-white px-6 py-3 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5"
+                style={{ color: COLORS.primary }}
+              >
+                Become a broker today
+              </a>
+              <Link
+                href="/login"
+                className="inline-block rounded-xl border border-white/40 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                Broker Login
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-gray-200/60 bg-[var(--zcanopy-surface)]">
-        <div className="mx-auto max-w-6xl px-6 py-8 text-center text-sm text-gray-500">
-          <p>© {new Date().getFullYear()} ZCanopy. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }
