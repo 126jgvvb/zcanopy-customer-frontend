@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { webApi } from "@/lib/api";
-import { MapPin, Calendar, Video, ArrowLeft } from "lucide-react";
+import { MapPin, Calendar, Video, ArrowLeft, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
 function formatUGX(n: number) {
@@ -237,6 +237,15 @@ export default function PropertyDetailPage() {
                   allowFullScreen
                 />
               </div>
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)]"
+              >
+                <ExternalLink size={16} />
+                Open in Google Maps
+              </a>
             </div>
           )}
         </div>
