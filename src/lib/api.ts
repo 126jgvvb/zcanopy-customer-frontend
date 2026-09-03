@@ -101,10 +101,10 @@ export const webApi = {
   createBooking: (token: string, body: unknown) =>
     apiFetch("/web/customer/bookings", { method: "POST", token, body, fallback: { success: true, booking: { id: "mock-booking-1", status: "pending" } } }),
 
-  brokerLogin: (brokerCode: string, password: string) =>
+  brokerLogin: (brokerCode: string, password: string, email?: string) =>
     apiFetch<{ id: string; username: string; email: string; role: string; brokerCode: string; token: string }>(
       "/web/auth/broker/login",
-      { method: "POST", body: { brokerCode, password, deviceId: "web-dashboard" }, fallback: { id: "brk-mock-1", username: "Demo Broker", email: "broker@example.com", role: "broker", brokerCode, token: "mock-token-broker" } },
+      { method: "POST", body: { brokerCode, password, email, deviceId: "web-dashboard" }, fallback: { id: "brk-mock-1", username: "Demo Broker", email: "broker@example.com", role: "broker", brokerCode, token: "mock-token-broker" } },
     ),
 
   registerBroker: (payload: {

@@ -1,0 +1,1518 @@
+{
+  "info": {
+    "name": "ZCanopy Storefront API",
+    "description": "Postman collection for zcanopy-storefront and zcanopy-dashboard frontend endpoints. Base URL: http://localhost:4000/api",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Public Properties",
+      "item": [
+        {
+          "name": "Get All Public Properties",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/web/public/properties",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "public", "properties"]
+            }
+          }
+        },
+        {
+          "name": "Get Featured Properties",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/web/public/properties/featured",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "public", "properties", "featured"]
+            }
+          }
+        },
+        {
+          "name": "Get Property Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/web/public/properties/{{propertyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "public", "properties", "{{propertyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Search Properties",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/web/public/search?q={{query}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "public", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{query}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer",
+      "item": [
+        {
+          "name": "Create Customer Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/customer/session",
+              "host": ["{{baseUrl}}"],
+              "path": ["customer", "session"]
+            }
+          }
+        },
+        {
+          "name": "Get Customer Properties",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/web/customer/properties",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "customer", "properties"]
+            }
+          }
+        },
+        {
+          "name": "Get Customer Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/web/customer/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "customer", "bookings"]
+            }
+          }
+        },
+        {
+          "name": "Create Customer Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"propertyId\": \"p1\",\n  \"customerName\": \"John Doe\",\n  \"customerPhone\": \"+256700000000\",\n  \"customerEmail\": \"john@example.com\",\n  \"status\": \"pending\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/web/customer/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "customer", "bookings"]
+            }
+          }
+        },
+        {
+          "name": "Get Broker Properties for Customer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/web/customer/broker/{{brokerCode}}/properties",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "customer", "broker", "{{brokerCode}}", "properties"]
+            }
+          }
+        },
+        {
+          "name": "Search Customer Properties",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/web/customer/search?q={{query}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "customer", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{query}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"broker@example.com\",\n  \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/web/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Broker Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"brokerCode\": \"BRK-001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/web/auth/broker/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "auth", "broker", "login"]
+            }
+          }
+        },
+        {
+          "name": "Broker Setup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"brokerCode\": \"BRK-001\",\n  \"password\": \"newpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/web/auth/broker/setup",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "auth", "broker", "setup"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/web/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/web/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Broker",
+      "item": [
+        {
+          "name": "Get Broker Properties",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/properties",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "properties"]
+            }
+          }
+        },
+        {
+          "name": "Get Broker Property Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/properties/{{propertyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "properties", "{{propertyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Property",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"New Property\",\n  \"description\": \"Description\",\n  \"propertyType\": \"apartment\",\n  \"location\": \"Kampala\",\n  \"price\": 500000,\n  \"bookingFee\": 25000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/properties",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "properties"]
+            }
+          }
+        },
+        {
+          "name": "Update Property",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Property\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/properties/{{propertyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "properties", "{{propertyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Property",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/properties/{{propertyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "properties", "{{propertyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Broker Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Get Broker Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "bookings"]
+            }
+          }
+        },
+        {
+          "name": "Update Booking Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/bookings/{{bookingId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "bookings", "{{bookingId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Get Broker Wallet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/wallet",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "wallet"]
+            }
+          }
+        },
+        {
+          "name": "Get Wallet Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/wallet/transactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "wallet", "transactions"]
+            }
+          }
+        },
+        {
+          "name": "Withdraw Funds",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/withdraw",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "withdraw"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/subscription",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "subscription"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription Packages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/subscription/packages",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "subscription", "packages"]
+            }
+          }
+        },
+        {
+          "name": "Subscribe to Plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"packageId\": \"premium\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/subscribe",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "subscribe"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Get Broker Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Mark Notifications as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notificationIds\": [\"n1\", \"n2\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/notifications/mark-read",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "notifications", "mark-read"]
+            }
+          }
+        },
+        {
+          "name": "Get Broker Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Broker Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"newusername\",\n  \"email\": \"newemail@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"oldpass\",\n  \"newPassword\": \"newpass\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "change-password"]
+            }
+          }
+        },
+        {
+          "name": "Submit Help Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Help needed\",\n  \"message\": \"I need assistance with...\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/help",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "help"]
+            }
+          }
+        },
+        {
+          "name": "Delete Broker Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/web/broker/account/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["web", "broker", "account", "delete"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Broker Public",
+      "item": [
+        {
+          "name": "Register Broker",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phoneNumber\": \"+256700000000\",\n  \"location\": \"Kampala\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/broker/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["broker", "register"]
+            }
+          }
+        },
+        {
+          "name": "Send Broker OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"phoneNumber\": \"+256700000000\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/broker/otp/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["broker", "otp", "send"]
+            }
+          }
+        },
+        {
+          "name": "Verify Broker OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/broker/otp/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["broker", "otp", "verify"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@zcanopy.com\",\n  \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "login"]
+            }
+          }
+        },
+        {
+          "name": "Dev Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/dev-login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "dev-login"]
+            }
+          }
+        },
+        {
+          "name": "Get Commissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/commissions",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "commissions"]
+            }
+          }
+        },
+        {
+          "name": "Get Broker Commissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/broker-commissions",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "broker-commissions"]
+            }
+          }
+        },
+        {
+          "name": "Get Current Commission",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/commission/current",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "commission", "current"]
+            }
+          }
+        },
+        {
+          "name": "Get Monthly Income",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/income/monthly",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "income", "monthly"]
+            }
+          }
+        },
+        {
+          "name": "Get All Brokers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/brokers",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "brokers"]
+            }
+          }
+        },
+        {
+          "name": "Get Recent Signups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/recent/signups",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "recent", "signups"]
+            }
+          }
+        },
+        {
+          "name": "Get Pending Verifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/pending/verifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "pending", "verifications"]
+            }
+          }
+        },
+        {
+          "name": "Get Pending Documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/pending/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "pending", "documents"]
+            }
+          }
+        },
+        {
+          "name": "Get Admin Properties",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/properties",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "properties"]
+            }
+          }
+        },
+        {
+          "name": "Get Property Locations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/property/locations",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "property", "locations"]
+            }
+          }
+        },
+        {
+          "name": "Get Property Details (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/properties/{{propertyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "properties", "{{propertyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Broker Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/brokers/{{brokerId}}/details",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "brokers", "{{brokerId}}", "details"]
+            }
+          }
+        },
+        {
+          "name": "Get Broker Properties (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/brokers/{{brokerId}}/properties",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "brokers", "{{brokerId}}", "properties"]
+            }
+          }
+        },
+        {
+          "name": "Approve Broker Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentType\": \"id\",\n  \"approved\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/brokers/{{brokerId}}/approve-document",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "brokers", "{{brokerId}}", "approve-document"]
+            }
+          }
+        },
+        {
+          "name": "Approve All Pending Verifications",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/pending/verifications/approve-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "pending", "verifications", "approve-all"]
+            }
+          }
+        },
+        {
+          "name": "Delete Broker",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/brokers/{{brokerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "brokers", "{{brokerId}}"]
+            }
+          }
+        },
+        {
+          "name": "Edit Broker Tier",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tier\": \"premium\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/brokers/{{brokerId}}/tier",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "brokers", "{{brokerId}}", "tier"]
+            }
+          }
+        },
+        {
+          "name": "Get All Admins",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/admins",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "admins"]
+            }
+          }
+        },
+        {
+          "name": "Add Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"newadmin\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"password\",\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/admins",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "admins"]
+            }
+          }
+        },
+        {
+          "name": "Delete Admin",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/admins/{{adminId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "admins", "{{adminId}}"]
+            }
+          }
+        },
+        {
+          "name": "Freeze/Unfreeze Admin",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/admins/{{adminId}}/freeze",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "admins", "{{adminId}}", "freeze"]
+            }
+          }
+        },
+        {
+          "name": "Generate Invitation Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/invitation-code",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "invitation-code"]
+            }
+          }
+        },
+        {
+          "name": "Get Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/transactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "transactions"]
+            }
+          }
+        },
+        {
+          "name": "Get System Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/system/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "system", "messages"]
+            }
+          }
+        },
+        {
+          "name": "Get Client Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/client/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "client", "messages"]
+            }
+          }
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipientType\": \"broker\",\n  \"recipientId\": \"BRK-001\",\n  \"subject\": \"Message\",\n  \"body\": \"Hello\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/messages/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "messages", "send"]
+            }
+          }
+        },
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Get Wallet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/wallet",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "wallet"]
+            }
+          }
+        },
+        {
+          "name": "Withdraw",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/withdraw",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "withdraw"]
+            }
+          }
+        },
+        {
+          "name": "Get Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/logs",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "logs"]
+            }
+          }
+        },
+        {
+          "name": "Get Active Customer Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/customers/active-sessions",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "customers", "active-sessions"]
+            }
+          }
+        },
+        {
+          "name": "Get Invoices",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/invoices",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "invoices"]
+            }
+          }
+        },
+        {
+          "name": "Delete Invoice",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/invoices/{{invoiceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "invoices", "{{invoiceId}}"]
+            }
+          }
+        },
+        {
+          "name": "Batch Delete Invoices",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceIds\": [\"inv1\", \"inv2\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/invoices/batch-delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "invoices", "batch-delete"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
