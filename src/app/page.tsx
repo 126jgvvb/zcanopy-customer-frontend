@@ -2,7 +2,7 @@ import Link from "next/link";
 import { COLORS } from "@/lib/theme";
 import { BROKER_SIGNUP_URL } from "@/lib/navigation";
 import FeaturedSlideshow from "@/components/FeaturedSlideshow";
-import GlowFallingText from "@/components/GlowFallingText";
+import ScrollReveal from "@/components/ScrollReveal";
 import Footer from "@/components/Footer";
 import { Home as HomeIcon, Handshake, BarChart3, Shield, MessageSquare, Zap } from "lucide-react";
 
@@ -65,7 +65,7 @@ export default function Home() {
           <div className="mx-auto w-full max-w-xl xl:col-span-2">
             <span className="eyebrow text-white/90">Real estate, reimagined</span>
             <h1 className="mt-6 text-4xl leading-tight sm:text-5xl lg:text-6xl xl:text-7xl" style={{ color: '#f6d98e', textShadow: '0 2px 10px rgba(0,0,0,0.35)' }}>
-              Find your next home in Uganda.
+              Find your next property in Uganda with ease.
             </h1>
             <p className="mt-5 max-w-lg text-base leading-relaxed text-gray-200 sm:text-lg xl:text-xl">
               Browse verified properties from trusted brokers, view details, and book directly — all in one place.
@@ -83,12 +83,12 @@ export default function Home() {
             <div className="overflow-hidden rounded-3xl border border-[var(--zcanopy-accent-gold)]/40 bg-[var(--zcanopy-surface)]/90 p-6 shadow-[var(--shadow-lift)] backdrop-blur lg:p-10 xl:p-12">
               <div className="flex items-center justify-between px-2 pb-2 pt-1">
                 <div className="flex items-center gap-2">
-                  <span
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-sm font-bold text-white"
-                    style={{ backgroundColor: COLORS.accentGold, color: COLORS.cardBrown }}
-                  >
-                    Z
-                  </span>
+                  <img
+                    src="/logo.svg"
+                    alt="ZCanopy"
+                    className="h-7 w-7 object-contain"
+                    style={{ mixBlendMode: 'multiply' }}
+                  />
                   <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                     Featured listings
                   </span>
@@ -123,8 +123,8 @@ export default function Home() {
               { n: "01", t: "Browse listings", d: "Search and filter properties by location, type, and price." },
               { n: "02", t: "Book a viewing", d: "Select a property and submit a booking request with your details." },
               { n: "03", t: "Connect with broker", d: "A verified broker will reach out to confirm and complete the process." },
-            ].map((step) => (
-              <div key={step.n} className="surface-card relative p-7">
+            ].map((step, idx) => (
+              <div key={step.n} className={`surface-card relative p-7 slide-up slide-up-${(idx % 6) + 1}`}>
                 <span className="font-display text-4xl" style={{ color: COLORS.accentGold }}>{step.n}</span>
                 <h3 className="mt-3 text-xl">{step.t}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-gray-600">{step.d}</p>
@@ -137,22 +137,16 @@ export default function Home() {
       {/* Full-width video */}
       <section className="relative">
         <div className="mx-auto max-w-6xl px-4 py-12">
-          <div className="relative overflow-hidden rounded-3xl shadow-[var(--shadow-lift)] ring-1 ring-black/5">
+          <div className="overflow-hidden rounded-3xl shadow-[var(--shadow-lift)] ring-1 ring-black/5">
             <video
-              className="h-[320px] w-full object-cover sm:h-[440px]"
+              className="h-[450px] w-[98%] object-cover sm:h-[550px] lg:h-[650px] mx-auto"
               autoPlay
               loop
               muted
               playsInline
-              preload="auto"
-              poster="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1600&q=70"
             >
-              <source src="/sample_vid.mp4" type="video/mp4" />
+              <source src="https://zcanopy-properties-media.fra1.cdn.digitaloceanspaces.com/Color%20Blended%20Page%20Background%20(1).mp4" type="video/mp4" />
             </video>
-
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gradient-to-b from-black/40 via-black/10 to-black/40">
-              <GlowFallingText text="let zcanopy deliver the property to you" />
-            </div>
           </div>
           <p className="mt-4 text-center text-sm text-gray-500">
             Discover homes across Uganda — tours, bookings, and verified brokers, all in one place.
@@ -190,8 +184,8 @@ export default function Home() {
             { n: "02", t: "Escrow hold", d: "Funds are secured and reconciled automatically against the transaction." },
             { n: "03", t: "Commission split", d: "The platform commission is calculated and the broker's share is earmarked." },
             { n: "04", t: "Payout", d: "Verified brokers withdraw earnings straight to their mobile money wallet." },
-          ].map((s) => (
-            <div key={s.n} className="surface-card p-6">
+          ].map((s, idx) => (
+            <div key={s.n} className={`surface-card p-6 slide-up slide-up-${(idx % 6) + 1}`}>
               <span className="font-display text-3xl" style={{ color: COLORS.accentGold }}>{s.n}</span>
               <h3 className="mt-3 text-lg">{s.t}</h3>
               <p className="mt-2 text-sm leading-relaxed text-gray-600">{s.d}</p>
@@ -241,8 +235,8 @@ export default function Home() {
           </p>
         </div>
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="surface-card p-7">
+          {FEATURES.map((f, idx) => (
+            <div key={f.title} className={`surface-card p-7 slide-up slide-up-${(idx % 6) + 1}`}>
               <div
                 className="flex h-12 w-12 items-center justify-center rounded-2xl"
                 style={{ backgroundColor: `${COLORS.accentGold}22` }}
@@ -305,6 +299,7 @@ export default function Home() {
       </section>
 
       <Footer />
+      <ScrollReveal />
     </main>
   );
 }

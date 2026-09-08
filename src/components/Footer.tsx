@@ -30,12 +30,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <div className="flex items-center gap-2">
-              <span
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-semibold"
-                style={{ backgroundColor: COLORS.accentGold, color: COLORS.cardBrown }}
-              >
-                Z
-              </span>
+              <img
+                src="/logo.svg"
+                alt="ZCanopy"
+                className="h-8 w-8 object-contain"
+                style={{ mixBlendMode: "multiply" }}
+              />
               <span className="font-display text-xl" style={{ color: COLORS.cardBrown }}>
                 ZCanopy
               </span>

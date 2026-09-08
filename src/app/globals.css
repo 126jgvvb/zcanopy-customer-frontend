@@ -360,3 +360,31 @@ html.dark textarea::placeholder {
 .letter-drop {
   animation: var(--animate-letter-drop);
 }
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.slide-up.visible {
+  animation: slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.slide-up-1 { animation-delay: 0.05s; }
+.slide-up-2 { animation-delay: 0.12s; }
+.slide-up-3 { animation-delay: 0.18s; }
+.slide-up-4 { animation-delay: 0.24s; }
+.slide-up-5 { animation-delay: 0.30s; }
+.slide-up-6 { animation-delay: 0.36s; }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import PropertyCard from "@/components/PropertyCard";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 interface FavoriteProperty {
   id: string;
@@ -25,6 +26,7 @@ export default function FavoritesPage() {
   const [favorites, setFavorites] = useState<FavoriteProperty[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { ref, visible } = useScrollReveal();
 
   useEffect(() => {
     const loadFavorites = async () => {
@@ -110,9 +112,19 @@ export default function FavoritesPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {properties.map((property) => (
-            <PropertyCard key={property.id} {...property} />
+        <div ref={ref} className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          {properties.map((property, idx) => (
+            <div
+              key={property.id}
+              className={`transition-all duration-700 ease-out ${
+                visible
+                  ? "translate-y-0 opacity-100"
+                  : "translate-y-10 opacity-0"
+              }`}
+              style={{ transitionDelay: `${idx * 80}ms` }}
+            >
+              <PropertyCard {...property} />
+            </div>
           ))}
         </div>
       )}

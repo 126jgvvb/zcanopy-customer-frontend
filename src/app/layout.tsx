@@ -39,12 +39,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="site-header sticky top-0 z-20">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
             <Link href="/" className="flex items-center gap-2.5">
-              <span
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-base font-semibold shadow-sm"
-                style={{ backgroundColor: "var(--zcanopy-accent-gold)", color: "var(--zcanopy-card-brown)" }}
-              >
-                Z
-              </span>
+              <img
+                src="/logo.svg"
+                alt="ZCanopy"
+                className="h-9 w-9 object-contain"
+                style={{ mixBlendMode: 'multiply' }}
+              />
               <span className="font-display text-xl tracking-tight" style={{ color: "var(--zcanopy-card-brown)" }}>
                 ZCanopy
               </span>

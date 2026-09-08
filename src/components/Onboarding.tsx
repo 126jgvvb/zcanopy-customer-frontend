@@ -43,13 +43,13 @@ export function OnboardingShell({
 export function BrandMark() {
   return (
     <div className="flex flex-col items-center gap-3">
-      <span
-        className="flex h-12 w-12 items-center justify-center rounded-2xl text-xl font-bold text-white shadow-lg"
-        style={{ backgroundColor: COLORS.accentGold, color: COLORS.cardBrown }}
-      >
-        Z
-      </span>
-        <span className="font-display text-2xl tracking-tight" style={{ color: COLORS.cardBrown }}>
+      <img
+        src="/logo.svg"
+        alt="ZCanopy"
+        className="h-12 w-12 object-contain"
+        style={{ mixBlendMode: "multiply" }}
+      />
+      <span className="font-display text-2xl tracking-tight" style={{ color: COLORS.cardBrown }}>
         ZCanopy
       </span>
     </div>

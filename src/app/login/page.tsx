@@ -51,12 +51,12 @@ export default function LoginPage() {
         <div className="relative w-full max-w-md rounded-3xl border border-[var(--zcanopy-border)] bg-[var(--zcanopy-surface)] p-9 shadow-[var(--zcanopy-shadow)]">
           <div className="mb-8 text-center">
             <Link href="/" className="inline-flex items-center gap-2">
-              <span
-                className="flex h-10 w-10 items-center justify-center rounded-xl text-base font-bold text-white shadow"
-                style={{ backgroundColor: COLORS.accentGold, color: COLORS.cardBrown }}
-              >
-                Z
-              </span>
+              <img
+                src="/logo.svg"
+                alt="ZCanopy"
+                className="h-10 w-10 object-contain"
+                style={{ mixBlendMode: 'multiply' }}
+              />
             </Link>
             <p className="mt-5 text-sm font-medium uppercase tracking-wide" style={{ color: COLORS.primary }}>
               Broker console
