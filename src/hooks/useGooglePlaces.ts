@@ -118,18 +118,19 @@ export function usePlacePredictions(input: string) {
 
     const requestId = ++requestIdRef.current;
     setLoading(true);
-    const service = new win.google.maps.places.AutocompleteService();
+    const places = win.google!.maps!.places!;
+    const service = new places.AutocompleteService();
 
     service.getPlacePredictions(
       {
         input: value,
         types: ["(cities)"],
       },
-      (results: Array<{ place_id: string; description: string }> | null, status: string) => {
+      (results, status) => {
         if (requestId !== requestIdRef.current) {
           return;
         }
-        if (status === win.google.maps.places.PlacesServiceStatus.OK && results) {
+        if (status === places.PlacesServiceStatus.OK && results) {
           setPredictions(
             results.map((item) => ({
               placeId: item.place_id,
