@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import PropertyCard from "@/components/PropertyCard";
-import { webApi, getSessionId } from "@/lib/api";
+import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
 
 interface FavoriteProperty {
   id: string;
@@ -31,9 +31,12 @@ export default function FavoritesPage() {
       setLoading(true);
       setError("");
       try {
-        const sessionId = getSessionId();
+        let sessionId = getSessionId();
         if (!sessionId) {
-          setError("Please log in to view your favorites");
+          sessionId = await ensureAnonymousSession();
+        }
+        if (!sessionId) {
+          setError("Unable to access favorites. Please refresh the page.");
           setLoading(false);
           return;
         }
