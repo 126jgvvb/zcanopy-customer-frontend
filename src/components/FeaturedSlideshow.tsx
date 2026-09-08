@@ -79,7 +79,7 @@ export default function FeaturedSlideshow() {
 
   if (slides.length === 0) {
     return (
-      <div className="flex h-[380px] w-full items-center justify-center rounded-2xl bg-[var(--zcanopy-surface)] text-sm text-gray-400 lg:h-[640px]">
+      <div className="flex h-[400px] w-full items-center justify-center rounded-2xl bg-[var(--zcanopy-surface)] text-sm text-gray-400 lg:h-[700px]">
         Loading featured listings…
       </div>
     );
@@ -88,7 +88,7 @@ export default function FeaturedSlideshow() {
   const go = (i: number) => setIndex(((i % slides.length) + slides.length) % slides.length);
 
   return (
-    <div className="relative h-[380px] w-full overflow-hidden rounded-2xl lg:h-[640px]">
+    <div className="relative h-[400px] w-full overflow-hidden rounded-2xl lg:h-[700px]">
       {slides.map((s, i) => (
         <div
           key={s.title}
@@ -101,23 +101,23 @@ export default function FeaturedSlideshow() {
             pointerEvents: i === index ? "auto" : "none",
           }}
         >
-          <div className="flex h-full flex-col justify-between p-6 text-white lg:p-10">
+          <div className="flex h-full flex-col justify-between p-8 text-white lg:p-12">
             <div className="flex items-center justify-between">
-              <span className="rounded-full bg-black/25 px-3 py-1 text-xs font-semibold uppercase tracking-wide backdrop-blur-sm lg:px-4 lg:py-1.5 lg:text-sm">
+              <span className="rounded-full bg-black/25 px-4 py-1.5 text-sm font-semibold uppercase tracking-wide backdrop-blur-sm lg:px-5 lg:py-2 lg:text-base">
                 {s.broker}
               </span>
-              <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-sm lg:px-4 lg:py-1.5 lg:text-sm">
+              <span className="rounded-full bg-white/20 px-4 py-1.5 text-sm font-semibold backdrop-blur-sm lg:px-5 lg:py-2 lg:text-base">
                 {s.location}
               </span>
             </div>
             <div>
-              <p className="text-sm font-semibold uppercase tracking-widest text-white/80 lg:text-base">
+              <p className="text-base font-semibold uppercase tracking-widest text-white/80 lg:text-lg">
                 {s.tagline}
               </p>
-              <h3 className="mt-1 text-2xl font-bold leading-tight drop-shadow lg:text-4xl">
+              <h3 className="mt-2 text-3xl font-bold leading-tight drop-shadow lg:text-5xl">
                 {s.title}
               </h3>
-              <p className="mt-2 text-lg font-bold text-white drop-shadow lg:text-2xl">{s.price}</p>
+              <p className="mt-3 text-xl font-bold text-white drop-shadow lg:text-3xl">{s.price}</p>
             </div>
           </div>
         </div>

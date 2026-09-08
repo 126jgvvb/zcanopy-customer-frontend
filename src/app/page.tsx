@@ -57,26 +57,26 @@ export default function Home() {
               "radial-gradient(900px 500px at 80% -10%, rgba(209,160,84,0.25), transparent), radial-gradient(700px 500px at 0% 0%, rgba(169,113,14,0.12), transparent)",
           }}
         />
-        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 lg:grid-cols-5 lg:gap-24 lg:py-28">
-          <div className="lg:col-span-2">
+        <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-10 px-6 py-20 lg:grid-cols-2 lg:gap-24 lg:py-28 xl:grid-cols-5 xl:gap-28">
+          <div className="mx-auto w-full max-w-xl xl:col-span-2">
             <span className="eyebrow">Real estate, reimagined</span>
-            <h1 className="mt-6 text-4xl leading-tight sm:text-5xl lg:text-6xl">
+            <h1 className="mt-6 text-4xl leading-tight sm:text-5xl lg:text-6xl xl:text-7xl">
               Find your next home in Uganda.
             </h1>
-            <p className="mt-5 max-w-lg text-base leading-relaxed text-gray-600 sm:text-lg">
+            <p className="mt-5 max-w-lg text-base leading-relaxed text-gray-600 sm:text-lg xl:text-xl">
               Browse verified properties from trusted brokers, view details, and book directly — all in one place.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/properties" className="btn-primary px-8 py-4 text-base">
+              <Link href="/properties" className="btn-primary px-8 py-4 text-base xl:px-10 xl:py-5 xl:text-lg">
                 Browse Properties
               </Link>
-              <Link href="/login" className="rounded-xl border border-gray-300 px-7 py-4 text-base font-semibold text-gray-700 transition-colors hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)]">
+              <Link href="/login" className="rounded-xl border border-gray-300 px-7 py-4 text-base font-semibold text-gray-700 transition-colors hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)] xl:px-8 xl:py-5 xl:text-lg">
                 Broker Login
               </Link>
             </div>
           </div>
-          <div className="hidden lg:block lg:col-span-3">
-            <div className="overflow-hidden rounded-3xl border border-[var(--zcanopy-accent-gold)]/40 bg-[var(--zcanopy-surface)]/90 p-6 shadow-[var(--shadow-lift)] backdrop-blur lg:p-10">
+          <div className="hidden lg:block xl:col-span-3">
+            <div className="overflow-hidden rounded-3xl border border-[var(--zcanopy-accent-gold)]/40 bg-[var(--zcanopy-surface)]/90 p-6 shadow-[var(--shadow-lift)] backdrop-blur lg:p-10 xl:p-12">
               <div className="flex items-center justify-between px-2 pb-2 pt-1">
                 <div className="flex items-center gap-2">
                   <span
