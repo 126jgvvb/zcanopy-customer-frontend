@@ -79,7 +79,7 @@ export default function FeaturedSlideshow() {
 
   if (slides.length === 0) {
     return (
-      <div className="flex h-[400px] w-full items-center justify-center rounded-2xl bg-[var(--zcanopy-surface)] text-sm text-gray-400 lg:h-[700px]">
+      <div className="flex h-[320px] w-full items-center justify-center rounded-2xl bg-[var(--zcanopy-surface)] text-sm text-gray-400 lg:h-[460px]">
         Loading featured listings…
       </div>
     );
@@ -88,7 +88,7 @@ export default function FeaturedSlideshow() {
   const go = (i: number) => setIndex(((i % slides.length) + slides.length) % slides.length);
 
   return (
-    <div className="relative h-[400px] w-full overflow-hidden rounded-2xl lg:h-[700px]">
+    <div className="relative h-[320px] w-full overflow-hidden rounded-2xl lg:h-[460px]">
       {slides.map((s, i) => (
         <div
           key={s.title}

@@ -57,7 +57,7 @@ export default function Home() {
               "radial-gradient(900px 500px at 80% -10%, rgba(209,160,84,0.25), transparent), radial-gradient(700px 500px at 0% 0%, rgba(169,113,14,0.12), transparent)",
           }}
         />
-        <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-10 px-6 py-20 lg:grid-cols-2 lg:gap-28 lg:py-28 xl:grid-cols-5 xl:gap-36">
+        <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 lg:grid-cols-2 lg:gap-20 lg:py-28 xl:grid-cols-5 xl:gap-24">
           <div className="mx-auto w-full max-w-xl xl:col-span-2">
             <span className="eyebrow">Real estate, reimagined</span>
             <h1 className="mt-6 text-4xl leading-tight sm:text-5xl lg:text-6xl xl:text-7xl">
@@ -96,7 +96,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="properties" className="mx-auto max-w-6xl px-6 py-20">
+      <section id="properties" className="mx-auto max-w-6xl px-4 py-20">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl sm:text-4xl">Latest Properties</h2>
           <p className="mt-3 text-gray-600">Explore available homes, apartments, and land across Uganda.</p>
@@ -109,7 +109,7 @@ export default function Home() {
       </section>
 
       <section id="how" className="bg-[var(--zcanopy-surface)]">
-        <div className="mx-auto max-w-6xl px-6 py-20">
+        <div className="mx-auto max-w-6xl px-4 py-20">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl sm:text-4xl">How it works</h2>
             <p className="mt-3 text-gray-600">From browsing to booking in three simple steps.</p>
@@ -132,7 +132,7 @@ export default function Home() {
 
       {/* Full-width video */}
       <section className="relative">
-        <div className="mx-auto max-w-6xl px-6 py-12">
+        <div className="mx-auto max-w-6xl px-4 py-12">
           <div className="relative overflow-hidden rounded-3xl shadow-[var(--shadow-lift)] ring-1 ring-black/5">
             <video
               className="h-[320px] w-full object-cover sm:h-[440px]"
@@ -158,7 +158,7 @@ export default function Home() {
 
       {/* Stats */}
       <section id="stats" className="border-y border-[var(--border)] bg-[var(--zcanopy-surface)]">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-14 md:grid-cols-4">
+        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-4 py-14 md:grid-cols-4">
           {STATS.map((s) => (
             <div key={s.label} className="text-center">
               <p className="font-display text-3xl sm:text-4xl" style={{ color: COLORS.primary }}>{s.value}</p>
@@ -169,7 +169,7 @@ export default function Home() {
       </section>
 
       {/* Payment flow */}
-      <section className="mx-auto max-w-6xl px-6 py-20">
+      <section className="mx-auto max-w-6xl px-4 py-20">
         <div className="mx-auto max-w-2xl text-center">
           <span className="eyebrow">Payments</span>
           <h2 className="mt-4 text-3xl sm:text-4xl">
@@ -229,7 +229,7 @@ export default function Home() {
       </section>
 
       {/* Features */}
-      <section id="features" className="mx-auto max-w-6xl px-6 py-20">
+      <section id="features" className="mx-auto max-w-6xl px-4 py-20">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl sm:text-4xl">Everything brokers need</h2>
           <p className="mt-3 text-gray-600">
@@ -254,7 +254,7 @@ export default function Home() {
 
       {/* For brokers */}
       <section id="brokers" className="bg-[var(--zcanopy-surface)]">
-        <div className="mx-auto max-w-6xl px-6 py-20">
+        <div className="mx-auto max-w-6xl px-4 py-20">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl sm:text-4xl">List your properties with ZCanopy</h2>
             <p className="mt-3 text-gray-600">From sign-up to your first payout in three simple steps.</p>
