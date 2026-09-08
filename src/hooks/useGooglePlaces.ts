@@ -2,6 +2,26 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+type GoogleMapsWindow = {
+  google?: {
+    maps?: {
+      places?: {
+        AutocompleteService: new () => {
+          getPlacePredictions(
+            request: { input: string; types: string[] },
+            callback: (results: Array<{ place_id: string; description: string }> | null, status: string) => void,
+          ): void;
+        };
+        PlacesServiceStatus: {
+          OK: string;
+          ZERO_RESULTS: string;
+          ERROR: string;
+        };
+      };
+    };
+  };
+};
+
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 const GOOGLE_MAPS_SCRIPT_ID = "google-maps-script";
 const HAS_API_KEY =
@@ -89,7 +109,7 @@ export function usePlacePredictions(input: string) {
   const requestIdRef = useRef(0);
 
   const fetchPredictions = useCallback((value: string) => {
-    const win = window as unknown as { google?: { maps?: { places?: unknown } } };
+    const win = window as unknown as GoogleMapsWindow;
     if (typeof window === "undefined" || !win.google?.maps?.places) {
       setPredictions([]);
       setLoading(false);
@@ -98,18 +118,18 @@ export function usePlacePredictions(input: string) {
 
     const requestId = ++requestIdRef.current;
     setLoading(true);
-    const service = new google.maps.places.AutocompleteService();
+    const service = new win.google.maps.places.AutocompleteService();
 
     service.getPlacePredictions(
       {
         input: value,
         types: ["(cities)"],
       },
-      (results, status) => {
+      (results: Array<{ place_id: string; description: string }> | null, status: string) => {
         if (requestId !== requestIdRef.current) {
           return;
         }
-        if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+        if (status === win.google.maps.places.PlacesServiceStatus.OK && results) {
           setPredictions(
             results.map((item) => ({
               placeId: item.place_id,
