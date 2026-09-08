@@ -57,7 +57,7 @@ export default function Home() {
               "radial-gradient(900px 500px at 80% -10%, rgba(209,160,84,0.25), transparent), radial-gradient(700px 500px at 0% 0%, rgba(169,113,14,0.12), transparent)",
           }}
         />
-        <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-10 px-6 py-20 lg:grid-cols-2 lg:gap-24 lg:py-28 xl:grid-cols-5 xl:gap-28">
+        <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-10 px-6 py-20 lg:grid-cols-2 lg:gap-28 lg:py-28 xl:grid-cols-5 xl:gap-36">
           <div className="mx-auto w-full max-w-xl xl:col-span-2">
             <span className="eyebrow">Real estate, reimagined</span>
             <h1 className="mt-6 text-4xl leading-tight sm:text-5xl lg:text-6xl xl:text-7xl">
