@@ -63,18 +63,18 @@ export default function Home() {
         <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
         <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 lg:grid-cols-2 lg:gap-20 lg:py-28 xl:grid-cols-5 xl:gap-24">
           <div className="mx-auto w-full max-w-xl xl:col-span-2">
-            <span className="eyebrow">Real estate, reimagined</span>
-            <h1 className="mt-6 text-4xl leading-tight sm:text-5xl lg:text-6xl xl:text-7xl">
+            <span className="eyebrow text-white/90">Real estate, reimagined</span>
+            <h1 className="mt-6 text-4xl leading-tight sm:text-5xl lg:text-6xl xl:text-7xl text-white">
               Find your next home in Uganda.
             </h1>
-            <p className="mt-5 max-w-lg text-base leading-relaxed text-gray-600 sm:text-lg xl:text-xl">
+            <p className="mt-5 max-w-lg text-base leading-relaxed text-gray-200 sm:text-lg xl:text-xl">
               Browse verified properties from trusted brokers, view details, and book directly — all in one place.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/properties" className="btn-primary px-8 py-4 text-base xl:px-10 xl:py-5 xl:text-lg">
                 Browse Properties
               </Link>
-              <Link href="/login" className="rounded-xl border border-gray-300 px-7 py-4 text-base font-semibold text-gray-700 transition-colors hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)] xl:px-8 xl:py-5 xl:text-lg">
+              <Link href="/login" className="rounded-xl border border-white/40 px-7 py-4 text-base font-semibold text-white transition-colors hover:border-white hover:bg-white/10 xl:px-8 xl:py-5 xl:text-lg">
                 Broker Login
               </Link>
             </div>
