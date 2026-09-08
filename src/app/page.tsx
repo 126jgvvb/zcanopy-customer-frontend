@@ -76,7 +76,7 @@ export default function Home() {
             </div>
           </div>
           <div className="hidden lg:block">
-            <div className="overflow-hidden rounded-3xl border border-[var(--zcanopy-accent-gold)]/40 bg-[var(--zcanopy-surface)]/90 p-6 shadow-[var(--shadow-lift)] backdrop-blur lg:p-8">
+            <div className="overflow-hidden rounded-3xl border border-[var(--zcanopy-accent-gold)]/40 bg-[var(--zcanopy-surface)]/90 p-6 shadow-[var(--shadow-lift)] backdrop-blur lg:p-10">
               <div className="flex items-center justify-between px-2 pb-2 pt-1">
                 <div className="flex items-center gap-2">
                   <span
