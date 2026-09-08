@@ -111,7 +111,7 @@ export default function FeaturedSlideshow() {
               </span>
             </div>
             <div>
-              <p className="text-base font-semibold uppercase tracking-widest text-white/80 lg:text-lg">
+              <p className="text-base font-semibold uppercase tracking-widest lg:text-lg" style={{ color: '#f6d98e', textShadow: '0 1px 8px rgba(0,0,0,0.35)' }}>
                 {s.tagline}
               </p>
               <h3 className="mt-2 text-3xl font-bold leading-tight drop-shadow lg:text-5xl">
