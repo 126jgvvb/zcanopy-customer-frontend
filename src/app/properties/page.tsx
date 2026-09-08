@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import PropertyCard from "@/components/PropertyCard";
 import { webApi } from "@/lib/api";
+import Link from "next/link";
+import { usePlacePredictions } from "@/hooks/useGooglePlaces";
 
 function formatUGX(n: number) {
   try {
@@ -61,41 +63,75 @@ export default function PropertiesPage() {
   const [selectedBrokerCode, setSelectedBrokerCode] = useState<string>("");
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [localSearch, setLocalSearch] = useState("");
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const { predictions: locationPredictions, loading: locationLoading, error: locationError } = usePlacePredictions(
+    localSearch
+  );
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
       setLoading(true);
       setError("");
       try {
-        let data;
+        let data: { properties?: Property[]; total?: number };
         if (viewMode === "broker" && selectedBrokerCode) {
           const res = await webApi.brokerPropertiesByCode(selectedBrokerCode);
-          data = res as any;
+          data = res as { properties?: Property[]; total?: number };
         } else if (search) {
           const res = await webApi.searchProperties(search);
-          data = res as any;
+          data = res as { properties?: Property[]; total?: number };
         } else {
-          const res = await webApi.publicProperties();
-          data = res as any;
+          const res = await webApi.publicProperties(locationFilter ? { location: locationFilter } : undefined);
+          data = res as { properties?: Property[]; total?: number };
         }
-        setProperties((data as any)?.properties || []);
+        if (!cancelled) {
+          setProperties(data.properties || []);
+        }
       } catch {
-        setError("Failed to load properties");
+        if (!cancelled) {
+          setError("Failed to load properties");
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
     load();
-  }, [search, viewMode, selectedBrokerCode]);
+    return () => {
+      cancelled = true;
+    };
+  }, [search, viewMode, selectedBrokerCode, locationFilter]);
+
+  useEffect(() => {
+    if (!search) return;
+    const timeout = setTimeout(() => {
+      webApi.recordSearch({
+        query: search,
+        location: locationFilter,
+        propertyType: viewMode === "broker" ? "broker" : undefined,
+      }).catch(() => {});
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [search, locationFilter, viewMode]);
 
   const handleSearchChange = (value: string) => {
     setLocalSearch(value);
+    setShowLocationSuggestions(value.trim().length > 0);
     if (searchTimerRef.current) {
       clearTimeout(searchTimerRef.current);
     }
     searchTimerRef.current = setTimeout(() => {
       setSearch(value);
     }, 300);
+  };
+
+  const handleLocationSuggestionSelect = (description: string) => {
+    setLocationFilter(description);
+    setLocalSearch(description);
+    setSearch(description);
+    setShowLocationSuggestions(false);
   };
 
   const filteredProperties = useMemo(() => {
@@ -122,13 +158,6 @@ export default function PropertiesPage() {
     });
     return Array.from(brokers.entries()).map(([code, name]) => ({ code, name }));
   }, [properties]);
-
-  const openBooking = (property: Property) => {
-    setSelectedProperty(property);
-    setForm(emptyForm);
-    setSubmitError("");
-    setSuccess("");
-  };
 
   const closeBooking = () => {
     setSelectedProperty(null);
@@ -190,15 +219,43 @@ export default function PropertiesPage() {
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-5 shadow-[var(--shadow-soft)]">
         <div className="flex flex-col gap-4 md:flex-row md:items-end">
-          <div className="flex-1">
+          <div className="flex-1 relative">
             <label className="block text-sm font-medium text-gray-700">Search</label>
             <input
               type="text"
               value={localSearch}
               onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => localSearch.trim().length > 0 && setShowLocationSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 150)}
               placeholder="Search by title, location, broker..."
               className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
             />
+            {showLocationSuggestions && (locationPredictions.length > 0 || locationLoading || locationError) && (
+              <div className="absolute z-20 mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] shadow-lg">
+                {locationLoading && (
+                  <div className="px-4 py-2 text-sm text-gray-500">Loading suggestions...</div>
+                )}
+                {locationError && (
+                  <div className="px-4 py-2 text-sm text-red-600">Location suggestions unavailable</div>
+                )}
+                {!locationLoading &&
+                  !locationError &&
+                  locationPredictions.map((item) => (
+                    <button
+                      key={item.placeId}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleLocationSuggestionSelect(item.description)}
+                      className="flex w-full items-center px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      {item.description}
+                    </button>
+                  ))}
+                {!locationLoading && !locationError && locationPredictions.length === 0 && (
+                  <div className="px-4 py-2 text-sm text-gray-500">No suggestions</div>
+                )}
+              </div>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Location</label>
@@ -267,6 +324,12 @@ export default function PropertiesPage() {
               {b.name}
             </button>
           ))}
+          <Link
+            href="/properties/favorites"
+            className="btn-ghost rounded-xl px-4 py-2 text-sm font-semibold transition-colors"
+          >
+            My Favorites
+          </Link>
         </div>
       </div>
 

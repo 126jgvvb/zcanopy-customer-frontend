@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { webApi } from "@/lib/api";
-import { MapPin, Calendar, Video, ArrowLeft, ExternalLink } from "lucide-react";
+import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
+import { MapPin, Calendar, Video, ArrowLeft, ExternalLink, Heart, MessageSquare, Star } from "lucide-react";
 import Link from "next/link";
 
 function formatUGX(n: number) {
@@ -38,10 +38,26 @@ interface BookingForm {
   customerEmail: string;
 }
 
+interface Comment {
+  id: string;
+  customerName: string;
+  comment: string;
+  rating: number;
+  createdAt: string;
+}
+
 const emptyForm: BookingForm = {
   customerName: "",
   customerPhone: "",
   customerEmail: "",
+};
+
+const emptyCommentForm = {
+  customerName: "",
+  customerPhone: "",
+  customerEmail: "",
+  comment: "",
+  rating: 0,
 };
 
 export default function PropertyDetailPage() {
@@ -57,6 +73,105 @@ export default function PropertyDetailPage() {
   const [submitError, setSubmitError] = useState("");
   const [success, setSuccess] = useState("");
   const [bookedProperty, setBookedProperty] = useState<Property | null>(null);
+  const [favorited, setFavorited] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [commentForm, setCommentForm] = useState(emptyCommentForm);
+  const [submittingComment, setSubmittingComment] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await webApi.propertyDetails(id);
+        const prop = (data as any)?.property || (data as any) || null;
+        setProperty(prop);
+
+        let commentsData: any = { comments: [], averageRating: 0 };
+        try {
+          commentsData = await webApi.getPropertyComments(id);
+        } catch {
+          // comments endpoint may be unavailable
+        }
+        setComments((commentsData as any)?.comments || []);
+        setAverageRating((commentsData as any)?.averageRating || 0);
+
+        const sessionId = getSessionId();
+        if (sessionId) {
+          try {
+            const favs = await webApi.getCustomerFavorites(sessionId);
+            const favList = (favs as any)?.favorites || [];
+            setFavorited(favList.some((f: any) => f.propertyId === id));
+          } catch {
+            // favorites endpoint may be unavailable
+          }
+        }
+      } catch {
+        setError("Failed to load property details");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id) load();
+  }, [id]);
+
+  const toggleFavorite = async () => {
+    try {
+      let sessionId = getSessionId();
+      if (!sessionId) {
+        const newSession = await ensureAnonymousSession();
+        sessionId = newSession || null;
+      }
+      if (!sessionId) {
+        window.alert("Unable to start a customer session right now. Please refresh and try again.");
+        return;
+      }
+      const res = await webApi.toggleFavorite({
+        sessionToken: sessionId,
+        propertyId: id,
+        propertyTitle: property?.title || "",
+        propertyLocation: property?.location || "",
+        imageUrl: property?.imageUrl?.[0] || "",
+        price: property?.price || 0,
+      });
+      setFavorited((res as any).favorited);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!property) return;
+    const sessionId = getSessionId();
+    if (!sessionId) {
+      window.alert("Please continue as a customer to comment.");
+      return;
+    }
+    setSubmittingComment(true);
+    try {
+      const res = await webApi.addComment({
+        sessionToken: sessionId,
+        propertyId: property.id,
+        customerName: commentForm.customerName,
+        customerPhone: commentForm.customerPhone,
+        customerEmail: commentForm.customerEmail,
+        comment: commentForm.comment,
+        rating: commentForm.rating,
+      });
+      if ((res as any).success) {
+        setCommentForm(emptyCommentForm);
+        const commentsData = await webApi.getPropertyComments(property.id);
+        setComments((commentsData as any)?.comments || []);
+        setAverageRating((commentsData as any)?.averageRating || 0);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -222,7 +337,7 @@ export default function PropertyDetailPage() {
             </div>
           )}
 
-          {lat !== undefined && lng !== undefined && (
+          {(lat != null && lng != null && lat !== 0 && lng !== 0) ? (
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
               <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--zcanopy-card-brown)]">
                 <MapPin size={18} />
@@ -231,7 +346,7 @@ export default function PropertyDetailPage() {
               <div className="h-80 w-full overflow-hidden rounded-xl">
                 <iframe
                   title={`Map of ${property.title}`}
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.02}%2C${lat - 0.02}%2C${lng + 0.02}%2C${lat + 0.02}&layer=mapnik&marker=${lat}%2C${lng}`}
+                  src={`https://www.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
                   className="h-full w-full border-0"
                   loading="lazy"
                   allowFullScreen
@@ -247,12 +362,38 @@ export default function PropertyDetailPage() {
                 Open in Google Maps
               </a>
             </div>
+          ) : (
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
+              <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--zcanopy-card-brown)]">
+                <MapPin size={18} />
+                Location
+              </h3>
+              <div className="py-8 text-center text-sm text-gray-500">
+                <p>This property was not lively captured on site,please refer to the location text</p>
+                <p className="mt-1 text-xs text-gray-400">Location: {property.location}</p>
+              </div>
+            </div>
           )}
         </div>
 
         <div className="space-y-6">
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
-            <h3 className="text-lg font-semibold text-[var(--zcanopy-card-brown)]">Booking Info</h3>
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-[var(--zcanopy-card-brown)]">Booking Info</h3>
+              </div>
+              <button
+                type="button"
+                onClick={toggleFavorite}
+                className="rounded-full p-2 text-gray-600 transition hover:bg-gray-100"
+              >
+                <Heart
+                  size={20}
+                  fill={favorited ? "#ef4444" : "none"}
+                  color={favorited ? "#ef4444" : "currentColor"}
+                />
+              </button>
+            </div>
             <div className="mt-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Status</span>
@@ -293,6 +434,89 @@ export default function PropertyDetailPage() {
                 Book Now
               </button>
             )}
+          </div>
+
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--zcanopy-card-brown)]">
+              <MessageSquare size={18} />
+              Reviews & Comments
+            </h3>
+            {averageRating > 0 && (
+              <div className="mb-4 text-sm text-gray-600">
+                Average rating: <span className="font-semibold">{averageRating.toFixed(1)}</span> / 5
+              </div>
+            )}
+            <div className="space-y-3">
+              {comments.map((c) => (
+                <div key={c.id} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-gray-800">{c.customerName}</p>
+                    <span className="text-xs text-gray-500">{new Date(c.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <p className="mt-1 text-sm text-gray-600">{c.comment}</p>
+                  <p className="mt-1 text-xs text-gray-500">Rating: {c.rating}/5</p>
+                </div>
+              ))}
+              {comments.length === 0 && (
+                <p className="text-sm text-gray-500">No comments yet. Be the first to review this property.</p>
+              )}
+            </div>
+            <form onSubmit={handleCommentSubmit} className="mt-4 space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Name</label>
+                <input
+                  type="text"
+                  required
+                  value={commentForm.customerName}
+                  onChange={(e) => setCommentForm({ ...commentForm, customerName: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+                  placeholder="Your name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Phone</label>
+                <input
+                  type="tel"
+                  required
+                  value={commentForm.customerPhone}
+                  onChange={(e) => setCommentForm({ ...commentForm, customerPhone: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+                  placeholder="+256 700 000000"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Email</label>
+                <input
+                  type="email"
+                  value={commentForm.customerEmail}
+                  onChange={(e) => setCommentForm({ ...commentForm, customerEmail: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+                  placeholder="you@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Rating</label>
+                <StarRating value={commentForm.rating} onChange={(rating) => setCommentForm({ ...commentForm, rating })} average={averageRating || undefined} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Comment</label>
+                <textarea
+                  required
+                  value={commentForm.comment}
+                  onChange={(e) => setCommentForm({ ...commentForm, comment: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+                  rows={3}
+                  placeholder="Share your experience..."
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={submittingComment}
+                className="btn-primary w-full px-4 py-2.5 text-sm disabled:opacity-50"
+              >
+                {submittingComment ? "Submitting..." : "Submit Review"}
+              </button>
+            </form>
           </div>
         </div>
       </div>
@@ -403,6 +627,49 @@ export default function PropertyDetailPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function StarRating({ value, onChange, average }: { value: number; onChange: (value: number) => void; average?: number }) {
+  const [hover, setHover] = useState(0);
+
+  return (
+    <div className="flex items-center gap-2">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => onChange(star)}
+          onMouseEnter={() => setHover(star)}
+          onMouseLeave={() => setHover(0)}
+          className="relative transition-transform duration-200 hover:scale-110"
+        >
+          <Star
+            size={24}
+            fill={star <= (hover || value) ? "#facc15" : "none"}
+            color={star <= (hover || value) ? "#facc15" : "#9ca3af"}
+            className={star === value ? "animate-[starDust_0.6s_ease-out]" : ""}
+          />
+          {star === value && (
+            <>
+              <span className="absolute -top-1 left-1/2 h-1 w-1 rounded-full bg-yellow-400 opacity-0 animate-[starDust_0.7s_ease-out_0.05s_forwards]" />
+              <span className="absolute -top-2 left-1/2 h-1.5 w-1.5 rounded-full bg-yellow-300 opacity-0 animate-[starDust_0.8s_ease-out_0.1s_forwards]" />
+              <span className="absolute top-1/2 -right-2 h-1 w-1 rounded-full bg-yellow-400 opacity-0 animate-[starDust_0.7s_ease-out_0.15s_forwards]" />
+              <span className="absolute top-1/2 -left-2 h-1.5 w-1.5 rounded-full bg-yellow-300 opacity-0 animate-[starDust_0.8s_ease-out_0.2s_forwards]" />
+            </>
+          )}
+        </button>
+      ))}
+      {typeof average === "number" && (
+        <span className="ml-2 text-sm text-gray-600">{average.toFixed(1)} / 5</span>
+      )}
+      <style jsx>{`
+        @keyframes starDust {
+          0% { transform: translate(0, 0) scale(1); opacity: 0.9; }
+          100% { transform: translate(var(--dx, 8px), var(--dy, -12px)) scale(0); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }

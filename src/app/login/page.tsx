@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { webApi, ApiError } from '@/lib/api';
+import { webApi, ApiError, setSession } from '@/lib/api';
 import { COLORS } from '@/lib/theme';
 import Footer from '@/components/Footer';
 
@@ -23,14 +23,18 @@ export default function LoginPage() {
       const result = await webApi.brokerLogin(brokerCode, password);
 
       const token = (result as { token?: string }).token;
-      if (!token) {
+      const sessionId =
+        (result as { sessionId?: string }).sessionId ||
+        (result as { sessionToken?: string }).sessionToken ||
+        token;
+
+      if (!sessionId) {
         setError('Login failed');
         return;
       }
 
-      localStorage.setItem('zcanopy_token', token);
-      localStorage.setItem('zcanopy_role', 'broker');
-      localStorage.setItem('zcanopy_user', JSON.stringify(result));
+      setSession(sessionId, result, 'broker');
+      localStorage.setItem('zcanopy_token', token || '');
 
       router.push('/dashboard');
     } catch (err) {

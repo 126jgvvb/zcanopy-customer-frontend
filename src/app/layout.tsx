@@ -3,6 +3,8 @@ import { Geist, Geist_Mono, Cormorant_Garamond } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import ThemeToggle from "@/components/ThemeToggle";
+import SessionGate from "@/components/SessionGate";
+import CookieBanner from "@/components/CookieBanner";
 import { BROKER_SIGNUP_URL } from "@/lib/navigation";
 
 const geistSans = Geist({
@@ -48,7 +50,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </span>
             </Link>
             <nav className="hidden items-center gap-8 text-[13px] font-medium md:flex">
-              <a href="#properties" className="nav-link">Properties</a>
+              <Link href="/" className="nav-link">Home</Link>
+              <Link href="/properties" className="nav-link">Properties</Link>
+              <Link href="/properties/favorites" className="nav-link">My Favorites</Link>
               <a href="#features" className="nav-link">Features</a>
               <a href="#how" className="nav-link">How it works</a>
               <a href={BROKER_SIGNUP_URL} className="nav-link">For brokers</a>
@@ -62,7 +66,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </header>
-        {children}
+        <SessionGate>
+          {children}
+        </SessionGate>
+        <CookieBanner />
       </body>
     </html>
   );

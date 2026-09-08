@@ -51,32 +51,32 @@ export default function Home() {
     <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <section className="relative overflow-hidden">
         <div
-          className="pointer-events-none absolute inset-0"
+          className="pointer-events-none absolute inset-0 z-0"
           style={{
             background:
               "radial-gradient(900px 500px at 80% -10%, rgba(209,160,84,0.25), transparent), radial-gradient(700px 500px at 0% 0%, rgba(169,113,14,0.12), transparent)",
           }}
         />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 lg:grid-cols-2 lg:py-28">
+        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 lg:grid-cols-2 lg:gap-24 lg:py-28">
           <div>
             <span className="eyebrow">Real estate, reimagined</span>
-            <h1 className="mt-6 text-4xl leading-tight sm:text-5xl lg:text-[3.4rem]">
+            <h1 className="mt-6 text-4xl leading-tight sm:text-5xl lg:text-6xl">
               Find your next home in Uganda.
             </h1>
-            <p className="mt-5 max-w-lg text-base leading-relaxed text-gray-600">
+            <p className="mt-5 max-w-lg text-base leading-relaxed text-gray-600 sm:text-lg">
               Browse verified properties from trusted brokers, view details, and book directly — all in one place.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/properties" className="btn-primary px-6 py-3 text-sm">
+              <Link href="/properties" className="btn-primary px-8 py-4 text-base">
                 Browse Properties
               </Link>
-              <Link href="/login" className="rounded-xl border border-gray-300 px-5 py-3 text-sm font-semibold text-gray-700 transition-colors hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)]">
+              <Link href="/login" className="rounded-xl border border-gray-300 px-7 py-4 text-base font-semibold text-gray-700 transition-colors hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)]">
                 Broker Login
               </Link>
             </div>
           </div>
           <div className="hidden lg:block">
-            <div className="overflow-hidden rounded-3xl border border-[var(--zcanopy-accent-gold)]/40 bg-[var(--zcanopy-surface)] p-3 shadow-[var(--shadow-lift)]">
+            <div className="overflow-hidden rounded-3xl border border-[var(--zcanopy-accent-gold)]/40 bg-[var(--zcanopy-surface)]/90 p-6 shadow-[var(--shadow-lift)] backdrop-blur lg:p-8">
               <div className="flex items-center justify-between px-2 pb-2 pt-1">
                 <div className="flex items-center gap-2">
                   <span
