@@ -57,8 +57,8 @@ export default function Home() {
               "radial-gradient(900px 500px at 80% -10%, rgba(209,160,84,0.25), transparent), radial-gradient(700px 500px at 0% 0%, rgba(169,113,14,0.12), transparent)",
           }}
         />
-        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 lg:grid-cols-2 lg:gap-24 lg:py-28">
-          <div>
+        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 lg:grid-cols-5 lg:gap-24 lg:py-28">
+          <div className="lg:col-span-2">
             <span className="eyebrow">Real estate, reimagined</span>
             <h1 className="mt-6 text-4xl leading-tight sm:text-5xl lg:text-6xl">
               Find your next home in Uganda.
@@ -75,7 +75,7 @@ export default function Home() {
               </Link>
             </div>
           </div>
-          <div className="hidden lg:block">
+          <div className="hidden lg:block lg:col-span-3">
             <div className="overflow-hidden rounded-3xl border border-[var(--zcanopy-accent-gold)]/40 bg-[var(--zcanopy-surface)]/90 p-6 shadow-[var(--shadow-lift)] backdrop-blur lg:p-10">
               <div className="flex items-center justify-between px-2 pb-2 pt-1">
                 <div className="flex items-center gap-2">
