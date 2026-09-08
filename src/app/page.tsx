@@ -50,13 +50,17 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <section className="relative overflow-hidden">
-        <div
-          className="pointer-events-none absolute inset-0 z-0"
-          style={{
-            background:
-              "radial-gradient(900px 500px at 80% -10%, rgba(209,160,84,0.25), transparent), radial-gradient(700px 500px at 0% 0%, rgba(169,113,14,0.12), transparent)",
-          }}
-        />
+        <video
+          className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+          autoPlay
+          loop
+          muted
+          playsInline
+          poster="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1600&q=70"
+        >
+          <source src="https://zcanopy-properties-media.fra1.cdn.digitaloceanspaces.com/19722974-uhd_3840_2160_25fps.mp4" type="video/mp4" />
+        </video>
+        <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
         <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 lg:grid-cols-2 lg:gap-20 lg:py-28 xl:grid-cols-5 xl:gap-24">
           <div className="mx-auto w-full max-w-xl xl:col-span-2">
             <span className="eyebrow">Real estate, reimagined</span>
