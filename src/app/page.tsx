@@ -63,8 +63,8 @@ export default function Home() {
         <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
         <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 lg:grid-cols-2 lg:gap-20 lg:py-28 xl:grid-cols-5 xl:gap-24">
           <div className="mx-auto w-full max-w-xl xl:col-span-2">
-            <span className="eyebrow text-white/90">Real estate, reimagined</span>
-            <h1 className="mt-6 text-4xl leading-tight sm:text-5xl lg:text-6xl xl:text-7xl text-white">
+            <span className="eyebrow text-white/90" style={{ backgroundColor: '#16a34a' }}>Real estate, reimagined</span>
+            <h1 className="mt-6 text-4xl leading-tight sm:text-5xl lg:text-6xl xl:text-7xl" style={{ color: '#f6d98e', textShadow: '0 2px 10px rgba(0,0,0,0.35)' }}>
               Find your next home in Uganda.
             </h1>
             <p className="mt-5 max-w-lg text-base leading-relaxed text-gray-200 sm:text-lg xl:text-xl">
