@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 export function useScrollReveal() {
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
