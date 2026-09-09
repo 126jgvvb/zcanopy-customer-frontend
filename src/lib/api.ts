@@ -229,6 +229,18 @@ export const webApi = {
   publicProperties: (query?: Record<string, string | number | boolean | undefined>) =>
     apiFetch<{ properties: any[]; total: number }>("/web/public/properties", { query, fallback: mockData.properties(), skipSessionHeader: true }),
 
+  publicPropertiesPaginated: (page: number, limit: number = 12, query?: Record<string, string | number | boolean | undefined>) =>
+    apiFetch<{ properties: any[]; total: number; page: number; limit: number; hasMore: boolean }>(
+      "/web/public/properties",
+      { query: { page, limit, ...query }, fallback: { properties: mockData.properties().properties, total: 0, page, limit, hasMore: false }, skipSessionHeader: true },
+    ),
+
+  searchPropertiesPaginated: (q: string, page: number, limit: number = 12) =>
+    apiFetch<{ properties: any[]; total: number; page: number; limit: number; hasMore: boolean }>(
+      `/web/public/search`,
+      { query: { q, page, limit }, fallback: { properties: mockData.search(q).properties, total: 0, page, limit, hasMore: false }, skipSessionHeader: true },
+    ),
+
   featuredProperties: (limit = 6) =>
     apiFetch<{ properties: any[]; total: number }>("/web/public/properties/featured", { query: { limit }, fallback: mockData.featuredProperties(), skipSessionHeader: true }),
 

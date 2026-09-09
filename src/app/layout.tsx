@@ -55,8 +55,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/properties/favorites" className="nav-link">My Favorites</Link>
               <a href="#features" className="nav-link">Features</a>
               <a href="#how" className="nav-link">How it works</a>
-              <a href={BROKER_SIGNUP_URL} className="nav-link">For brokers</a>
-              <Link href="/login" className="nav-link">Broker Login</Link>
+              <a href="https://zcanopy-broker-web-dashbaord.vercel.app" className="nav-link">For brokers</a>
+              <a href="https://zcanopy-broker-web-dashbaord.vercel.app" className="nav-link">Broker Login</a>
             </nav>
             <div className="flex items-center gap-3">
               <Link href="/properties" className="btn-primary hidden px-4 py-2 text-sm sm:inline-flex">

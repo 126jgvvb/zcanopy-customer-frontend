@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import PropertyCard from "@/components/PropertyCard";
 import { webApi } from "@/lib/api";
 import Link from "next/link";
@@ -64,6 +64,12 @@ export default function PropertiesPage() {
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [localSearch, setLocalSearch] = useState("");
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const PAGE_SIZE = 12;
+  const observerTarget = useRef<HTMLDivElement>(null);
   const { predictions: locationPredictions, loading: locationLoading, error: locationError } = usePlacePredictions(
     localSearch
   );
@@ -74,19 +80,22 @@ export default function PropertiesPage() {
       setLoading(true);
       setError("");
       try {
-        let data: { properties?: Property[]; total?: number };
+        let data: { properties?: Property[]; total?: number; hasMore?: boolean };
         if (viewMode === "broker" && selectedBrokerCode) {
           const res = await webApi.brokerPropertiesByCode(selectedBrokerCode);
-          data = res as { properties?: Property[]; total?: number };
+          data = res as { properties?: Property[]; total?: number; hasMore?: boolean };
         } else if (search) {
-          const res = await webApi.searchProperties(search);
-          data = res as { properties?: Property[]; total?: number };
+          const res = await webApi.searchPropertiesPaginated(search, 1, PAGE_SIZE);
+          data = res as { properties?: Property[]; total?: number; hasMore?: boolean };
         } else {
-          const res = await webApi.publicProperties(locationFilter ? { location: locationFilter } : undefined);
-          data = res as { properties?: Property[]; total?: number };
+          const res = await webApi.publicPropertiesPaginated(1, PAGE_SIZE, locationFilter ? { location: locationFilter } : undefined);
+          data = res as { properties?: Property[]; total?: number; hasMore?: boolean };
         }
         if (!cancelled) {
           setProperties(data.properties || []);
+          setTotal(data.total || 0);
+          setHasMore(!!data.hasMore);
+          setPage(1);
         }
       } catch {
         if (!cancelled) {
@@ -134,6 +143,48 @@ export default function PropertiesPage() {
     setShowLocationSuggestions(false);
   };
 
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      let data: { properties?: Property[]; hasMore?: boolean };
+      if (search) {
+        const res = await webApi.searchPropertiesPaginated(search, nextPage, PAGE_SIZE);
+        data = res as { properties?: Property[]; hasMore?: boolean };
+      } else {
+        const res = await webApi.publicPropertiesPaginated(nextPage, PAGE_SIZE, locationFilter ? { location: locationFilter } : undefined);
+        data = res as { properties?: Property[]; hasMore?: boolean };
+      }
+      setProperties((prev) => [...prev, ...(data.properties || [])]);
+      setHasMore(!!data.hasMore);
+      setPage(nextPage);
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // Infinite scroll via IntersectionObserver
+  useEffect(() => {
+    if (loading || loadingMore || !hasMore) return;
+    const el = observerTarget.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px" },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loading, loadingMore, hasMore, page, search, locationFilter]);
+
   const filteredProperties = useMemo(() => {
     return properties.filter((p) => {
       if (locationFilter && !p.location.toLowerCase().includes(locationFilter.toLowerCase())) return false;
@@ -143,6 +194,28 @@ export default function PropertiesPage() {
       return true;
     });
   }, [properties, locationFilter, brokerFilter, dateFrom, dateTo]);
+
+  // Scroll reveal for property cards
+  useEffect(() => {
+    const elements = document.querySelectorAll(".slide-up");
+    if (!elements.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" },
+    );
+
+    elements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [filteredProperties.length]);
 
   const uniqueLocations = useMemo(() => {
     const locs = new Set(properties.map((p) => p.location));
@@ -341,9 +414,25 @@ export default function PropertiesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredProperties.map((property) => (
-            <PropertyCard key={property.id} {...property} />
+          {filteredProperties.map((property, idx) => (
+            <div
+              key={property.id}
+              className={`slide-up ${idx >= 12 ? "" : ""}`}
+              style={{ animationDelay: `${(idx % 12) * 60}ms` }}
+            >
+              <PropertyCard {...property} />
+            </div>
           ))}
+        </div>
+      )}
+
+      {hasMore && (
+        <div ref={observerTarget} className="mt-8 flex justify-center">
+          {loadingMore ? (
+            <p className="text-sm text-gray-500">Loading more properties...</p>
+          ) : (
+            <p className="text-sm text-gray-400">Scroll down for more</p>
+          )}
         </div>
       )}
 
