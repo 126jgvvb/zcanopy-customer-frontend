@@ -51,6 +51,11 @@ export default function PropertiesPage() {
   const [search, setSearch] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const [brokerFilter, setBrokerFilter] = useState("");
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [subCountyFilter, setSubCountyFilter] = useState("");
+  const [districtFilter, setDistrictFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -81,14 +86,24 @@ export default function PropertiesPage() {
       setError("");
       try {
         let data: { properties?: Property[]; total?: number; hasMore?: boolean };
+        const hasFilters = locationFilter || brokerFilter || propertyTypeFilter || minPrice || maxPrice || subCountyFilter || districtFilter || dateFrom || dateTo;
         if (viewMode === "broker" && selectedBrokerCode) {
           const res = await webApi.brokerPropertiesByCode(selectedBrokerCode);
           data = res as { properties?: Property[]; total?: number; hasMore?: boolean };
-        } else if (search) {
-          const res = await webApi.searchPropertiesPaginated(search, 1, PAGE_SIZE);
+        } else if (search || hasFilters) {
+          const res = await webApi.searchPropertiesPaginated(search, 1, PAGE_SIZE, {
+            location: locationFilter || undefined,
+            propertyType: propertyTypeFilter || undefined,
+            minPrice: minPrice ? Number(minPrice) : undefined,
+            maxPrice: maxPrice ? Number(maxPrice) : undefined,
+            subCounty: subCountyFilter || undefined,
+            district: districtFilter || undefined,
+          });
           data = res as { properties?: Property[]; total?: number; hasMore?: boolean };
         } else {
-          const res = await webApi.publicPropertiesPaginated(1, PAGE_SIZE, locationFilter ? { location: locationFilter } : undefined);
+          const res = await webApi.publicPropertiesPaginated(1, PAGE_SIZE, {
+            location: locationFilter || undefined,
+          });
           data = res as { properties?: Property[]; total?: number; hasMore?: boolean };
         }
         if (!cancelled) {
@@ -111,7 +126,7 @@ export default function PropertiesPage() {
     return () => {
       cancelled = true;
     };
-  }, [search, viewMode, selectedBrokerCode, locationFilter]);
+  }, [search, viewMode, selectedBrokerCode, locationFilter, propertyTypeFilter, minPrice, maxPrice, subCountyFilter, districtFilter]);
 
   useEffect(() => {
     if (!search) return;
@@ -148,12 +163,22 @@ export default function PropertiesPage() {
     setLoadingMore(true);
     try {
       const nextPage = page + 1;
+      const hasFilters = locationFilter || brokerFilter || propertyTypeFilter || minPrice || maxPrice || subCountyFilter || districtFilter || dateFrom || dateTo;
       let data: { properties?: Property[]; hasMore?: boolean };
-      if (search) {
-        const res = await webApi.searchPropertiesPaginated(search, nextPage, PAGE_SIZE);
+      if (search || hasFilters) {
+        const res = await webApi.searchPropertiesPaginated(search, nextPage, PAGE_SIZE, {
+          location: locationFilter || undefined,
+          propertyType: propertyTypeFilter || undefined,
+          minPrice: minPrice ? Number(minPrice) : undefined,
+          maxPrice: maxPrice ? Number(maxPrice) : undefined,
+          subCounty: subCountyFilter || undefined,
+          district: districtFilter || undefined,
+        });
         data = res as { properties?: Property[]; hasMore?: boolean };
       } else {
-        const res = await webApi.publicPropertiesPaginated(nextPage, PAGE_SIZE, locationFilter ? { location: locationFilter } : undefined);
+        const res = await webApi.publicPropertiesPaginated(nextPage, PAGE_SIZE, {
+          location: locationFilter || undefined,
+        });
         data = res as { properties?: Property[]; hasMore?: boolean };
       }
       setProperties((prev) => [...prev, ...(data.properties || [])]);
@@ -183,17 +208,20 @@ export default function PropertiesPage() {
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [loading, loadingMore, hasMore, page, search, locationFilter]);
+  }, [loading, loadingMore, hasMore, page, search, locationFilter, propertyTypeFilter, minPrice, maxPrice, subCountyFilter, districtFilter]);
 
   const filteredProperties = useMemo(() => {
     return properties.filter((p) => {
       if (locationFilter && !p.location.toLowerCase().includes(locationFilter.toLowerCase())) return false;
       if (brokerFilter && !(p.brokerBrandName || "").toLowerCase().includes(brokerFilter.toLowerCase())) return false;
+      if (propertyTypeFilter && p.propertyType !== propertyTypeFilter) return false;
+      if (minPrice && (p.price ?? 0) < Number(minPrice)) return false;
+      if (maxPrice && (p.price ?? 0) > Number(maxPrice)) return false;
       if (dateFrom && p.createdAt < dateFrom) return false;
       if (dateTo && p.createdAt > dateTo + "T23:59:59Z") return false;
       return true;
     });
-  }, [properties, locationFilter, brokerFilter, dateFrom, dateTo]);
+  }, [properties, locationFilter, brokerFilter, propertyTypeFilter, minPrice, maxPrice, dateFrom, dateTo]);
 
   // Scroll reveal for property cards
   useEffect(() => {
@@ -359,6 +387,64 @@ export default function PropertiesPage() {
                 </option>
               ))}
             </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Property Type</label>
+            <select
+              value={propertyTypeFilter}
+              onChange={(e) => setPropertyTypeFilter(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+            >
+              <option value="">All types</option>
+              <option value="RESIDENTIAL">Residential</option>
+              <option value="COMMERCIAL">Commercial</option>
+              <option value="LAND">Land</option>
+              <option value="APARTMENT">Apartment</option>
+              <option value="VILLA">Villa</option>
+              <option value="CONDO">Condo</option>
+              <option value="OFFICE">Office</option>
+              <option value="WAREHOUSE">Warehouse</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Min Price (UGX)</label>
+            <input
+              type="number"
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+              placeholder="0"
+              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Max Price (UGX)</label>
+            <input
+              type="number"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              placeholder="No limit"
+              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Sub-county</label>
+            <input
+              type="text"
+              value={subCountyFilter}
+              onChange={(e) => setSubCountyFilter(e.target.value)}
+              placeholder="e.g. Kampala Central"
+              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">District</label>
+            <input
+              type="text"
+              value={districtFilter}
+              onChange={(e) => setDistrictFilter(e.target.value)}
+              placeholder="e.g. Kampala"
+              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">From</label>
