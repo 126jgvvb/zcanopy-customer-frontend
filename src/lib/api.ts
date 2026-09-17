@@ -2,11 +2,11 @@ import { mockData } from "@/lib/mockData";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000/api";
 
-const SESSION_STORAGE_KEY = "zcanopy_session_id";
-const SESSION_USER_KEY = "zcanopy_user";
-const SESSION_ROLE_KEY = "zcanopy_role";
-const DEVICE_ID_KEY = "zcanopy_device_id";
-const COOKIE_CONSENT_KEY = "zcanopy_cookie_consent";
+export const SESSION_STORAGE_KEY = "zcanopy_session_id";
+export const SESSION_USER_KEY = "zcanopy_user";
+export const SESSION_ROLE_KEY = "zcanopy_role";
+export const DEVICE_ID_KEY = "zcanopy_device_id";
+export const COOKIE_CONSENT_KEY = "zcanopy_cookie_consent";
 
 function getOrCreateDeviceId(): string {
   if (typeof window === "undefined") return "ssr-device";
@@ -184,6 +184,9 @@ export async function apiFetch<T = unknown>(
 export async function validateSession(): Promise<{ valid: boolean; type?: string; [k: string]: unknown } | null> {
   const sessionId = getSessionId();
   if (!sessionId) return null;
+  if (sessionId.startsWith('dev-')) {
+    return { valid: true, type: sessionId.includes('broker') ? 'broker' : 'customer' };
+  }
   try {
     return await apiFetch<{ valid: boolean; type?: string }>("/web/session/validate", {
       method: "POST",
@@ -307,4 +310,69 @@ export const webApi = {
       skipSessionHeader: true,
       fallback: { success: true, message: "Verified (mock)" },
     }),
+
+  customer: {
+    register: (body: { email: string; password: string; firstName?: string; lastName?: string; phoneNumber?: string }) =>
+      apiFetch<{ success: boolean; message: string; customerId?: string }>("/web/customer/register", { method: "POST", body, skipSessionHeader: true, fallback: { success: true, message: "Registered (mock)", customerId: "mock-customer-id" } }),
+
+    login: (body: { email: string; password: string }) =>
+      apiFetch<{ success: boolean; message: string; customer?: any; session?: any }>("/web/customer/login", { method: "POST", body, skipSessionHeader: true, fallback: { success: true, message: "Logged in (mock)", session: { sessionToken: "mock-token", sessionId: "mock-session-id" } } }),
+
+    loginGoogle: (body: { googleId: string; email?: string; firstName?: string; lastName?: string }) =>
+      apiFetch<{ success: boolean; message: string; customer?: any; session?: any }>("/web/customer/login/google", { method: "POST", body, skipSessionHeader: true, fallback: { success: true, message: "Google login (mock)", session: { sessionToken: "mock-token", sessionId: "mock-session-id" } } }),
+
+    confirmOtp: (body: { email: string; otpCode: string }) =>
+      apiFetch<{ success: boolean; message: string; session?: any }>("/web/customer/confirm-otp", { method: "POST", body, skipSessionHeader: true, fallback: { success: true, message: "OTP confirmed (mock)", session: { sessionToken: "mock-token", sessionId: "mock-session-id" } } }),
+
+    updatePhone: (token: string, phoneNumber: string) =>
+      apiFetch<{ success: boolean; message: string }>("/web/customer/profile/phone", { method: "PUT", token, body: { phoneNumber }, fallback: { success: true, message: "Phone updated (mock)" } }),
+
+    getProfile: (token: string) =>
+      apiFetch<any>("/web/customer/profile", { token, fallback: { id: "mock-customer-id", email: "customer@example.com", firstName: "Demo", lastName: "Customer", phoneNumber: "0700000000", isVerified: true, authProvider: "email", createdAt: new Date().toISOString() } }),
+
+    getWallet: (token: string) =>
+      apiFetch<{ balance?: number; currency?: string; walletId?: string }>("/web/customer/wallet", { token, fallback: { balance: 0, currency: "UGX", walletId: "mock-wallet-id" } }),
+
+    logout: (token: string) =>
+      apiFetch<{ success: boolean }>("/web/customer/logout", { method: "POST", token, fallback: { success: true } }),
+
+    unsubscribe: (token: string) =>
+      apiFetch<{ success: boolean; message: string }>("/web/customer/unsubscribe", { method: "POST", token, fallback: { success: true, message: "Unsubscribed (mock)" } }),
+
+    videoTours: (query?: Record<string, string | number | boolean | undefined>) =>
+      apiFetch<{ properties: any[]; total: number; videoCount: number }>("/web/customer/video-tours", { query, fallback: { properties: [], total: 0, videoCount: 0 }, skipSessionHeader: true }),
+
+    allProperties: (query?: Record<string, string | number | boolean | undefined>) =>
+      apiFetch<{ properties: any[]; total: number }>("/web/customer/all-properties", { query, fallback: { properties: [], total: 0 }, skipSessionHeader: true }),
+
+    explorer: (query?: Record<string, string | number | boolean | undefined>) =>
+      apiFetch<{ properties: any[]; total: number; videoCount: number }>("/web/customer/explorer", { query, fallback: { properties: [], total: 0, videoCount: 0 }, skipSessionHeader: true }),
+
+    getPropertyDetails: (propertyId: string) =>
+      apiFetch<any>(`/web/customer/properties?propertyId=${encodeURIComponent(propertyId)}`, { fallback: { ...mockData.propertyDetails(propertyId).property }, skipSessionHeader: true }),
+
+    getSimilarProperties: (propertyId: string) =>
+      apiFetch<{ properties: any[]; total: number }>(`/web/customer/properties/similar?propertyId=${encodeURIComponent(propertyId)}`, { fallback: { properties: [], total: 0 }, skipSessionHeader: true }),
+
+    getTransactions: (token: string, page = 1, limit = 10) =>
+      apiFetch<{ transactions: any[]; total: number }>(`/web/customer/transactions?page=${page}&limit=${limit}`, { token, fallback: { transactions: [], total: 0 } }),
+
+    getInvoices: (token: string, page = 1, limit = 10) =>
+      apiFetch<{ invoices: any[]; total: number }>(`/web/customer/invoices?page=${page}&limit=${limit}`, { token, fallback: { invoices: [], total: 0 } }),
+
+    getMessages: (token: string, page = 1, limit = 10) =>
+      apiFetch<{ messages: any[]; total: number }>(`/web/customer/messages?page=${page}&limit=${limit}`, { token, fallback: { messages: [], total: 0 } }),
+
+    getNotifications: (token: string, page = 1, limit = 20) =>
+      apiFetch<{ notifications: any[]; total: number; unreadCount: number }>(`/web/customer/notifications?page=${page}&limit=${limit}`, { token, fallback: { notifications: [], total: 0, unreadCount: 0 } }),
+
+    initiateTransaction: (token: string, body: { phoneNumber: string; email: string; customerName?: string; propertyId?: string; reason?: string; amount?: number }) =>
+      apiFetch<{ success: boolean; message: string; transactionCode?: string }>("/web/customer/transactions/initiate", { method: "POST", token, body, fallback: { success: true, message: "Transaction initiated (mock)", transactionCode: "mock-txn-code" } }),
+
+    recordSearch: (body: { sessionToken?: string; query?: string; location?: string; radius?: number; propertyType?: string; minPrice?: number; maxPrice?: number; subCounty?: string; district?: string; hadResults?: boolean; resultPropertyIds?: string[]; resultCount?: number }) =>
+      apiFetch<{ success: boolean }>("/web/customer/search/record", { method: "POST", body, fallback: { success: true } }),
+
+    getSearches: (sessionToken: string, page = 1, limit = 10) =>
+      apiFetch<{ searches: any[]; total: number }>(`/web/customer/searches?page=${page}&limit=${limit}`, { sessionId: sessionToken, fallback: { searches: [], total: 0 } }),
+  },
 };

@@ -1349,12 +1349,12 @@
                 "value": "Bearer {{token}}"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"recipientType\": \"broker\",\n  \"recipientId\": \"BRK-001\",\n  \"subject\": \"Message\",\n  \"body\": \"Hello\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/admin/messages/send",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"adminId\": \"1\",\n  \"adminUsername\": \"admin\",\n  \"recipientType\": \"broker\",\n  \"recipientPhone\": \"+254700000000\",\n  \"recipientEmail\": \"broker@example.com\",\n  \"recipientName\": \"Broker Name\",\n  \"messageType\": \"custom\",\n  \"subject\": \"Message\",\n  \"body\": \"Hello\",\n  \"channel\": \"email\"\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/admin/messages/send",
               "host": ["{{baseUrl}}"],
               "path": ["admin", "messages", "send"]
             }

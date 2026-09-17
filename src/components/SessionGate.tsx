@@ -4,7 +4,18 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { validateSession, getSessionId, clearSession, ensureAnonymousSession } from '@/lib/api';
 
-const PUBLIC_PATHS = new Set(['/', '/login', '/brokers/signup', '/brokers/verify', '/brokers/welcome', '/about', '/help', '/terms']);
+const PUBLIC_PATHS = new Set(['/', '/login', '/brokers/signup', '/brokers/verify', '/brokers/welcome', '/about', '/help', '/terms', '/customer', '/customer/signup']);
+
+const CUSTOMER_PATHS = new Set([
+  '/customer/transactions',
+  '/customer/invoices',
+  '/customer/messages',
+  '/customer/notifications',
+  '/customer/profile',
+  '/properties/favorites',
+  '/bookings/retrieve',
+  '/bookings/find',
+]);
 
 interface SessionGateProps {
   children: React.ReactNode;
@@ -17,21 +28,17 @@ export default function SessionGate({ children }: SessionGateProps) {
   const [valid, setValid] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const isPublic =
-      PUBLIC_PATHS.has(pathname) ||
-      pathname.startsWith('/properties') ||
-      pathname.startsWith('/api/');
+    const isPublic = PUBLIC_PATHS.has(pathname) || pathname.startsWith('/properties') || pathname.startsWith('/api/');
+    const isCustomer = CUSTOMER_PATHS.has(pathname);
 
     let cancelled = false;
     (async () => {
-      // Always ensure an anonymous session exists on first visit so traffic
-      // analytics, browsing, and booking all share the same sessionId.
       if (!getSessionId()) {
         await ensureAnonymousSession();
         if (cancelled) return;
       }
 
-      if (isPublic) {
+      if (isPublic || isCustomer) {
         setValid(true);
         setReady(true);
         return;
