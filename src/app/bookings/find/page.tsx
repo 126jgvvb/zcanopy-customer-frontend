@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { webApi, getSessionId } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 
 interface BookingResponse {
   booking?: {
@@ -37,13 +37,13 @@ export default function FindBookingPage() {
     try {
       let res: BookingResponse;
       if (method === "code") {
-        res = await webApi<BookingResponse>("/customer/bookings/retrieve", {
+        res = await apiFetch<BookingResponse>("/web/customer/bookings/retrieve", {
           method: "POST",
           body: { code: transactionCode, phoneNumber: phone },
           skipSessionHeader: true,
         });
       } else {
-        res = await webApi<BookingResponse>("/customer/bookings/retrieve-by-code", {
+        res = await apiFetch<BookingResponse>("/web/customer/bookings/retrieve-by-code", {
           method: "POST",
           body: { bookingCode: transactionCode, customerPhone: phone },
           skipSessionHeader: true,
@@ -53,7 +53,7 @@ export default function FindBookingPage() {
       if (!res.booking) {
         setError("No booking found for the provided details.");
       }
-    } catch (err) {
+    } catch {
       setError("Failed to retrieve booking. Please check your details and try again.");
     } finally {
       setLoading(false);

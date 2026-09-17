@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { COLORS } from "@/lib/theme";
 import ZLoadingIndicator from "@/components/ZLoadingIndicator";
 
@@ -9,24 +9,25 @@ type Fetcher<T> = (token: string) => Promise<T>;
 export function useCustomerData<T>(fetcher: Fetcher<T>, deps: unknown[] = []) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const fetcherRef = useRef(fetcher);
+  const hasToken = typeof window !== "undefined" && !!window.localStorage.getItem("zcanopy_token");
+  const [loading, setLoading] = useState(() => hasToken);
+  const fetcherRef = useRef<Fetcher<T>>(fetcher);
 
   useEffect(() => { fetcherRef.current = fetcher; });
 
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("zcanopy_token") : null;
-    if (!token) { setLoading(false); return; }
+    if (!token) {
+      return;
+    }
     let active = true;
-    setLoading(true);
-    setError(null);
     fetcherRef.current(token)
-      .then((result) => { if (active) setData(result); })
-      .catch((err) => { if (active) setError(err instanceof Error ? err.message : "Failed to load data."); })
+      .then((result: T) => { if (active) setData(result); })
+      .catch((err: unknown) => { if (active) setError(err instanceof Error ? err.message : "Failed to load data."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, ...deps]);
+  }, [...deps]);
   return { data, error, loading };
 }
 

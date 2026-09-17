@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { webApi, getSessionId } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 
 interface BookingResponse {
   booking?: {
@@ -34,7 +34,7 @@ export default function RetrieveBookingPage() {
     setError("");
     setBooking(null);
     try {
-      const res = await webApi<BookingResponse>("/web/customer/bookings/retrieve-by-code", {
+      const res = await apiFetch<BookingResponse>("/web/customer/bookings/retrieve-by-code", {
         method: "POST",
         body: { bookingCode, customerPhone: phone },
         skipSessionHeader: true,
@@ -43,7 +43,7 @@ export default function RetrieveBookingPage() {
       if (!res.booking) {
         setError("No booking found for that code and phone number.");
       }
-    } catch (err) {
+    } catch {
       setError("Failed to retrieve booking. Please check your code and phone number.");
     } finally {
       setLoading(false);
