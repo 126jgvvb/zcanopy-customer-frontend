@@ -1,11 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { webApi, setSession } from '@/lib/api';
+import { webApi } from '@/lib/api';
 
-export default function CustomerProfilePage() {
-  const router = useRouter();
+interface CustomerProfileContentProps {
+  token: string;
+  customerName: string;
+  onProfileUpdate?: () => void;
+}
+
+export default function CustomerProfileContent({ token, customerName, onProfileUpdate }: CustomerProfileContentProps) {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -13,13 +17,8 @@ export default function CustomerProfilePage() {
   const [phone, setPhone] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('zcanopy_token');
-if (!token) {
-        router.replace('/customer');
-        return;
-      }
     loadProfile(token);
-  }, [router]);
+  }, [token]);
 
   const loadProfile = async (token: string) => {
     try {
@@ -42,6 +41,7 @@ if (!token) {
       await webApi.customer.updatePhone(token, phone);
       alert('Phone number updated');
       await loadProfile(token);
+      onProfileUpdate?.();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to update phone');
     } finally {
@@ -51,42 +51,42 @@ if (!token) {
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="flex min-h-[500px] items-center justify-center">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-[var(--zcanopy-primary)]" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-12">
-      <h1 className="text-3xl font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>My Profile</h1>
+    <div className="min-h-[500px]">
+      <h2 className="text-2xl font-bold" style={{ color: 'var(--zcanopy-card-brown)' }}>My Profile</h2>
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
       {profile && (
         <div className="mt-6 space-y-6">
-          <div className="rounded-2xl border border-[var(--zcanopy-border)] bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-[var(--zcanopy-border)] bg-white p-6 shadow-sm dark:bg-[var(--zcanopy-surface)]">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Email</p>
-                <p className="mt-1 text-sm text-gray-900">{profile.email}</p>
+                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--zcanopy-muted)' }}>Email</p>
+                <p className="mt-1 text-sm" style={{ color: 'var(--zcanopy-card-brown)' }}>{profile.email}</p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">First Name</p>
-                <p className="mt-1 text-sm text-gray-900">{profile.firstName || '-'}</p>
+                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--zcanopy-muted)' }}>First Name</p>
+                <p className="mt-1 text-sm" style={{ color: 'var(--zcanopy-card-brown)' }}>{profile.firstName || '-'}</p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Last Name</p>
-                <p className="mt-1 text-sm text-gray-900">{profile.lastName || '-'}</p>
+                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--zcanopy-muted)' }}>Last Name</p>
+                <p className="mt-1 text-sm" style={{ color: 'var(--zcanopy-card-brown)' }}>{profile.lastName || '-'}</p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Verified</p>
-                <p className="mt-1 text-sm text-gray-900">{profile.isVerified ? 'Yes' : 'No'}</p>
+                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--zcanopy-muted)' }}>Verified</p>
+                <p className="mt-1 text-sm" style={{ color: 'var(--zcanopy-card-brown)' }}>{profile.isVerified ? 'Yes' : 'No'}</p>
               </div>
             </div>
           </div>
-          <form onSubmit={handleUpdatePhone} className="rounded-2xl border border-[var(--zcanopy-border)] bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900">Update Phone Number</h2>
+          <form onSubmit={handleUpdatePhone} className="rounded-2xl border border-[var(--zcanopy-border)] bg-white p-6 shadow-sm dark:bg-[var(--zcanopy-surface)]">
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>Update Phone Number</h2>
             <div className="mt-4">
-              <label className="mb-1.5 block text-sm font-medium text-gray-800">Phone Number</label>
+              <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--zcanopy-muted)' }}>Phone Number</label>
               <input
                 type="tel"
                 value={phone}
@@ -109,4 +109,3 @@ if (!token) {
     </div>
   );
 }
-

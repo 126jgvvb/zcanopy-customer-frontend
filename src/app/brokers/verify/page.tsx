@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { OnboardingShell, PrimaryButton } from "@/components/Onboarding";
 import { webApi, ApiError } from "@/lib/api";
 import { COLORS } from "@/lib/theme";
+import BackButton from "@/components/BackButton";
 
 const OTP_LENGTH = 6;
 
@@ -160,6 +161,7 @@ function BrokerVerifyPageInner() {
       title="Confirm your details"
       subtitle="We sent a 6-digit code to your email and phone number."
     >
+      <BackButton />
       <div className="flex flex-col gap-5">
         <div>
           <p className="mb-1.5 text-sm font-medium">Email code</p>

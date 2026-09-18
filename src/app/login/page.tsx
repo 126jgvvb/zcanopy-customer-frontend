@@ -55,7 +55,7 @@ export default function LoginPage() {
     <main className="min-h-screen bg-[var(--background)]">
       <div className="relative flex min-h-[calc(100vh-200px)] items-center justify-center overflow-hidden px-4 py-12">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(209,160,84,0.22),transparent_55%)]" />
-        <div className="relative w-full max-w-md rounded-3xl border border-[var(--zcanopy-border)] bg-white p-9 shadow-[var(--zcanopy-shadow)]">
+        <div className="relative w-full max-w-lg rounded-3xl border border-[var(--zcanopy-border)] bg-white p-9 shadow-[var(--zcanopy-shadow)]">
           <div className="mb-8 text-center">
             <Link href="/" className="inline-flex items-center gap-2">
               <img
@@ -123,7 +123,7 @@ export default function LoginPage() {
             onClick={handleDevBypass}
             className="mt-3 w-full rounded-xl border-2 border-dashed border-gray-300 px-4 py-3 text-sm font-medium text-gray-600 transition hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)]"
           >
-            🚀 Dev Bypass (skip login)
+            Dev Bypass (skip login)
           </button>
 
           <p className="mt-7 text-center text-sm" style={{ color: 'var(--zcanopy-muted)' }}>

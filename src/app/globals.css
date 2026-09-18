@@ -48,6 +48,7 @@ html.dark {
   --border-strong: rgba(209, 160, 84, 0.28);
   --ring: rgba(209, 160, 84, 0.35);
   --zcanopy-surface: #1c1916;
+  --zcanopy-background: #12100e;
   --zcanopy-card-brown: #e8c48a;
   --zcanopy-muted: #b8aba0;
   --zcanopy-border: rgba(209, 160, 84, 0.14);
@@ -269,6 +270,34 @@ html.dark textarea::placeholder {
   transform: translateY(-1px);
   filter: brightness(1.05);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.22) inset, 0 12px 24px rgba(169, 113, 14, 0.34);
+}
+
+@keyframes glow-pulse {
+  0% {
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 8px 18px rgba(169, 113, 14, 0.28),
+      0 0 0 0px rgba(169, 113, 14, 0.4);
+  }
+  50% {
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 8px 18px rgba(169, 113, 14, 0.28),
+      0 0 0 6px rgba(169, 113, 14, 0.0);
+  }
+  100% {
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 8px 18px rgba(169, 113, 14, 0.28),
+      0 0 0 0px rgba(169, 113, 14, 0.4);
+  }
+}
+
+.btn-glow {
+  animation: pulse-beat 2s ease-in-out infinite;
+}
+
+@keyframes pulse-beat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
 }
 
 .btn-ghost {

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import PropertyCard from "@/components/PropertyCard";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import BackButton from "@/components/BackButton";
 
 interface FavoriteProperty {
   id: string;
@@ -100,6 +101,7 @@ export default function FavoritesPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 md:px-6">
+      <BackButton />
       <div>
         <h2 className="text-3xl">My Favorites</h2>
         <p className="mt-2 text-gray-500">Properties you have saved for later.</p>

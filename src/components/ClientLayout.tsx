@@ -41,7 +41,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             <a href="https://zcanopy-broker-web-dashbaord.vercel.app" className="nav-link">Broker Login</a>
           </nav>
           <div className="flex items-center gap-3">
-            <Link href="/properties" className="btn-primary hidden px-4 py-2 text-sm sm:inline-flex">
+            <Link href="/properties" className="btn-primary btn-glow hidden px-4 py-2 text-sm sm:inline-flex">
               Browse Properties
             </Link>
             <ThemeToggle />

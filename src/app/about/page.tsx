@@ -4,6 +4,7 @@ import Link from "next/link";
 import Footer from "@/components/Footer";
 import { Home, CheckCircle, MapPin } from "lucide-react";
 import { COLORS } from "@/lib/theme";
+import BackButton from "@/components/BackButton";
 
 const VALUES = [
   { icon: Home, title: "Trusted Listings", text: "Every property is tied to a verified broker, reducing fraud and building trust." },
@@ -15,6 +16,7 @@ export default function AboutPage() {
   return (
     <main className="min-h-screen bg-[var(--background)]">
       <section className="mx-auto max-w-3xl px-6 py-12">
+        <BackButton />
         <h1 className="text-4xl">
           About ZCanopy
         </h1>

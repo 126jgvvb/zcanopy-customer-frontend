@@ -5,6 +5,7 @@ import PropertyCard from "@/components/PropertyCard";
 import { webApi } from "@/lib/api";
 import Link from "next/link";
 import { usePlacePredictions } from "@/hooks/useGooglePlaces";
+import BackButton from "@/components/BackButton";
 
 function formatUGX(n: number) {
   try {
@@ -313,6 +314,7 @@ export default function PropertiesPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 md:px-6">
+      <BackButton />
       <div>
         <h2 className="text-3xl">Browse Properties</h2>
         <p className="mt-2 text-gray-500">Find your next home or investment and book directly.</p>

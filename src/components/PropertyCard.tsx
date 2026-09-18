@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Calendar, Video, Heart } from "lucide-react";
+import { MapPin, Calendar, Video, Heart, Trash2 } from "lucide-react";
 import { COLORS } from "@/lib/theme";
 import { useEffect, useState } from "react";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
@@ -27,6 +27,9 @@ interface PropertyCardProps {
   price?: number;
   createdAt?: string;
   postgis_spatial_field?: { lat: number; lng: number } | null;
+  preFavorited?: boolean;
+  showRemoveButton?: boolean;
+  onRemoveFavorite?: () => void;
 }
 
 export default function PropertyCard({
@@ -42,14 +45,17 @@ export default function PropertyCard({
   price,
   createdAt,
   postgis_spatial_field,
+  preFavorited = false,
+  showRemoveButton = false,
+  onRemoveFavorite,
 }: PropertyCardProps) {
   const images = imageUrl || [];
   const videos = videoUrl || [];
   const mainImage = images[0] || "https://via.placeholder.com/400x200?text=No+Image";
   const lat = postgis_spatial_field?.lat;
   const lng = postgis_spatial_field?.lng;
-  const [favorited, setFavorited] = useState(false);
-  const [initializing, setInitializing] = useState(true);
+  const [favorited, setFavorited] = useState(preFavorited);
+  const [initializing, setInitializing] = useState(!preFavorited);
 
   useEffect(() => {
     let cancelled = false;
@@ -128,6 +134,20 @@ export default function PropertyCard({
             color={favorited ? "#ef4444" : "currentColor"}
           />
         </button>
+        {showRemoveButton && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onRemoveFavorite?.();
+            }}
+            className="absolute top-3 right-14 rounded-full bg-red-500/80 p-1.5 text-white backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600"
+            title="Remove from favorites"
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
         {videos.length > 0 && (
           <span className="absolute top-3 left-3 flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm">
             <Video size={12} />

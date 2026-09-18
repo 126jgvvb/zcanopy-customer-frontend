@@ -1,24 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { webApi, getSessionId, clearSession } from '@/lib/api';
+import { webApi } from '@/lib/api';
+import { mockData } from '@/lib/mockData';
 
-export default function CustomerTransactionsPage() {
-  const router = useRouter();
+interface CustomerTransactionsContentProps {
+  token: string;
+}
+
+export default function CustomerTransactionsContent({ token }: CustomerTransactionsContentProps) {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('zcanopy_token');
-if (!token) {
-        router.replace('/customer');
-        return;
-      }
     loadTransactions(token);
-  }, [router]);
+  }, [token]);
 
   const loadTransactions = async (token: string) => {
     try {
@@ -34,30 +32,32 @@ if (!token) {
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="flex min-h-[500px] items-center justify-center">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-[var(--zcanopy-primary)]" />
       </div>
     );
   }
 
+  const displayTransactions = transactions.length > 0 ? transactions : mockData.customerTransactions().transactions;
+
   return (
-    <div className="mx-auto max-w-6xl px-6 py-12">
-      <h1 className="text-3xl font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>My Transactions</h1>
+    <div className="min-h-[500px]">
+      <h2 className="text-2xl font-bold" style={{ color: 'var(--zcanopy-card-brown)' }}>My Transactions</h2>
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
-      {!transactions.length ? (
-        <p className="mt-4 text-sm text-gray-600">No transactions found.</p>
+      {!displayTransactions.length ? (
+        <p className="mt-4 text-sm" style={{ color: 'var(--zcanopy-muted)' }}>No transactions found.</p>
       ) : (
         <div className="mt-6 space-y-4">
-          {transactions.map((txn) => (
-            <div key={txn.id} className="rounded-2xl border border-[var(--zcanopy-border)] bg-white p-5 shadow-sm">
+          {displayTransactions.map((txn) => (
+            <div key={txn.id} className="rounded-2xl border border-[var(--zcanopy-border)] bg-white p-5 shadow-sm dark:bg-[var(--zcanopy-surface)]">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{txn.reasonForPayment || 'Transaction'}</p>
-                  <p className="text-xs text-gray-600">Ref: {txn.referenceNumber}</p>
+                  <p className="text-sm font-medium" style={{ color: 'var(--zcanopy-card-brown)' }}>{txn.reasonForPayment || 'Transaction'}</p>
+                  <p className="text-xs" style={{ color: 'var(--zcanopy-muted)' }}>Ref: {txn.referenceNumber}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-900">UGX {Number(txn.amount).toLocaleString()}</p>
-                  <p className="text-xs text-gray-600">{txn.paymentStatus}</p>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>UGX {Number(txn.amount).toLocaleString()}</p>
+                  <p className="text-xs" style={{ color: 'var(--zcanopy-muted)' }}>{txn.paymentStatus}</p>
                 </div>
               </div>
             </div>
@@ -67,4 +67,3 @@ if (!token) {
     </div>
   );
 }
-

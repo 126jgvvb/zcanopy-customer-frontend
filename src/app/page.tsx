@@ -71,7 +71,7 @@ export default function Home() {
               Browse verified properties from trusted brokers, view details, and book directly — all in one place.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/properties" className="btn-primary px-8 py-4 text-base xl:px-10 xl:py-5 xl:text-lg">
+              <Link href="/properties" className="btn-primary btn-glow px-8 py-4 text-base xl:px-10 xl:py-5 xl:text-lg">
                 Browse Properties
               </Link>
               <Link href="/login" className="rounded-xl border border-white/40 px-7 py-4 text-base font-semibold text-white transition-colors hover:border-white hover:bg-white/10 xl:px-8 xl:py-5 xl:text-lg">

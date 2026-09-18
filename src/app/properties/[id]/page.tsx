@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
 import { MapPin, Calendar, Video, ArrowLeft, ExternalLink, Heart, MessageSquare, Star } from "lucide-react";
 import Link from "next/link";
+import BackButton from "@/components/BackButton";
 
 function formatUGX(n: number) {
   try {
@@ -261,6 +262,7 @@ export default function PropertyDetailPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 px-6 py-10 md:px-10">
+      <BackButton />
       <Link href="/properties" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[var(--zcanopy-primary)]">
         <ArrowLeft size={16} />
         Back to properties

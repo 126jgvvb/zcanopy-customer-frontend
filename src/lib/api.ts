@@ -76,6 +76,9 @@ export function hasCookieConsent(): boolean {
 
 export function setCookieConsent() {
   setCookie(COOKIE_CONSENT_KEY, "true", 365);
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(COOKIE_CONSENT_KEY, "true");
+  }
 }
 
 export class ApiError extends Error {
@@ -356,6 +359,9 @@ export const webApi = {
 
     getTransactions: (token: string, page = 1, limit = 10) =>
       apiFetch<{ transactions: any[]; total: number }>(`/web/customer/transactions?page=${page}&limit=${limit}`, { token, fallback: { transactions: [], total: 0 } }),
+
+    getBookings: (token: string, page = 1, limit = 10) =>
+      apiFetch<{ bookings: any[]; total: number }>(`/web/customer/bookings?page=${page}&limit=${limit}`, { token, fallback: { bookings: mockData.customerBookings().bookings, total: mockData.customerBookings().bookings.length } }),
 
     getInvoices: (token: string, page = 1, limit = 10) =>
       apiFetch<{ invoices: any[]; total: number }>(`/web/customer/invoices?page=${page}&limit=${limit}`, { token, fallback: { invoices: [], total: 0 } }),

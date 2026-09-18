@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { OnboardingShell, PrimaryButton } from "@/components/Onboarding";
 import { COLORS } from "@/lib/theme";
 import { Clock } from "lucide-react";
+import BackButton from "@/components/BackButton";
 
 function BrokerWelcomePageInner() {
   const router = useRouter();
@@ -20,6 +21,7 @@ function BrokerWelcomePageInner() {
       title="Application received"
       subtitle="Your email and phone are confirmed. Keep your broker code safe."
     >
+      <BackButton />
       <div className="flex flex-col gap-5">
         <div className="rounded-2xl border border-[var(--zcanopy-accent-gold)] bg-[rgba(209,160,84,0.1)] p-5 text-center">
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-600">

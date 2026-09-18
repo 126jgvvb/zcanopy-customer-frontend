@@ -9,7 +9,10 @@ export default function CookieBanner() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const consent = window.localStorage.getItem("zcanopy_cookie_consent");
-      if (!consent) {
+      const cookie = window.document.cookie
+        .split('; ')
+        .find((row) => row.startsWith("zcanopy_cookie_consent="));
+      if (!consent && !cookie) {
         setVisible(true);
       }
     }

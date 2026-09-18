@@ -174,6 +174,37 @@ export const mockData = {
       { id: "wb1", propertyTitle: "2BR Apartment in Kololo", customerName: "John Doe", date: "2026-08-20", status: "pending", amount: 850000 },
     ],
   }),
+  customerTransactions: () => ({
+    transactions: [
+      { id: "wt1", reasonForPayment: "Booking - 2BR Apartment in Kololo", amount: 850000, paymentStatus: "completed", referenceNumber: "TXN-001", createdAt: "2026-08-20T09:00:00Z" },
+      { id: "wt2", reasonForPayment: "Booking - 3BR Villa in Muyenga", amount: 1500000, paymentStatus: "completed", referenceNumber: "TXN-002", createdAt: "2026-08-21T10:00:00Z" },
+      { id: "wt3", reasonForPayment: "Platform fee - Kololo Apartment", amount: 50000, paymentStatus: "pending", referenceNumber: "TXN-003", createdAt: "2026-08-22T11:00:00Z" },
+    ],
+    total: 3,
+  }),
+  customerInvoices: () => ({
+    invoices: [
+      { id: "inv1", reasonForPayment: "Monthly subscription", amount: 25000, paymentStatus: "paid", referenceNumber: "INV-001", createdAt: "2026-08-01T00:00:00Z", dueDate: "2026-08-31T23:59:59Z" },
+      { id: "inv2", reasonForPayment: "Property listing fee", amount: 100000, paymentStatus: "unpaid", referenceNumber: "INV-002", createdAt: "2026-08-15T00:00:00Z", dueDate: "2026-09-14T23:59:59Z" },
+    ],
+    total: 2,
+  }),
+  customerMessages: () => ({
+    messages: [
+      { id: "msg1", subject: "Booking confirmation - Kololo Apartment", body: "Your booking for the 2BR Apartment in Kololo has been confirmed. The broker will contact you shortly.", createdAt: "2026-08-20T10:00:00Z" },
+      { id: "msg2", subject: "Welcome to ZCanopy", body: "Welcome to ZCanopy! Your account has been created successfully. Start browsing properties and booking viewings.", createdAt: "2026-08-15T09:00:00Z" },
+    ],
+    total: 2,
+  }),
+  customerNotifications: () => ({
+    notifications: [
+      { id: "notif1", title: "New message from broker", body: "Alice Properties sent you a message regarding your booking inquiry.", createdAt: "2026-08-20T12:00:00Z", isRead: false },
+      { id: "notif2", title: "Booking reminder", body: "Your property viewing for 2BR Apartment in Kololo is scheduled for tomorrow at 10:00 AM.", createdAt: "2026-08-21T08:00:00Z", isRead: false },
+      { id: "notif3", title: "Payment received", body: "Your payment of UGX 850,000 has been received and your booking is being processed.", createdAt: "2026-08-20T11:00:00Z", isRead: true },
+    ],
+    total: 3,
+    unreadCount: 2,
+  }),
   brokerByCode: () => ({ id: "b1", username: "Demo Broker", email: "broker@example.com", brokerCode: "BRK-WEB-1" }),
   featuredProperties: () => ({
     properties: MOCK_PROPERTIES.slice(0, 4).map((p) => ({

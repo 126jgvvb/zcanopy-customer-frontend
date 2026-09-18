@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { apiFetch } from "@/lib/api";
+import BackButton from "@/components/BackButton";
 
 interface BookingResponse {
   booking?: {
@@ -52,6 +53,7 @@ export default function RetrieveBookingPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 px-4 py-12 md:px-6">
+      <BackButton />
       <div>
         <h2 className="text-3xl">Retrieve Your Booking</h2>
         <p className="mt-2 text-gray-500">
