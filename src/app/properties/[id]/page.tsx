@@ -74,6 +74,7 @@ export default function PropertyDetailPage() {
   const [submitError, setSubmitError] = useState("");
   const [success, setSuccess] = useState("");
   const [bookedProperty, setBookedProperty] = useState<Property | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<string>("");
   const [favorited, setFavorited] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [averageRating, setAverageRating] = useState(0);
@@ -190,9 +191,22 @@ export default function PropertyDetailPage() {
     if (id) load();
   }, [id]);
 
+  const [submittedBookingPropertyId, setSubmittedBookingPropertyId] = useState<string | null>(null);
+  const [needsAuth, setNeedsAuth] = useState(false);
+
+  const isAuthenticated = () => {
+    return !!localStorage.getItem("zcanopy_token");
+  };
+
   const openBooking = () => {
     if (!property) return;
+    if (!isAuthenticated()) {
+      setNeedsAuth(true);
+      setSelectedProperty(property);
+      return;
+    }
     setSelectedProperty(property);
+    setNeedsAuth(false);
     setForm(emptyForm);
     setSubmitError("");
     setSuccess("");
@@ -201,10 +215,12 @@ export default function PropertyDetailPage() {
 
   const closeBooking = () => {
     setSelectedProperty(null);
+    setNeedsAuth(false);
     setBookedProperty(null);
     setForm(emptyForm);
     setSubmitError("");
     setSuccess("");
+    setPaymentStatus("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -213,21 +229,35 @@ export default function PropertyDetailPage() {
 
     setSubmitting(true);
     setSubmitError("");
+    setSuccess("");
+    setPaymentStatus("");
 
     try {
       const token = localStorage.getItem("zcanopy_token") || "";
-      await webApi.createBooking(token, {
+      setPaymentStatus("Initiating payment...");
+      
+      const result = await webApi.createBooking(token, {
         propertyId: selectedProperty.id,
         customerName: form.customerName,
         customerPhone: form.customerPhone,
         customerEmail: form.customerEmail,
         status: "pending",
       });
-      setSuccess("Booking created successfully!");
-      setForm(emptyForm);
-      setBookedProperty(selectedProperty);
+
+      const paymentResult = result as { success?: boolean; message?: string; bookingCode?: string };
+      
+      if (paymentResult.success) {
+        setPaymentStatus("Payment completed successfully!");
+        setSuccess("Booking confirmed! Check your email and SMS for the invoice code.");
+        setForm(emptyForm);
+        setBookedProperty(selectedProperty);
+      } else {
+        setPaymentStatus("");
+        setSubmitError(paymentResult.message || "Payment failed. Please try again.");
+      }
     } catch {
-      setSubmitError("Failed to create booking. Please try again.");
+      setPaymentStatus("");
+      setSubmitError("Failed to process payment. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -526,7 +556,35 @@ export default function PropertyDetailPage() {
       {selectedProperty && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">
           <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-lift)]">
-            {bookedProperty ? (
+            {needsAuth ? (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-[var(--zcanopy-card-brown)]">Sign in to book</h3>
+                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
+                  <p>You need to be signed in to book a property. Please sign in or create an account to continue.</p>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <Link
+                    href={`/customer/signup?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`}
+                    className="flex items-center justify-center rounded-xl bg-[var(--zcanopy-primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:opacity-90"
+                  >
+                    Create Account
+                  </Link>
+                  <Link
+                    href={`/customer?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`}
+                    className="flex items-center justify-center rounded-xl border border-[var(--zcanopy-border)] bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+                  >
+                    Sign In
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={closeBooking}
+                    className="btn-ghost px-4 py-2 text-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : bookedProperty ? (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-[var(--zcanopy-card-brown)]">Booking Confirmed</h3>
                 <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
@@ -596,12 +654,18 @@ export default function PropertyDetailPage() {
                     />
                   </div>
 
+                  {paymentStatus && !submitError && (
+                    <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                      {paymentStatus}
+                    </div>
+                  )}
+
                   {submitError && (
                     <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
                       {submitError}
                     </div>
                   )}
-                  {success && (
+                  {success && !submitError && (
                     <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
                       {success}
                     </div>
@@ -611,7 +675,8 @@ export default function PropertyDetailPage() {
                     <button
                       type="button"
                       onClick={closeBooking}
-                      className="btn-ghost px-4 py-2 text-sm"
+                      disabled={submitting}
+                      className="btn-ghost px-4 py-2 text-sm disabled:opacity-50"
                     >
                       Cancel
                     </button>
@@ -620,7 +685,7 @@ export default function PropertyDetailPage() {
                       disabled={submitting}
                       className="btn-primary px-4 py-2 text-sm disabled:opacity-50"
                     >
-                      {submitting ? "Submitting..." : "Confirm Booking"}
+                      {submitting ? "Processing payment..." : "Confirm Booking"}
                     </button>
                   </div>
                 </form>

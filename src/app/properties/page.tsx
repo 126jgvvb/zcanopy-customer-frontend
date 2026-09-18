@@ -65,6 +65,7 @@ export default function PropertiesPage() {
   const [submitError, setSubmitError] = useState("");
   const [success, setSuccess] = useState("");
   const [bookedProperty, setBookedProperty] = useState<Property | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<string>("");
   const [viewMode, setViewMode] = useState<"all" | "broker">("all");
   const [selectedBrokerCode, setSelectedBrokerCode] = useState<string>("");
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -261,12 +262,20 @@ export default function PropertiesPage() {
     return Array.from(brokers.entries()).map(([code, name]) => ({ code, name }));
   }, [properties]);
 
+  const [needsAuth, setNeedsAuth] = useState(false);
+
+  const isAuthenticated = () => {
+    return !!localStorage.getItem('zcanopy_token');
+  };
+
   const closeBooking = () => {
     setSelectedProperty(null);
+    setNeedsAuth(false);
     setBookedProperty(null);
     setForm(emptyForm);
     setSubmitError("");
     setSuccess("");
+    setPaymentStatus("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -275,22 +284,36 @@ export default function PropertiesPage() {
 
     setSubmitting(true);
     setSubmitError("");
+    setSuccess("");
+    setPaymentStatus("");
 
     try {
       const token = localStorage.getItem("zcanopy_token") || "";
-      await webApi.createBooking(token, {
+      setPaymentStatus("Initiating payment...");
+      
+      const result = await webApi.createBooking(token, {
         propertyId: selectedProperty.id,
         customerName: form.customerName,
         customerPhone: form.customerPhone,
         customerEmail: form.customerEmail,
         status: "pending",
       });
-      setSuccess("Booking created successfully!");
-      setForm(emptyForm);
-      setBookedProperty(selectedProperty);
-      setTimeout(closeBooking, 1500);
+
+      const paymentResult = result as { success?: boolean; message?: string; bookingCode?: string };
+      
+      if (paymentResult.success) {
+        setPaymentStatus("Payment completed successfully!");
+        setSuccess("Booking confirmed! Check your email and SMS for the invoice code.");
+        setForm(emptyForm);
+        setBookedProperty(selectedProperty);
+        setTimeout(closeBooking, 1500);
+      } else {
+        setPaymentStatus("");
+        setSubmitError(paymentResult.message || "Payment failed. Please try again.");
+      }
     } catch {
-      setSubmitError("Failed to create booking. Please try again.");
+      setPaymentStatus("");
+      setSubmitError("Failed to process payment. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -597,12 +620,18 @@ export default function PropertiesPage() {
                     />
                   </div>
 
+                  {paymentStatus && !submitError && (
+                    <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                      {paymentStatus}
+                    </div>
+                  )}
+
                   {submitError && (
                     <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
                       {submitError}
                     </div>
                   )}
-                  {success && (
+                  {success && !submitError && (
                     <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
                       {success}
                     </div>
@@ -612,7 +641,8 @@ export default function PropertiesPage() {
                     <button
                       type="button"
                       onClick={closeBooking}
-                      className="btn-ghost px-4 py-2 text-sm"
+                      disabled={submitting}
+                      className="btn-ghost px-4 py-2 text-sm disabled:opacity-50"
                     >
                       Cancel
                     </button>
@@ -621,7 +651,7 @@ export default function PropertiesPage() {
                       disabled={submitting}
                       className="btn-primary px-4 py-2 text-sm disabled:opacity-50"
                     >
-                      {submitting ? "Submitting..." : "Confirm Booking"}
+                      {submitting ? "Processing payment..." : "Confirm Booking"}
                     </button>
                   </div>
                 </form>
