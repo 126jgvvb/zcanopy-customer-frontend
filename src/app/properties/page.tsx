@@ -436,7 +436,7 @@ export default function PropertiesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 md:px-6">
+    <div className="w-full space-y-6 px-4 py-8 md:px-6">
       <BackButton />
       <div>
         <h2 className="text-3xl">Browse Properties</h2>
