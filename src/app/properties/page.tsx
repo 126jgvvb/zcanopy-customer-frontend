@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback, useTransition, useDeferredValue } from "react";
 import PropertyCard from "@/components/PropertyCard";
-import { webApi } from "@/lib/api";
+import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
+import { mockData } from "@/lib/mockData";
 import Link from "next/link";
 import { usePlacePredictions } from "@/hooks/useGooglePlaces";
 import BackButton from "@/components/BackButton";
@@ -81,38 +82,109 @@ export default function PropertiesPage() {
     localSearch
   );
 
+  const [isPending, startTransition] = useTransition();
+  const deferredSearch = useDeferredValue(search);
+  const deferredLocationFilter = useDeferredValue(locationFilter);
+  const deferredBrokerFilter = useDeferredValue(brokerFilter);
+  const deferredPropertyTypeFilter = useDeferredValue(propertyTypeFilter);
+  const deferredMinPrice = useDeferredValue(minPrice);
+  const deferredMaxPrice = useDeferredValue(maxPrice);
+  const deferredSubCountyFilter = useDeferredValue(subCountyFilter);
+  const deferredDistrictFilter = useDeferredValue(districtFilter);
+  const deferredDateFrom = useDeferredValue(dateFrom);
+  const deferredDateTo = useDeferredValue(dateTo);
+  const deferredViewMode = useDeferredValue(viewMode);
+  const deferredSelectedBrokerCode = useDeferredValue(selectedBrokerCode);
+
+  const isInitialMount = useRef(true);
+
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      setLoading(true);
+      if (isInitialMount.current) {
+        setLoading(true);
+        isInitialMount.current = false;
+      }
       setError("");
       try {
-        let data: { properties?: Property[]; total?: number; hasMore?: boolean };
-        const hasFilters = locationFilter || brokerFilter || propertyTypeFilter || minPrice || maxPrice || subCountyFilter || districtFilter || dateFrom || dateTo;
-        if (viewMode === "broker" && selectedBrokerCode) {
-          const res = await webApi.brokerPropertiesByCode(selectedBrokerCode);
-          data = res as { properties?: Property[]; total?: number; hasMore?: boolean };
-        } else if (search || hasFilters) {
-          const res = await webApi.searchPropertiesPaginated(search, 1, PAGE_SIZE, {
-            location: locationFilter || undefined,
-            propertyType: propertyTypeFilter || undefined,
-            minPrice: minPrice ? Number(minPrice) : undefined,
-            maxPrice: maxPrice ? Number(maxPrice) : undefined,
-            subCounty: subCountyFilter || undefined,
-            district: districtFilter || undefined,
-          });
-          data = res as { properties?: Property[]; total?: number; hasMore?: boolean };
+        let data: { properties?: Property[]; total?: number };
+        if (deferredViewMode === "broker" && deferredSelectedBrokerCode) {
+          try {
+            const res = await webApi.brokerPropertiesByCode(deferredSelectedBrokerCode);
+            data = res as { properties?: Property[]; total?: number };
+          } catch {
+            data = { properties: [], total: 0 };
+          }
+        } else if (deferredSearch) {
+          try {
+            const res = await webApi.searchPropertiesPaginated(deferredSearch, 1, PAGE_SIZE, {
+              location: deferredLocationFilter || undefined,
+              propertyType: deferredPropertyTypeFilter || undefined,
+              brokerBrandName: deferredBrokerFilter || undefined,
+              minPrice: deferredMinPrice ? Number(deferredMinPrice) : undefined,
+              maxPrice: deferredMaxPrice ? Number(deferredMaxPrice) : undefined,
+              subCounty: deferredSubCountyFilter || undefined,
+              district: deferredDistrictFilter || undefined,
+            });
+            data = res as { properties?: Property[]; total?: number };
+          } catch {
+            data = { properties: [], total: 0 };
+          }
         } else {
-          const res = await webApi.publicPropertiesPaginated(1, PAGE_SIZE, {
-            location: locationFilter || undefined,
-          });
-          data = res as { properties?: Property[]; total?: number; hasMore?: boolean };
+          const sessionId = await ensureAnonymousSession();
+          if (!sessionId) {
+            data = mockData.customerProperties({
+              location: deferredLocationFilter || undefined,
+              propertyType: deferredPropertyTypeFilter || undefined,
+              brokerBrandName: deferredBrokerFilter || undefined,
+              minPrice: deferredMinPrice ? Number(deferredMinPrice) : undefined,
+              maxPrice: deferredMaxPrice ? Number(deferredMaxPrice) : undefined,
+              subCounty: deferredSubCountyFilter || undefined,
+              district: deferredDistrictFilter || undefined,
+            });
+          } else {
+            try {
+              const res = await webApi.customer.explorer({
+                page: 1,
+                limit: PAGE_SIZE,
+                location: deferredLocationFilter || undefined,
+                propertyType: deferredPropertyTypeFilter || undefined,
+                brokerBrandName: deferredBrokerFilter || undefined,
+                minPrice: deferredMinPrice ? Number(deferredMinPrice) : undefined,
+                maxPrice: deferredMaxPrice ? Number(deferredMaxPrice) : undefined,
+                subCounty: deferredSubCountyFilter || undefined,
+                district: deferredDistrictFilter || undefined,
+                fromDate: deferredDateFrom || undefined,
+                toDate: deferredDateTo || undefined,
+              });
+              data = res as { properties?: Property[]; total?: number };
+              if ((data.properties || []).length === 0) {
+                const fallback = await webApi.publicPropertiesPaginated(1, PAGE_SIZE, {
+                  location: deferredLocationFilter || undefined,
+                  propertyType: deferredPropertyTypeFilter || undefined,
+                  minPrice: deferredMinPrice ? Number(deferredMinPrice) : undefined,
+                  maxPrice: deferredMaxPrice ? Number(deferredMaxPrice) : undefined,
+                });
+                data = fallback as { properties?: Property[]; total?: number };
+              }
+            } catch (explorerError) {
+              const fallback = await webApi.publicPropertiesPaginated(1, PAGE_SIZE, {
+                location: deferredLocationFilter || undefined,
+                propertyType: deferredPropertyTypeFilter || undefined,
+                minPrice: deferredMinPrice ? Number(deferredMinPrice) : undefined,
+                maxPrice: deferredMaxPrice ? Number(deferredMaxPrice) : undefined,
+              });
+              data = fallback as { properties?: Property[]; total?: number };
+            }
+          }
         }
         if (!cancelled) {
-          setProperties(data.properties || []);
-          setTotal(data.total || 0);
-          setHasMore(!!data.hasMore);
-          setPage(1);
+          startTransition(() => {
+            setProperties(data.properties || []);
+            setTotal(data.total || 0);
+            setHasMore(1 * PAGE_SIZE < (data.total || 0));
+            setPage(1);
+          });
         }
       } catch {
         if (!cancelled) {
@@ -128,7 +200,7 @@ export default function PropertiesPage() {
     return () => {
       cancelled = true;
     };
-  }, [search, viewMode, selectedBrokerCode, locationFilter, propertyTypeFilter, minPrice, maxPrice, subCountyFilter, districtFilter]);
+  }, [deferredSearch, deferredViewMode, deferredSelectedBrokerCode, deferredLocationFilter, deferredBrokerFilter, deferredPropertyTypeFilter, deferredMinPrice, deferredMaxPrice, deferredSubCountyFilter, deferredDistrictFilter, deferredDateFrom, deferredDateTo]);
 
   useEffect(() => {
     if (!search) return;
@@ -165,26 +237,67 @@ export default function PropertiesPage() {
     setLoadingMore(true);
     try {
       const nextPage = page + 1;
-      const hasFilters = locationFilter || brokerFilter || propertyTypeFilter || minPrice || maxPrice || subCountyFilter || districtFilter || dateFrom || dateTo;
-      let data: { properties?: Property[]; hasMore?: boolean };
-      if (search || hasFilters) {
-        const res = await webApi.searchPropertiesPaginated(search, nextPage, PAGE_SIZE, {
-          location: locationFilter || undefined,
-          propertyType: propertyTypeFilter || undefined,
-          minPrice: minPrice ? Number(minPrice) : undefined,
-          maxPrice: maxPrice ? Number(maxPrice) : undefined,
-          subCounty: subCountyFilter || undefined,
-          district: districtFilter || undefined,
-        });
-        data = res as { properties?: Property[]; hasMore?: boolean };
+      let data: { properties?: Property[]; total?: number } = { properties: [], total: 0 };
+      if (deferredViewMode === "broker" && deferredSelectedBrokerCode) {
+        try {
+          const res = await webApi.brokerPropertiesByCode(deferredSelectedBrokerCode, { page: nextPage, limit: PAGE_SIZE });
+          data = res as { properties?: Property[]; total?: number };
+        } catch {
+          data = { properties: [], total: 0 };
+        }
+      } else if (deferredSearch) {
+        try {
+          const res = await webApi.searchPropertiesPaginated(deferredSearch, nextPage, PAGE_SIZE, {
+            location: deferredLocationFilter || undefined,
+            propertyType: deferredPropertyTypeFilter || undefined,
+            brokerBrandName: deferredBrokerFilter || undefined,
+            minPrice: deferredMinPrice ? Number(deferredMinPrice) : undefined,
+            maxPrice: deferredMaxPrice ? Number(deferredMaxPrice) : undefined,
+            subCounty: deferredSubCountyFilter || undefined,
+            district: deferredDistrictFilter || undefined,
+          });
+          data = res as { properties?: Property[]; total?: number };
+        } catch {
+          data = { properties: [], total: 0 };
+        }
       } else {
-        const res = await webApi.publicPropertiesPaginated(nextPage, PAGE_SIZE, {
-          location: locationFilter || undefined,
-        });
-        data = res as { properties?: Property[]; hasMore?: boolean };
+        try {
+          const res = await webApi.customer.explorer({
+            page: nextPage,
+            limit: PAGE_SIZE,
+            location: deferredLocationFilter || undefined,
+            propertyType: deferredPropertyTypeFilter || undefined,
+            brokerBrandName: deferredBrokerFilter || undefined,
+            minPrice: deferredMinPrice ? Number(deferredMinPrice) : undefined,
+            maxPrice: deferredMaxPrice ? Number(deferredMaxPrice) : undefined,
+            subCounty: deferredSubCountyFilter || undefined,
+            district: deferredDistrictFilter || undefined,
+            fromDate: deferredDateFrom || undefined,
+            toDate: deferredDateTo || undefined,
+          });
+          data = res as { properties?: Property[]; total?: number };
+          if ((data.properties || []).length === 0) {
+            const fallback = await webApi.publicPropertiesPaginated(nextPage, PAGE_SIZE, {
+              location: deferredLocationFilter || undefined,
+              propertyType: deferredPropertyTypeFilter || undefined,
+              minPrice: deferredMinPrice ? Number(deferredMinPrice) : undefined,
+              maxPrice: deferredMaxPrice ? Number(deferredMaxPrice) : undefined,
+            });
+            data = fallback as { properties?: Property[]; total?: number };
+          }
+        } catch (explorerError) {
+          const fallback = await webApi.publicPropertiesPaginated(nextPage, PAGE_SIZE, {
+            location: deferredLocationFilter || undefined,
+            propertyType: deferredPropertyTypeFilter || undefined,
+            minPrice: deferredMinPrice ? Number(deferredMinPrice) : undefined,
+            maxPrice: deferredMaxPrice ? Number(deferredMaxPrice) : undefined,
+          });
+          data = fallback as { properties?: Property[]; total?: number };
+        }
       }
       setProperties((prev) => [...prev, ...(data.properties || [])]);
-      setHasMore(!!data.hasMore);
+      setTotal(data.total || 0);
+      setHasMore(nextPage * PAGE_SIZE < (data.total || 0));
       setPage(nextPage);
     } catch {
       // silently fail
@@ -210,20 +323,7 @@ export default function PropertiesPage() {
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [loading, loadingMore, hasMore, page, search, locationFilter, propertyTypeFilter, minPrice, maxPrice, subCountyFilter, districtFilter]);
-
-  const filteredProperties = useMemo(() => {
-    return properties.filter((p) => {
-      if (locationFilter && !p.location.toLowerCase().includes(locationFilter.toLowerCase())) return false;
-      if (brokerFilter && !(p.brokerBrandName || "").toLowerCase().includes(brokerFilter.toLowerCase())) return false;
-      if (propertyTypeFilter && p.propertyType !== propertyTypeFilter) return false;
-      if (minPrice && (p.price ?? 0) < Number(minPrice)) return false;
-      if (maxPrice && (p.price ?? 0) > Number(maxPrice)) return false;
-      if (dateFrom && p.createdAt < dateFrom) return false;
-      if (dateTo && p.createdAt > dateTo + "T23:59:59Z") return false;
-      return true;
-    });
-  }, [properties, locationFilter, brokerFilter, propertyTypeFilter, minPrice, maxPrice, dateFrom, dateTo]);
+  }, [loading, loadingMore, hasMore, page, deferredSearch, deferredViewMode, deferredSelectedBrokerCode, deferredLocationFilter, deferredBrokerFilter, deferredPropertyTypeFilter, deferredMinPrice, deferredMaxPrice, deferredSubCountyFilter, deferredDistrictFilter, deferredDateFrom, deferredDateTo]);
 
   // Scroll reveal for property cards
   useEffect(() => {
@@ -245,7 +345,7 @@ export default function PropertiesPage() {
     elements.forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
-  }, [filteredProperties.length]);
+  }, [properties.length]);
 
   const uniqueLocations = useMemo(() => {
     const locs = new Set(properties.map((p) => p.location));
@@ -344,45 +444,46 @@ export default function PropertiesPage() {
       </div>
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-5 shadow-[var(--shadow-soft)]">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end">
-          <div className="flex-1 relative">
-            <label className="block text-sm font-medium text-gray-700">Search</label>
-            <input
-              type="text"
-              value={localSearch}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              onFocus={() => localSearch.trim().length > 0 && setShowLocationSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 150)}
-              placeholder="Search by title, location, broker..."
-              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-            />
-            {showLocationSuggestions && (locationPredictions.length > 0 || locationLoading || locationError) && (
-              <div className="absolute z-20 mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] shadow-lg">
-                {locationLoading && (
-                  <div className="px-4 py-2 text-sm text-gray-500">Loading suggestions...</div>
-                )}
-                {locationError && (
-                  <div className="px-4 py-2 text-sm text-red-600">Location suggestions unavailable</div>
-                )}
-                {!locationLoading &&
-                  !locationError &&
-                  locationPredictions.map((item) => (
-                    <button
-                      key={item.placeId}
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleLocationSuggestionSelect(item.description)}
-                      className="flex w-full items-center px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      {item.description}
-                    </button>
-                  ))}
-                {!locationLoading && !locationError && locationPredictions.length === 0 && (
-                  <div className="px-4 py-2 text-sm text-gray-500">No suggestions</div>
-                )}
-              </div>
-            )}
-          </div>
+        <div className="relative">
+          <label className="block text-sm font-medium text-gray-700">Search</label>
+          <input
+            type="text"
+            value={localSearch}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onFocus={() => localSearch.trim().length > 0 && setShowLocationSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 150)}
+            placeholder="Search by title, location, broker..."
+            className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+          />
+          {showLocationSuggestions && (locationPredictions.length > 0 || locationLoading || locationError) && (
+            <div className="absolute z-20 mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] shadow-lg">
+              {locationLoading && (
+                <div className="px-4 py-2 text-sm text-gray-500">Loading suggestions...</div>
+              )}
+              {locationError && (
+                <div className="px-4 py-2 text-sm text-red-600">Location suggestions unavailable</div>
+              )}
+              {!locationLoading &&
+                !locationError &&
+                locationPredictions.map((item) => (
+                  <button
+                    key={item.placeId}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleLocationSuggestionSelect(item.description)}
+                    className="flex w-full items-center px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    {item.description}
+                  </button>
+                ))}
+              {!locationLoading && !locationError && locationPredictions.length === 0 && (
+                <div className="px-4 py-2 text-sm text-gray-500">No suggestions</div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Location</label>
             <select
@@ -491,7 +592,7 @@ export default function PropertiesPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-4">
+        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-4">
           <span className="text-sm font-medium text-gray-700">View:</span>
           <button
             onClick={() => { setViewMode("all"); setSelectedBrokerCode(""); }}
@@ -508,16 +609,10 @@ export default function PropertiesPage() {
               {b.name}
             </button>
           ))}
-          <Link
-            href="/properties/favorites"
-            className="btn-ghost rounded-xl px-4 py-2 text-sm font-semibold transition-colors"
-          >
-            My Favorites
-          </Link>
         </div>
       </div>
 
-      {filteredProperties.length === 0 ? (
+      {properties.length === 0 ? (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-5 shadow-[var(--shadow-soft)]">
           <div className="py-12 text-center">
             <p className="text-gray-500">No properties found.</p>
@@ -525,7 +620,7 @@ export default function PropertiesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredProperties.map((property, idx) => (
+          {properties.map((property, idx) => (
             <div
               key={property.id}
               className={`slide-up ${idx >= 12 ? "" : ""}`}

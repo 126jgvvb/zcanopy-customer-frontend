@@ -1,0 +1,31 @@
+info:
+  name: Create Customer Booking
+  type: http
+  seq: 7
+
+http:
+  method: POST
+  url: "{{baseUrl}}/web/customer/bookings"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Authorization
+      value: Bearer {{token}}
+  body:
+    type: json
+    data: |-
+      {
+        "propertyId": "p1",
+        "customerName": "John Doe",
+        "customerPhone": "+256700000000",
+        "customerEmail": "john@example.com",
+        "status": "pending"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

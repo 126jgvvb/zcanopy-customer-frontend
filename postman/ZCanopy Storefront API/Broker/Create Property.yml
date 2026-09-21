@@ -1,0 +1,32 @@
+info:
+  name: Create Property
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{baseUrl}}/web/broker/properties"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Authorization
+      value: Bearer {{token}}
+  body:
+    type: json
+    data: |-
+      {
+        "title": "New Property",
+        "description": "Description",
+        "propertyType": "apartment",
+        "location": "Kampala",
+        "price": 500000,
+        "bookingFee": 25000
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

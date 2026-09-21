@@ -12,6 +12,14 @@
     {
       "key": "token",
       "value": ""
+    },
+    {
+      "key": "customerAccessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
     }
   ],
   "item": [
@@ -75,115 +83,365 @@
       ]
     },
     {
-      "name": "Customer",
-      "item": [
-        {
-          "name": "Create Customer Session",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/customer/session",
-              "host": ["{{baseUrl}}"],
-              "path": ["customer", "session"]
+    "name": "Customer",
+    "item": [
+      {
+        "name": "Customer Login",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
             }
-          }
-        },
-        {
-          "name": "Get Customer Properties",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/web/customer/properties",
-              "host": ["{{baseUrl}}"],
-              "path": ["web", "customer", "properties"]
-            }
-          }
-        },
-        {
-          "name": "Get Customer Bookings",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/web/customer/bookings",
-              "host": ["{{baseUrl}}"],
-              "path": ["web", "customer", "bookings"]
-            }
-          }
-        },
-        {
-          "name": "Create Customer Booking",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"propertyId\": \"p1\",\n  \"customerName\": \"John Doe\",\n  \"customerPhone\": \"+256700000000\",\n  \"customerEmail\": \"john@example.com\",\n  \"status\": \"pending\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/web/customer/bookings",
-              "host": ["{{baseUrl}}"],
-              "path": ["web", "customer", "bookings"]
-            }
-          }
-        },
-        {
-          "name": "Get Broker Properties for Customer",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/web/customer/broker/{{brokerCode}}/properties",
-              "host": ["{{baseUrl}}"],
-              "path": ["web", "customer", "broker", "{{brokerCode}}", "properties"]
-            }
-          }
-        },
-        {
-          "name": "Search Customer Properties",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/web/customer/search?q={{query}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["web", "customer", "search"],
-              "query": [
-                {
-                  "key": "q",
-                  "value": "{{query}}"
-                }
-              ]
-            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": \"customer@example.com\",\n  \"password\": \"password123\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/web/customer/login",
+            "host": ["{{baseUrl}}"],
+            "path": ["web", "customer", "login"]
           }
         }
-      ]
-    },
+      },
+      {
+        "name": "Customer Register",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": \"newcustomer@example.com\",\n  \"password\": \"password123\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"phoneNumber\": \"+256700000000\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/web/customer/register",
+            "host": ["{{baseUrl}}"],
+            "path": ["web", "customer", "register"]
+          }
+        }
+      },
+      {
+        "name": "Customer Google Login",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"googleId\": \"google-user-id\",\n  \"email\": \"customer@gmail.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/web/customer/login/google",
+            "host": ["{{baseUrl}}"],
+            "path": ["web", "customer", "login", "google"]
+          }
+        }
+      },
+      {
+        "name": "Create Customer Session (Anonymous)",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/customer/session",
+            "host": ["{{baseUrl}}"],
+            "path": ["customer", "session"]
+          }
+        }
+      },
+      {
+        "name": "Get Customer Properties",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "url": {
+            "raw": "{{baseUrl}}/web/customer/properties",
+            "host": ["{{baseUrl}}"],
+            "path": ["web", "customer", "properties"]
+          }
+        }
+      },
+      {
+        "name": "Get Customer Bookings",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "url": {
+            "raw": "{{baseUrl}}/web/customer/bookings",
+            "host": ["{{baseUrl}}"],
+            "path": ["web", "customer", "bookings"]
+          }
+        }
+      },
+      {
+        "name": "Create Customer Booking",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"propertyId\": \"p1\",\n  \"customerName\": \"John Doe\",\n  \"customerPhone\": \"+256700000000\",\n  \"customerEmail\": \"john@example.com\",\n  \"status\": \"pending\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/web/customer/bookings",
+            "host": ["{{baseUrl}}"],
+            "path": ["web", "customer", "bookings"]
+          }
+        }
+      },
+      {
+        "name": "Get Broker Properties for Customer",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "url": {
+            "raw": "{{baseUrl}}/web/customer/broker/{{brokerCode}}/properties",
+            "host": ["{{baseUrl}}"],
+            "path": ["web", "customer", "broker", "{{brokerCode}}", "properties"]
+          }
+        }
+      },
+      {
+        "name": "Search Customer Properties",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "url": {
+            "raw": "{{baseUrl}}/web/customer/search?q={{query}}",
+            "host": ["{{baseUrl}}"],
+            "path": ["web", "customer", "search"],
+            "query": [
+              {
+                "key": "q",
+                "value": "{{query}}"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "Record Customer Search",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"query\": \"apartment in kololo\",\n  \"location\": \"Kampala\",\n  \"radius\": 10,\n  \"propertyType\": \"apartment\",\n  \"resultCount\": 5,\n  \"resultPropertyIds\": [\"p1\", \"p2\", \"p3\"]\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/web/customer/search/record",
+            "host": ["{{baseUrl}}"],
+            "path": ["web", "customer", "search", "record"]
+          }
+        }
+      },
+      {
+        "name": "Get Customer Searches",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "url": {
+            "raw": "{{baseUrl}}/web/customer/searches",
+            "host": ["{{baseUrl}}"],
+            "path": ["web", "customer", "searches"]
+          }
+        }
+      },
+      {
+        "name": "Toggle Favorite",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"propertyId\": \"p1\",\n  \"propertyTitle\": \"2BR Apartment in Kololo\",\n  \"propertyLocation\": \"Kololo, Kampala\",\n  \"imageUrl\": \"https://example.com/image.jpg\",\n  \"price\": 850000\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/web/customer/favorites/toggle",
+            "host": ["{{baseUrl}}"],
+            "path": ["web", "customer", "favorites", "toggle"]
+          }
+        }
+      },
+      {
+        "name": "Get Customer Favorites",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "url": {
+            "raw": "{{baseUrl}}/web/customer/favorites",
+            "host": ["{{baseUrl}}"],
+            "path": ["web", "customer", "favorites"]
+          }
+        }
+      },
+      {
+        "name": "Add Comment",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"propertyId\": \"p1\",\n  \"customerName\": \"John Doe\",\n  \"customerPhone\": \"+256700000000\",\n  \"customerEmail\": \"john@example.com\",\n  \"comment\": \"Great apartment, very clean and secure.\",\n  \"rating\": 5\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/web/customer/comments",
+            "host": ["{{baseUrl}}"],
+            "path": ["web", "customer", "comments"]
+          }
+        }
+      },
+      {
+        "name": "Get Property Comments",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "url": {
+            "raw": "{{baseUrl}}/web/customer/properties/{{propertyId}}/comments",
+            "host": ["{{baseUrl}}"],
+            "path": ["web", "customer", "properties", "{{propertyId}}", "comments"]
+          }
+        }
+      },
+      {
+        "name": "Initiate Property Access Payment",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"propertyId\": \"prop-123\",\n  \"customerName\": \"John Doe\",\n  \"customerPhone\": \"+256700000000\",\n  \"customerEmail\": \"john@example.com\",\n  \"date\": \"2026-12-01\",\n  \"amount\": 5000,\n  \"reason\": \"property_access\",\n  \"status\": \"pending\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/web/customer/properties/access-payment",
+            "host": ["{{baseUrl}}"],
+            "path": ["web", "customer", "properties", "access-payment"]
+          }
+        }
+      },
+      {
+        "name": "Customer Logout",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "url": {
+            "raw": "{{baseUrl}}/web/customer/logout",
+            "host": ["{{baseUrl}}"],
+            "path": ["web", "customer", "logout"]
+          }
+        }
+      }
+    ]
+  },
     {
       "name": "Auth",
       "item": [

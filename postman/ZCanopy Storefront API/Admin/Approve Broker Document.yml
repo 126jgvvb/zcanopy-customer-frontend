@@ -1,0 +1,28 @@
+info:
+  name: Approve Broker Document
+  type: http
+  seq: 16
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/brokers/{{brokerId}}/approve-document"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Authorization
+      value: Bearer {{token}}
+  body:
+    type: json
+    data: |-
+      {
+        "documentType": "id",
+        "approved": true
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,0 +1,27 @@
+info:
+  name: Delete Broker Account
+  type: http
+  seq: 22
+
+http:
+  method: POST
+  url: "{{baseUrl}}/web/broker/account/delete"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Authorization
+      value: Bearer {{token}}
+  body:
+    type: json
+    data: |-
+      {
+        "password": "password"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

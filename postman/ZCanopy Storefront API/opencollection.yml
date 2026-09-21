@@ -1,0 +1,25 @@
+opencollection: 1.0.0
+
+info:
+  name: ZCanopy Storefront API
+
+request:
+  variables:
+    - name: baseUrl
+      value: http://localhost:4000/api
+    - name: token
+      value: ""
+    - name: customerAccessToken
+      value: ""
+    - name: refreshToken
+      value: ""
+
+docs:
+  content: "Postman collection for zcanopy-storefront and zcanopy-dashboard frontend endpoints. Base URL: http://localhost:4000/api"
+  type: text/markdown
+bundled: false
+extensions:
+  bruno:
+    ignore:
+      - node_modules
+      - .git

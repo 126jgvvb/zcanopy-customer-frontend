@@ -1,0 +1,19 @@
+info:
+  name: Get Invoices
+  type: http
+  seq: 34
+
+http:
+  method: GET
+  url: "{{baseUrl}}/admin/invoices"
+  headers:
+    - name: Authorization
+      value: Bearer {{token}}
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,0 +1,19 @@
+info:
+  name: Get Broker Properties (Admin)
+  type: http
+  seq: 15
+
+http:
+  method: GET
+  url: "{{baseUrl}}/admin/brokers/{{brokerId}}/properties"
+  headers:
+    - name: Authorization
+      value: Bearer {{token}}
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

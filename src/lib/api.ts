@@ -233,18 +233,18 @@ export async function ensureAnonymousSession(): Promise<string | null> {
 
 export const webApi = {
   publicProperties: (query?: Record<string, string | number | boolean | undefined>) =>
-    apiFetch<{ properties: any[]; total: number }>("/web/public/properties", { query, fallback: mockData.properties(), skipSessionHeader: true }),
+    apiFetch<{ properties: any[]; total: number }>("/web/public/properties", { query, fallback: mockData.properties(query), skipSessionHeader: true }),
 
   publicPropertiesPaginated: (page: number, limit: number = 12, query?: Record<string, string | number | boolean | undefined>) =>
     apiFetch<{ properties: any[]; total: number; page: number; limit: number; hasMore: boolean }>(
       "/web/public/properties",
-      { query: { page, limit, ...query }, fallback: { properties: mockData.properties().properties, total: 0, page, limit, hasMore: false }, skipSessionHeader: true },
+      { query: { page, limit, ...query }, fallback: { properties: mockData.properties(query).properties, total: 0, page, limit, hasMore: false }, skipSessionHeader: true },
     ),
 
   searchPropertiesPaginated: (q: string, page: number, limit: number = 12, query?: Record<string, string | number | boolean | undefined>) =>
     apiFetch<{ properties: any[]; total: number; page: number; limit: number; hasMore: boolean }>(
       `/web/public/search`,
-      { query: { q, page, limit, ...query }, fallback: { properties: mockData.search(q).properties, total: 0, page, limit, hasMore: false }, skipSessionHeader: true },
+      { query: { q, page, limit, ...query }, fallback: { properties: mockData.search(q, query).properties, total: 0, page, limit, hasMore: false }, skipSessionHeader: true },
     ),
 
   featuredProperties: (limit = 6) =>
@@ -253,8 +253,8 @@ export const webApi = {
   propertyDetails: (id: string) =>
     apiFetch<{ property: any }>(`/web/public/properties/${id}`, { fallback: mockData.propertyDetails(id), skipSessionHeader: true }),
 
-  searchProperties: (q: string) =>
-    apiFetch<{ properties: any[]; total: number }>(`/web/public/search?q=${encodeURIComponent(q)}`, { fallback: mockData.search(q), skipSessionHeader: true }),
+  searchProperties: (q: string, queryParams?: Record<string, string | number | boolean | undefined>) =>
+    apiFetch<{ properties: any[]; total: number }>(`/web/public/search?q=${encodeURIComponent(q)}`, { fallback: mockData.search(q, queryParams), skipSessionHeader: true }),
 
   recordSearch: (body: { sessionToken?: string; query?: string; location?: string; radius?: number; propertyType?: string; filters?: any; resultPropertyIds?: string[]; resultCount?: number; minPrice?: number; maxPrice?: number; subCounty?: string; district?: string }) =>
     apiFetch<{ success: boolean }>("/web/customer/search/record", { method: "POST", body, fallback: { success: true } }),
@@ -275,7 +275,7 @@ export const webApi = {
     apiFetch<{ comments: any[]; total: number; averageRating: number }>(`/web/customer/properties/${propertyId}/comments?page=${page}&limit=${limit}`, { fallback: { comments: [], total: 0, averageRating: 0 } }),
 
   brokerPropertiesByCode: (brokerCode: string, query?: Record<string, string | number | boolean | undefined>) =>
-    apiFetch<{ properties: any[]; total: number }>(`/web/customer/broker/${brokerCode}/properties`, { query, fallback: mockData.brokerProperties(), skipSessionHeader: true }),
+    apiFetch<{ properties: any[]; total: number }>(`/web/customer/broker/${brokerCode}/properties`, { query, fallback: mockData.brokerProperties() }),
 
   createBooking: (token: string, body: unknown) =>
     apiFetch("/web/customer/bookings", { method: "POST", token, body, fallback: { success: true, booking: { id: "mock-booking-1", status: "pending" } } }),
@@ -349,7 +349,7 @@ export const webApi = {
       apiFetch<{ properties: any[]; total: number }>("/web/customer/all-properties", { query, fallback: { properties: [], total: 0 }, skipSessionHeader: true }),
 
     explorer: (query?: Record<string, string | number | boolean | undefined>) =>
-      apiFetch<{ properties: any[]; total: number; videoCount: number }>("/web/customer/explorer", { query, fallback: { properties: [], total: 0, videoCount: 0 }, skipSessionHeader: true }),
+      apiFetch<{ properties: any[]; total: number; videoCount: number }>("/web/public/explorer", { query, fallback: mockData.customerProperties(query) }),
 
     getPropertyDetails: (propertyId: string) =>
       apiFetch<any>(`/web/customer/properties?propertyId=${encodeURIComponent(propertyId)}`, { fallback: { ...mockData.propertyDetails(propertyId).property }, skipSessionHeader: true }),

@@ -1,0 +1,36 @@
+info:
+  name: Send Message
+  type: http
+  seq: 28
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/messages/send"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Authorization
+      value: Bearer {{token}}
+  body:
+    type: json
+    data: |-
+      {
+        "adminId": "1",
+        "adminUsername": "admin",
+        "recipientType": "broker",
+        "recipientPhone": "+254700000000",
+        "recipientEmail": "broker@example.com",
+        "recipientName": "Broker Name",
+        "messageType": "custom",
+        "subject": "Message",
+        "body": "Hello",
+        "channel": "email"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

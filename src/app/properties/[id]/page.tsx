@@ -6,6 +6,7 @@ import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
 import { MapPin, Calendar, Video, ArrowLeft, ExternalLink, Heart, MessageSquare, Star } from "lucide-react";
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
+import AuthPromptModal from "@/components/AuthPromptModal";
 
 function formatUGX(n: number) {
   try {
@@ -76,6 +77,7 @@ export default function PropertyDetailPage() {
   const [bookedProperty, setBookedProperty] = useState<Property | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string>("");
   const [favorited, setFavorited] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [averageRating, setAverageRating] = useState(0);
   const [commentForm, setCommentForm] = useState(emptyCommentForm);
@@ -118,7 +120,16 @@ export default function PropertyDetailPage() {
     if (id) load();
   }, [id]);
 
+  const isAuthenticated = () => {
+    return !!localStorage.getItem("zcanopy_token");
+  };
+
   const toggleFavorite = async () => {
+    if (!isAuthenticated()) {
+      setShowAuthPrompt(true);
+      return;
+    }
+
     try {
       let sessionId = getSessionId();
       if (!sessionId) {
@@ -194,10 +205,6 @@ export default function PropertyDetailPage() {
   const [submittedBookingPropertyId, setSubmittedBookingPropertyId] = useState<string | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
 
-  const isAuthenticated = () => {
-    return !!localStorage.getItem("zcanopy_token");
-  };
-
   const openBooking = () => {
     if (!property) return;
     if (!isAuthenticated()) {
@@ -241,6 +248,9 @@ export default function PropertyDetailPage() {
         customerName: form.customerName,
         customerPhone: form.customerPhone,
         customerEmail: form.customerEmail,
+        date: new Date().toISOString(),
+        amount: selectedProperty.bookingFee || 0,
+        reason: "property_access",
         status: "pending",
       });
 
@@ -694,6 +704,7 @@ export default function PropertyDetailPage() {
           </div>
         </div>
       )}
+      <AuthPromptModal open={showAuthPrompt} onClose={() => setShowAuthPrompt(false)} />
     </div>
   );
 }

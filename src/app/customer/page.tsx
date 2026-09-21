@@ -182,10 +182,10 @@ export default function CustomerPage() {
        {!loggedIn ? (
         <div className="flex-1 bg-[var(--zcanopy-background)] px-6 py-12">
           <div className="mx-auto max-w-6xl">
-            <div className="mt-8 flex justify-center">
-              <div className="mt-8 max-w-lg rounded-2xl border border-[var(--zcanopy-border)] bg-white p-8 shadow-sm dark:bg-[var(--zcanopy-surface)]">
-                <h2 className="text-lg font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>Customer Login</h2>
-                <form onSubmit={handleLogin} className="mt-5 space-y-4">
+          <div className="mt-8 flex justify-center">
+            <div className="mt-8 w-full max-w-sm rounded-3xl border border-[var(--zcanopy-border)] bg-white p-5 shadow-[var(--zcanopy-shadow)] dark:bg-[var(--zcanopy-surface)]">
+              <h2 className="text-lg font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>Customer Login</h2>
+              <form onSubmit={handleLogin} className="mt-4 space-y-4">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--zcanopy-muted)' }}>Email</label>
                     <input

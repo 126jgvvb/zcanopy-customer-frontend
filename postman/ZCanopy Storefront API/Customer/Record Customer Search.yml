@@ -1,0 +1,32 @@
+info:
+  name: Record Customer Search
+  type: http
+  seq: 10
+
+http:
+  method: POST
+  url: "{{baseUrl}}/web/customer/search/record"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Authorization
+      value: Bearer {{token}}
+  body:
+    type: json
+    data: |-
+      {
+        "query": "apartment in kololo",
+        "location": "Kampala",
+        "radius": 10,
+        "propertyType": "apartment",
+        "resultCount": 5,
+        "resultPropertyIds": ["p1", "p2", "p3"]
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

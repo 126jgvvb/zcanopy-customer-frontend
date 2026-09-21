@@ -5,6 +5,7 @@ import { MapPin, Calendar, Video, Heart, Trash2 } from "lucide-react";
 import { COLORS } from "@/lib/theme";
 import { useEffect, useState } from "react";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
+import AuthPromptModal from "./AuthPromptModal";
 
 function formatUGX(n: number) {
   try {
@@ -56,6 +57,7 @@ export default function PropertyCard({
   const lng = postgis_spatial_field?.lng;
   const [favorited, setFavorited] = useState(preFavorited);
   const [initializing, setInitializing] = useState(!preFavorited);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,6 +94,13 @@ export default function PropertyCard({
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    const hasToken = typeof window !== "undefined" && !!window.localStorage.getItem("zcanopy_token");
+    if (!hasToken) {
+      setShowAuthPrompt(true);
+      return;
+    }
+
     try {
       let sessionId = getSessionId();
       if (!sessionId) {
@@ -240,6 +249,7 @@ export default function PropertyCard({
           </div>
         )}
       </div>
+      <AuthPromptModal open={showAuthPrompt} onClose={() => setShowAuthPrompt(false)} />
     </Link>
   );
 }

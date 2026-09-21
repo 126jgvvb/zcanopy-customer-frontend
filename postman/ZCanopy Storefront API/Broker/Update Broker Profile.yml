@@ -1,0 +1,28 @@
+info:
+  name: Update Broker Profile
+  type: http
+  seq: 19
+
+http:
+  method: POST
+  url: "{{baseUrl}}/web/broker/profile"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Authorization
+      value: Bearer {{token}}
+  body:
+    type: json
+    data: |-
+      {
+        "username": "newusername",
+        "email": "newemail@example.com"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -136,17 +136,61 @@ const MOCK_PROPERTIES = [
 ];
 
 export const mockData = {
-  properties: () => ({ properties: MOCK_PROPERTIES, total: MOCK_PROPERTIES.length }),
+  properties: (query?: Record<string, string | number | boolean | undefined>) => {
+    let results = [...MOCK_PROPERTIES];
+    if (query?.location) {
+      const location = String(query.location).toLowerCase();
+      results = results.filter((p) => p.location.toLowerCase().includes(location));
+    }
+    if (query?.propertyType) {
+      const type = String(query.propertyType).toLowerCase();
+      results = results.filter((p) => p.propertyType.toLowerCase() === type);
+    }
+    if (query?.brokerBrandName) {
+      const broker = String(query.brokerBrandName).toLowerCase();
+      results = results.filter((p) => (p.brokerBrandName || "").toLowerCase().includes(broker));
+    }
+    if (query?.minPrice != null) {
+      const min = Number(query.minPrice);
+      results = results.filter((p) => (p.price || 0) >= min);
+    }
+    if (query?.maxPrice != null) {
+      const max = Number(query.maxPrice);
+      results = results.filter((p) => (p.price || 0) <= max);
+    }
+    return { properties: results, total: results.length };
+  },
   propertyDetails: (id: string) => ({ property: MOCK_PROPERTIES.find((p) => p.id === id) || MOCK_PROPERTIES[0] }),
-  search: (query: string) => ({
-    properties: MOCK_PROPERTIES.filter(
+  search: (query: string, queryParams?: Record<string, string | number | boolean | undefined>) => {
+    const term = (query || "").toLowerCase();
+    let results = MOCK_PROPERTIES.filter(
       (p) =>
-        p.title.toLowerCase().includes(query.toLowerCase()) ||
-        p.location.toLowerCase().includes(query.toLowerCase()) ||
-        p.brokerBrandName?.toLowerCase().includes(query.toLowerCase()),
-    ),
-    total: 1,
-  }),
+        p.title.toLowerCase().includes(term) ||
+        p.location.toLowerCase().includes(term) ||
+        p.brokerBrandName?.toLowerCase().includes(term),
+    );
+    if (queryParams?.propertyType) {
+      const type = String(queryParams.propertyType).toLowerCase();
+      results = results.filter((p) => p.propertyType.toLowerCase() === type);
+    }
+    if (queryParams?.location) {
+      const location = String(queryParams.location).toLowerCase();
+      results = results.filter((p) => p.location.toLowerCase().includes(location));
+    }
+    if (queryParams?.brokerBrandName) {
+      const broker = String(queryParams.brokerBrandName).toLowerCase();
+      results = results.filter((p) => (p.brokerBrandName || "").toLowerCase().includes(broker));
+    }
+    if (queryParams?.minPrice != null) {
+      const min = Number(queryParams.minPrice);
+      results = results.filter((p) => (p.price || 0) >= min);
+    }
+    if (queryParams?.maxPrice != null) {
+      const max = Number(queryParams.maxPrice);
+      results = results.filter((p) => (p.price || 0) <= max);
+    }
+    return { properties: results, total: results.length };
+  },
   bookings: () => ({
     bookings: [
       { id: "wb1", propertyTitle: "2BR Apartment in Kololo", customerName: "John Doe", date: "2026-08-20", status: "pending", amount: 850000 },
@@ -168,7 +212,30 @@ export const mockData = {
     bookings: { bookings: [] },
     wallet: { balance: 2000000, currency: "UGX", walletId: "wallet-web-1" },
   }),
-  customerProperties: () => ({ properties: MOCK_PROPERTIES, total: MOCK_PROPERTIES.length }),
+  customerProperties: (query?: Record<string, string | number | boolean | undefined>) => {
+    let results = [...MOCK_PROPERTIES];
+    if (query?.location) {
+      const location = String(query.location).toLowerCase();
+      results = results.filter((p) => p.location.toLowerCase().includes(location));
+    }
+    if (query?.propertyType) {
+      const type = String(query.propertyType).toLowerCase();
+      results = results.filter((p) => p.propertyType.toLowerCase() === type);
+    }
+    if (query?.brokerBrandName) {
+      const broker = String(query.brokerBrandName).toLowerCase();
+      results = results.filter((p) => (p.brokerBrandName || "").toLowerCase().includes(broker));
+    }
+    if (query?.minPrice != null) {
+      const min = Number(query.minPrice);
+      results = results.filter((p) => (p.price || 0) >= min);
+    }
+    if (query?.maxPrice != null) {
+      const max = Number(query.maxPrice);
+      results = results.filter((p) => (p.price || 0) <= max);
+    }
+    return { properties: results, total: results.length };
+  },
   customerBookings: () => ({
     bookings: [
       { id: "wb1", propertyTitle: "2BR Apartment in Kololo", customerName: "John Doe", date: "2026-08-20", status: "pending", amount: 850000 },
