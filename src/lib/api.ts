@@ -148,12 +148,16 @@ export async function apiFetch<T = unknown>(
 
     let data: Record<string, unknown> | string | null = null;
     const text = await res.text();
+    console.log('[apiFetch] Raw response text', text);
     if (text) {
       try {
         const parsed = JSON.parse(text) as Record<string, unknown>;
+        console.log('[apiFetch] Parsed response', parsed);
         data = parsed.encrypted ? await decryptResponse(parsed) : parsed;
+        console.log('[apiFetch] Final data after decrypt/parse', data);
       } catch {
         data = text;
+        console.log('[apiFetch] Non-JSON response', data);
       }
     }
 
