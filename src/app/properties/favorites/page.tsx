@@ -67,18 +67,7 @@ export default function FavoritesPage() {
     brokerBrandName: fav.brokerBrandName || undefined,
     price: fav.price,
     createdAt: fav.createdAt,
-        postgisSpatialField: fav.postgisSpatialField
-      ? (() => {
-          try {
-            const parsed = JSON.parse(fav.postgisSpatialField);
-            return parsed && typeof parsed === "object" && "lat" in parsed && "lng" in parsed
-              ? { lat: Number(parsed.lat), lng: Number(parsed.lng) }
-              : null;
-          } catch {
-            return null;
-          }
-        })()
-      : null,
+    postgisSpatialField: fav.postgisSpatialField,
   }));
 
   if (loading) {

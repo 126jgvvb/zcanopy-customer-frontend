@@ -43,7 +43,7 @@ async function getCryptoKey(): Promise<CryptoKey | null> {
   }
   cryptoKey = await crypto.subtle.importKey(
     'raw',
-    keyBytes,
+    keyBytes as unknown as BufferSource,
     { name: 'AES-GCM' },
     false,
     ['decrypt'],
