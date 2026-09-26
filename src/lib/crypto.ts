@@ -74,7 +74,9 @@ export async function decryptResponse(data: any): Promise<any> {
       key,
       combined,
     );
-    return JSON.parse(arrayBufferToString(decrypted));
+    const text = arrayBufferToString(decrypted);
+    console.log('[decryptResponse] Decrypted payload', text);
+    return JSON.parse(text);
   } catch {
     return data;
   }
