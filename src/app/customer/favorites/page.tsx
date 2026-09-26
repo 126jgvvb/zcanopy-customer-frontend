@@ -89,18 +89,7 @@ export default function CustomerFavoritesContent({ token }: CustomerFavoritesCon
         brokerBrandName: fav.brokerBrandName || undefined,
         price: fav.price,
         createdAt: fav.createdAt,
-        postgisSpatialField: fav.postgisSpatialField
-          ? (() => {
-              try {
-                const parsed = JSON.parse(fav.postgisSpatialField);
-                return parsed && typeof parsed === "object" && "lat" in parsed && "lng" in parsed
-                  ? { lat: Number(parsed.lat), lng: Number(parsed.lng) }
-                  : null;
-              } catch {
-                return null;
-              }
-            })()
-          : null,
+        postgisSpatialField: fav.postgisSpatialField,
       }))
     : mockData.customerProperties().properties.slice(0, 2).map((p) => ({
         id: p.id,
