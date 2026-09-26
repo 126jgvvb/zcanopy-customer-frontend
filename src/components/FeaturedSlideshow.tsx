@@ -91,7 +91,7 @@ export default function FeaturedSlideshow() {
     <div className="relative h-[320px] w-full overflow-hidden rounded-2xl lg:h-[460px]">
       {slides.map((s, i) => (
         <div
-          key={s.title}
+          key={`${s.title}-${i}`}
           className="absolute inset-0 transition-opacity duration-700"
           style={{
             backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.25) 100%), url(${s.image})`,
@@ -145,7 +145,7 @@ export default function FeaturedSlideshow() {
           <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2">
             {slides.map((s, i) => (
               <button
-                key={s.title}
+                key={`${s.title}-${i}`}
                 type="button"
                 onClick={() => go(i)}
                 aria-label={`Show ${s.title}`}

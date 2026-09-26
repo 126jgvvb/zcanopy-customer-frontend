@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
 import { MapPin, Calendar, Video, ArrowLeft, ExternalLink, Heart, MessageSquare, Star } from "lucide-react";
 import Link from "next/link";
@@ -30,8 +30,15 @@ interface Property {
   brokerCode?: string;
   brokerPhone?: string;
   price?: number;
-  bookingFee?: number;
-  postgis_spatial_field?: { lat: number; lng: number } | null;
+  postgisSpatialField?: string | null;
+  brokersUniqueCode?: string;
+  bookingState?: { isBooked: boolean; bookingCount: number };
+  photoCount?: number;
+  videoCount?: number;
+  brokerBookingFee?: number;
+  brokerName?: string;
+  amount?: number;
+  canBook?: boolean;
 }
 
 interface BookingForm {
@@ -65,6 +72,8 @@ const emptyCommentForm = {
 export default function PropertyDetailPage() {
   const params = useParams();
   const id = params.id as string;
+  const searchParams = useSearchParams();
+  const brokerCode = searchParams.get("brokerCode") || undefined;
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -83,35 +92,22 @@ export default function PropertyDetailPage() {
   const [commentForm, setCommentForm] = useState(emptyCommentForm);
   const [submittingComment, setSubmittingComment] = useState(false);
 
-  useEffect(() => {
+   useEffect(() => {
     const load = async () => {
       setLoading(true);
       setError("");
       try {
-        const data = await webApi.propertyDetails(id);
+        const data = await webApi.propertyDetails(id, brokerCode);
         const prop = (data as any)?.property || (data as any) || null;
+        console.log('[PropertyDetail] Decrypted property payload', prop);
+        if (!prop) {
+          console.error('[PropertyDetail] Missing property payload for id=', id, data);
+          setError('Property not found');
+          return;
+        }
         setProperty(prop);
-
-        let commentsData: any = { comments: [], averageRating: 0 };
-        try {
-          commentsData = await webApi.getPropertyComments(id);
-        } catch {
-          // comments endpoint may be unavailable
-        }
-        setComments((commentsData as any)?.comments || []);
-        setAverageRating((commentsData as any)?.averageRating || 0);
-
-        const sessionId = getSessionId();
-        if (sessionId) {
-          try {
-            const favs = await webApi.getCustomerFavorites(sessionId);
-            const favList = (favs as any)?.favorites || [];
-            setFavorited(favList.some((f: any) => f.propertyId === id));
-          } catch {
-            // favorites endpoint may be unavailable
-          }
-        }
-      } catch {
+      } catch (error) {
+        console.error('[PropertyDetail] Property load failed', error);
         setError("Failed to load property details");
       } finally {
         setLoading(false);
@@ -131,17 +127,16 @@ export default function PropertyDetailPage() {
     }
 
     try {
-      let sessionId = getSessionId();
-      if (!sessionId) {
+      let token = getSessionId();
+      if (!token) {
         const newSession = await ensureAnonymousSession();
-        sessionId = newSession || null;
+        token = newSession || null;
       }
-      if (!sessionId) {
+      if (!token) {
         window.alert("Unable to start a customer session right now. Please refresh and try again.");
         return;
       }
-      const res = await webApi.toggleFavorite({
-        sessionToken: sessionId,
+      const res = await webApi.toggleFavorite(token, {
         propertyId: id,
         propertyTitle: property?.title || "",
         propertyLocation: property?.location || "",
@@ -164,8 +159,7 @@ export default function PropertyDetailPage() {
     }
     setSubmittingComment(true);
     try {
-      const res = await webApi.addComment({
-        sessionToken: sessionId,
+      const res = await webApi.addComment(sessionId, {
         propertyId: property.id,
         customerName: commentForm.customerName,
         customerPhone: commentForm.customerPhone,
@@ -185,22 +179,6 @@ export default function PropertyDetailPage() {
       setSubmittingComment(false);
     }
   };
-
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const data = await webApi.propertyDetails(id);
-        setProperty((data as any)?.property || null);
-      } catch {
-        setError("Failed to load property details");
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (id) load();
-  }, [id]);
 
   const [submittedBookingPropertyId, setSubmittedBookingPropertyId] = useState<string | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
@@ -249,7 +227,7 @@ export default function PropertyDetailPage() {
         customerPhone: form.customerPhone,
         customerEmail: form.customerEmail,
         date: new Date().toISOString(),
-        amount: selectedProperty.bookingFee || 0,
+        amount: selectedProperty.brokerBookingFee || 0,
         reason: "property_access",
         status: "pending",
       });
@@ -297,8 +275,10 @@ export default function PropertyDetailPage() {
 
   const images = property.imageUrl || [];
   const videos = property.videoUrl || [];
-  const lat = property.postgis_spatial_field?.lat;
-  const lng = property.postgis_spatial_field?.lng;
+  const spatial = property.postgisSpatialField ? (() => { try { return JSON.parse(property.postgisSpatialField); } catch { return null; } })() : null;
+  const lat = spatial?.lat;
+  const lng = spatial?.lng;
+  const bookingState = property.bookingState || { isBooked: false, bookingCount: 0 };
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 px-6 py-10 md:px-10">
@@ -449,10 +429,10 @@ export default function PropertyDetailPage() {
                   <span className="text-sm font-semibold text-[var(--zcanopy-card-brown)]">{formatUGX(property.price)}</span>
                 </div>
               )}
-              {property.bookingFee !== undefined && (
+              {property.brokerBookingFee !== undefined && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Booking fee</span>
-                  <span className="text-sm font-semibold text-[var(--zcanopy-card-brown)]">{formatUGX(property.bookingFee)}</span>
+                  <span className="text-sm font-semibold text-[var(--zcanopy-card-brown)]">{formatUGX(property.brokerBookingFee)}</span>
                 </div>
               )}
               <div className="flex items-center justify-between">
@@ -625,7 +605,7 @@ export default function PropertyDetailPage() {
                 <h3 className="mb-4 text-lg font-semibold text-[var(--zcanopy-card-brown)]">Book: {selectedProperty.title}</h3>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
-                    <p className="font-semibold text-[var(--zcanopy-card-brown)]">Booking charge: {selectedProperty.bookingFee !== undefined ? formatUGX(selectedProperty.bookingFee) : "Not set"}</p>
+                     <p className="font-semibold text-[var(--zcanopy-card-brown)]">Booking charge: {selectedProperty.brokerBookingFee !== undefined ? formatUGX(selectedProperty.brokerBookingFee) : "Not set"}</p>
                     <p className="mt-2">You will receive a message having an invoice code on both email and SMS showing your invoice payment code.</p>
                   </div>
                   <div>

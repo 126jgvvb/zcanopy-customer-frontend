@@ -67,7 +67,7 @@ export default function FavoritesPage() {
     brokerBrandName: fav.brokerBrandName || undefined,
     price: fav.price,
     createdAt: fav.createdAt,
-    postgis_spatial_field: fav.postgisSpatialField
+        postgisSpatialField: fav.postgisSpatialField
       ? (() => {
           try {
             const parsed = JSON.parse(fav.postgisSpatialField);

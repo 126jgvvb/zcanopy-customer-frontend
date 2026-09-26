@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState, useRef, useCallback, useTransition, useDeferredValue } from "react";
 import PropertyCard from "@/components/PropertyCard";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
-import { mockData } from "@/lib/mockData";
 import Link from "next/link";
 import { usePlacePredictions } from "@/hooks/useGooglePlaces";
 import BackButton from "@/components/BackButton";
@@ -31,7 +30,7 @@ interface Property {
   brokerPhone?: string;
   price?: number;
   bookingFee?: number;
-  postgis_spatial_field?: { lat: number; lng: number } | null;
+  postgisSpatialField?: string | null;
 }
 
 interface BookingForm {
@@ -107,7 +106,7 @@ export default function PropertiesPage() {
       }
       setError("");
       try {
-        let data: { properties?: Property[]; total?: number };
+        let data: { properties?: Property[]; total?: number } = { properties: [], total: 0 };
         if (deferredViewMode === "broker" && deferredSelectedBrokerCode) {
           try {
             const res = await webApi.brokerPropertiesByCode(deferredSelectedBrokerCode);
@@ -131,9 +130,10 @@ export default function PropertiesPage() {
             data = { properties: [], total: 0 };
           }
         } else {
-          const sessionId = await ensureAnonymousSession();
-          if (!sessionId) {
-            data = mockData.customerProperties({
+          try {
+            const res = await webApi.customer.explorer({
+              page: 1,
+              limit: PAGE_SIZE,
               location: deferredLocationFilter || undefined,
               propertyType: deferredPropertyTypeFilter || undefined,
               brokerBrandName: deferredBrokerFilter || undefined,
@@ -141,24 +141,12 @@ export default function PropertiesPage() {
               maxPrice: deferredMaxPrice ? Number(deferredMaxPrice) : undefined,
               subCounty: deferredSubCountyFilter || undefined,
               district: deferredDistrictFilter || undefined,
+              fromDate: deferredDateFrom || undefined,
+              toDate: deferredDateTo || undefined,
             });
-          } else {
-            try {
-              const res = await webApi.customer.explorer({
-                page: 1,
-                limit: PAGE_SIZE,
-                location: deferredLocationFilter || undefined,
-                propertyType: deferredPropertyTypeFilter || undefined,
-                brokerBrandName: deferredBrokerFilter || undefined,
-                minPrice: deferredMinPrice ? Number(deferredMinPrice) : undefined,
-                maxPrice: deferredMaxPrice ? Number(deferredMaxPrice) : undefined,
-                subCounty: deferredSubCountyFilter || undefined,
-                district: deferredDistrictFilter || undefined,
-                fromDate: deferredDateFrom || undefined,
-                toDate: deferredDateTo || undefined,
-              });
-              data = res as { properties?: Property[]; total?: number };
-              if ((data.properties || []).length === 0) {
+            data = res as { properties?: Property[]; total?: number };
+            if ((data.properties || []).length === 0) {
+              try {
                 const fallback = await webApi.publicPropertiesPaginated(1, PAGE_SIZE, {
                   location: deferredLocationFilter || undefined,
                   propertyType: deferredPropertyTypeFilter || undefined,
@@ -166,8 +154,12 @@ export default function PropertiesPage() {
                   maxPrice: deferredMaxPrice ? Number(deferredMaxPrice) : undefined,
                 });
                 data = fallback as { properties?: Property[]; total?: number };
+              } catch {
+                data = { properties: [], total: 0 };
               }
-            } catch (explorerError) {
+            }
+          } catch (explorerError) {
+            try {
               const fallback = await webApi.publicPropertiesPaginated(1, PAGE_SIZE, {
                 location: deferredLocationFilter || undefined,
                 propertyType: deferredPropertyTypeFilter || undefined,
@@ -175,6 +167,8 @@ export default function PropertiesPage() {
                 maxPrice: deferredMaxPrice ? Number(deferredMaxPrice) : undefined,
               });
               data = fallback as { properties?: Property[]; total?: number };
+            } catch {
+              data = { properties: [], total: 0 };
             }
           }
         }
@@ -205,7 +199,7 @@ export default function PropertiesPage() {
   useEffect(() => {
     if (!search) return;
     const timeout = setTimeout(() => {
-      webApi.recordSearch({
+      webApi.recordSearch(getSessionId(), {
         query: search,
         location: locationFilter,
         propertyType: viewMode === "broker" ? "broker" : undefined,
@@ -622,7 +616,7 @@ export default function PropertiesPage() {
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {properties.map((property, idx) => (
             <div
-              key={property.id}
+              key={property.id || `${property.title}-${idx}`}
               className={`slide-up ${idx >= 12 ? "" : ""}`}
               style={{ animationDelay: `${(idx % 12) * 60}ms` }}
             >

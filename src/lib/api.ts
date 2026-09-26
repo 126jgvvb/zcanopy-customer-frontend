@@ -1,4 +1,5 @@
 import { mockData } from "@/lib/mockData";
+import { decryptResponse } from "@/lib/crypto";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000/api";
 
@@ -149,7 +150,8 @@ export async function apiFetch<T = unknown>(
     const text = await res.text();
     if (text) {
       try {
-        data = JSON.parse(text) as Record<string, unknown>;
+        const parsed = JSON.parse(text) as Record<string, unknown>;
+        data = parsed.encrypted ? await decryptResponse(parsed) : parsed;
       } catch {
         data = text;
       }
@@ -214,7 +216,8 @@ export async function ensureAnonymousSession(): Promise<string | null> {
       cache: "no-store",
     });
     if (!res.ok) return null;
-    const data = await res.json().catch(() => null);
+    const raw = await res.json().catch(() => null);
+    const data = raw?.encrypted ? await decryptResponse(raw) : raw;
     const sessionId =
       data?.sessionId ||
       data?.sessionToken ||
@@ -229,6 +232,81 @@ export async function ensureAnonymousSession(): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+export interface PresignResponse {
+  uploadUrl: string;
+  key: string;
+  publicUrl: string;
+}
+
+async function getUploadPresignedUrl(filename: string, contentType: string, folder = 'properties'): Promise<PresignResponse> {
+  const res = await fetch(`${API_BASE}/upload/presign`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename, contentType, folder }),
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to get upload URL: ${res.status}`);
+  }
+
+  const text = await res.text();
+  if (!text) return { uploadUrl: '', key: '', publicUrl: '' };
+  try {
+    const parsed = JSON.parse(text);
+    return parsed.encrypted ? await decryptResponse(parsed) : parsed;
+  } catch {
+    return { uploadUrl: '', key: '', publicUrl: '' };
+  }
+}
+
+export async function uploadToSpaces(file: File, folder = 'properties'): Promise<string> {
+  try {
+    const { uploadUrl, publicUrl } = await getUploadPresignedUrl(file.name, file.type, folder);
+
+    if (!uploadUrl) {
+      throw new Error('Missing upload URL from presign response');
+    }
+
+    const res = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type,
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error(`Upload failed: ${res.status}`);
+    }
+
+    return publicUrl;
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      return uploadToSpacesViaProxy(file, folder);
+    }
+    throw error;
+  }
+}
+
+async function uploadToSpacesViaProxy(file: File, folder = 'properties'): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${API_BASE}/upload/proxy?folder=${encodeURIComponent(folder)}`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Proxy upload failed: ${res.status} - ${text}`);
+  }
+
+  const data = await res.json();
+  return data.publicUrl;
 }
 
 export const webApi = {
@@ -250,29 +328,40 @@ export const webApi = {
   featuredProperties: (limit = 6) =>
     apiFetch<{ properties: any[]; total: number }>("/web/public/properties/featured", { query: { limit }, fallback: mockData.featuredProperties(), skipSessionHeader: true }),
 
-  propertyDetails: (id: string) =>
-    apiFetch<{ property: any }>(`/web/public/properties/${id}`, { fallback: mockData.propertyDetails(id), skipSessionHeader: true }),
+  propertyDetails: async (id: string, brokerCode?: string) => {
+    try {
+      const data = await apiFetch<{ property: any }>(`/web/public/property-info?id=${encodeURIComponent(id)}${brokerCode ? `&brokerCode=${encodeURIComponent(brokerCode)}` : ''}`, { fallback: null, skipSessionHeader: true });
+      const prop = (data as any)?.property || (data as any) || null;
+      if (prop) return prop;
+    } catch {
+      // ignore and fall back
+    }
+
+    const fallbackData = await apiFetch<{ properties: any[]; total: number }>(`/web/public/properties?id=${encodeURIComponent(id)}`, { fallback: mockData.propertyDetails(id), skipSessionHeader: true });
+    const properties = (fallbackData as any)?.properties || [];
+    return properties.find((item: any) => String(item.id) === String(id)) || null;
+  },
 
   searchProperties: (q: string, queryParams?: Record<string, string | number | boolean | undefined>) =>
     apiFetch<{ properties: any[]; total: number }>(`/web/public/search?q=${encodeURIComponent(q)}`, { fallback: mockData.search(q, queryParams), skipSessionHeader: true }),
 
-  recordSearch: (body: { sessionToken?: string; query?: string; location?: string; radius?: number; propertyType?: string; filters?: any; resultPropertyIds?: string[]; resultCount?: number; minPrice?: number; maxPrice?: number; subCounty?: string; district?: string }) =>
-    apiFetch<{ success: boolean }>("/web/customer/search/record", { method: "POST", body, fallback: { success: true } }),
+  recordSearch: (token: string | null, body: { query?: string; location?: string; radius?: number; propertyType?: string; filters?: any; resultPropertyIds?: string[]; resultCount?: number; minPrice?: number; maxPrice?: number; subCounty?: string; district?: string }) =>
+    apiFetch<{ success: boolean }>("/web/customer/search/record", { method: "POST", token, body, fallback: { success: true } }),
 
-  getCustomerSearches: (sessionToken: string, page = 1, limit = 10) =>
-    apiFetch<{ searches: any[]; total: number }>(`/web/customer/searches?page=${page}&limit=${limit}`, { sessionId: sessionToken, fallback: { searches: [], total: 0 } }),
+  getCustomerSearches: (token: string, page = 1, limit = 10) =>
+    apiFetch<{ searches: any[]; total: number }>(`/web/customer/searches?page=${page}&limit=${limit}`, { token, fallback: { searches: [], total: 0 } }),
 
-  toggleFavorite: (body: { sessionToken: string; propertyId: string; propertyTitle: string; propertyLocation?: string; brokerCode?: string; imageUrl?: string; price?: number }) =>
-    apiFetch<{ favorited: boolean }>("/web/customer/favorites/toggle", { method: "POST", body, fallback: { favorited: false } }),
+  toggleFavorite: (token: string, body: { propertyId: string; propertyTitle: string; propertyLocation?: string; brokerCode?: string; imageUrl?: string; price?: number }) =>
+    apiFetch<{ favorited: boolean }>("/web/customer/favorites/toggle", { method: "POST", token, body, fallback: { favorited: false } }),
 
-  getCustomerFavorites: (sessionToken: string, page = 1, limit = 10) =>
-    apiFetch<{ favorites: any[]; total: number }>(`/web/customer/favorites?page=${page}&limit=${limit}`, { sessionId: sessionToken, fallback: { favorites: [], total: 0 } }),
+  getCustomerFavorites: (token: string, page = 1, limit = 10) =>
+    apiFetch<{ favorites: any[]; total: number }>(`/web/customer/favorites?page=${page}&limit=${limit}`, { token, fallback: { favorites: [], total: 0 } }),
 
-  addComment: (body: { sessionToken: string; propertyId: string; customerName: string; customerPhone: string; customerEmail?: string; comment: string; rating?: number }) =>
-    apiFetch<{ success: boolean; commentId?: string }>("/web/customer/comments", { method: "POST", body, fallback: { success: false } }),
+  addComment: (token: string, body: { propertyId: string; customerName: string; customerPhone: string; customerEmail?: string; comment: string; rating?: number }) =>
+    apiFetch<{ success: boolean; commentId?: string }>("/web/customer/comments", { method: "POST", token, body, fallback: { success: false } }),
 
   getPropertyComments: (propertyId: string, page = 1, limit = 10) =>
-    apiFetch<{ comments: any[]; total: number; averageRating: number }>(`/web/customer/properties/${propertyId}/comments?page=${page}&limit=${limit}`, { fallback: { comments: [], total: 0, averageRating: 0 } }),
+    apiFetch<{ comments: any[]; total: number; averageRating: number }>(`/web/customer/properties/${propertyId}/comments?page=${page}&limit=${limit}`, { fallback: { comments: [], total: 0, averageRating: 0 }, skipSessionHeader: true }),
 
   brokerPropertiesByCode: (brokerCode: string, query?: Record<string, string | number | boolean | undefined>) =>
     apiFetch<{ properties: any[]; total: number }>(`/web/customer/broker/${brokerCode}/properties`, { query, fallback: mockData.brokerProperties() }),
@@ -319,13 +408,13 @@ export const webApi = {
       apiFetch<{ success: boolean; message: string; customerId?: string }>("/web/customer/register", { method: "POST", body, skipSessionHeader: true, fallback: { success: true, message: "Registered (mock)", customerId: "mock-customer-id" } }),
 
     login: (body: { email: string; password: string }) =>
-      apiFetch<{ success: boolean; message: string; customer?: any; session?: any }>("/web/customer/login", { method: "POST", body, skipSessionHeader: true, fallback: { success: true, message: "Logged in (mock)", session: { sessionToken: "mock-token", sessionId: "mock-session-id" } } }),
+      apiFetch<{ success: boolean; message: string; customer?: any; session?: any }>("/web/customer/login", { method: "POST", body, skipSessionHeader: true, fallback: { success: true, message: "Logged in (mock)", customer: { id: "mock-customer-id", email: body.email, firstName: "Demo", lastName: "Customer", phoneNumber: "0700000000", isVerified: true, authProvider: "email", createdAt: new Date().toISOString() }, session: { sessionToken: "mock-token", sessionId: "mock-session-id", expiresAt: Date.now() + 2592000000, ttlSeconds: 2592000 } } }),
 
     loginGoogle: (body: { googleId: string; email?: string; firstName?: string; lastName?: string }) =>
-      apiFetch<{ success: boolean; message: string; customer?: any; session?: any }>("/web/customer/login/google", { method: "POST", body, skipSessionHeader: true, fallback: { success: true, message: "Google login (mock)", session: { sessionToken: "mock-token", sessionId: "mock-session-id" } } }),
+      apiFetch<{ success: boolean; message: string; customer?: any; session?: any }>("/web/customer/login/google", { method: "POST", body, skipSessionHeader: true, fallback: { success: true, message: "Google login (mock)", customer: { id: "mock-customer-id", email: body.email || "customer@example.com", firstName: body.firstName || "Demo", lastName: body.lastName || "Customer", phoneNumber: "", isVerified: true, authProvider: "google", createdAt: new Date().toISOString() }, session: { sessionToken: "mock-token", sessionId: "mock-session-id", expiresAt: Date.now() + 2592000000, ttlSeconds: 2592000 } } }),
 
     confirmOtp: (body: { email: string; otpCode: string }) =>
-      apiFetch<{ success: boolean; message: string; session?: any }>("/web/customer/confirm-otp", { method: "POST", body, skipSessionHeader: true, fallback: { success: true, message: "OTP confirmed (mock)", session: { sessionToken: "mock-token", sessionId: "mock-session-id" } } }),
+      apiFetch<{ success: boolean; message: string; session?: any }>("/web/customer/confirm-otp", { method: "POST", body, skipSessionHeader: true, fallback: { success: true, message: "OTP confirmed (mock)", session: { sessionToken: "mock-token", sessionId: "mock-session-id", expiresAt: Date.now() + 2592000000, ttlSeconds: 2592000 } } }),
 
     updatePhone: (token: string, phoneNumber: string) =>
       apiFetch<{ success: boolean; message: string }>("/web/customer/profile/phone", { method: "PUT", token, body: { phoneNumber }, fallback: { success: true, message: "Phone updated (mock)" } }),
@@ -375,10 +464,10 @@ export const webApi = {
     initiateTransaction: (token: string, body: { phoneNumber: string; email: string; customerName?: string; propertyId?: string; reason?: string; amount?: number }) =>
       apiFetch<{ success: boolean; message: string; transactionCode?: string }>("/web/customer/transactions/initiate", { method: "POST", token, body, fallback: { success: true, message: "Transaction initiated (mock)", transactionCode: "mock-txn-code" } }),
 
-    recordSearch: (body: { sessionToken?: string; query?: string; location?: string; radius?: number; propertyType?: string; minPrice?: number; maxPrice?: number; subCounty?: string; district?: string; hadResults?: boolean; resultPropertyIds?: string[]; resultCount?: number }) =>
-      apiFetch<{ success: boolean }>("/web/customer/search/record", { method: "POST", body, fallback: { success: true } }),
+    recordSearch: (token: string, body: { query?: string; location?: string; radius?: number; propertyType?: string; minPrice?: number; maxPrice?: number; subCounty?: string; district?: string; hadResults?: boolean; resultPropertyIds?: string[]; resultCount?: number }) =>
+      apiFetch<{ success: boolean }>("/web/customer/search/record", { method: "POST", token, body, fallback: { success: true } }),
 
-    getSearches: (sessionToken: string, page = 1, limit = 10) =>
-      apiFetch<{ searches: any[]; total: number }>(`/web/customer/searches?page=${page}&limit=${limit}`, { sessionId: sessionToken, fallback: { searches: [], total: 0 } }),
+    getSearches: (token: string, page = 1, limit = 10) =>
+      apiFetch<{ searches: any[]; total: number }>(`/web/customer/searches?page=${page}&limit=${limit}`, { token, fallback: { searches: [], total: 0 } }),
   },
 };

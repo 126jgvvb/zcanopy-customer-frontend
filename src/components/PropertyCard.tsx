@@ -27,10 +27,11 @@ interface PropertyCardProps {
   brokerBrandName?: string;
   price?: number;
   createdAt?: string;
-  postgis_spatial_field?: { lat: number; lng: number } | null;
+  postgisSpatialField?: string | null;
   preFavorited?: boolean;
   showRemoveButton?: boolean;
   onRemoveFavorite?: () => void;
+  brokersUniqueCode?: string;
 }
 
 export default function PropertyCard({
@@ -45,16 +46,18 @@ export default function PropertyCard({
   brokerBrandName,
   price,
   createdAt,
-  postgis_spatial_field,
+  postgisSpatialField,
   preFavorited = false,
   showRemoveButton = false,
   onRemoveFavorite,
+  brokersUniqueCode,
 }: PropertyCardProps) {
   const images = imageUrl || [];
   const videos = videoUrl || [];
   const mainImage = images[0] || "https://via.placeholder.com/400x200?text=No+Image";
-  const lat = postgis_spatial_field?.lat;
-  const lng = postgis_spatial_field?.lng;
+  const spatial = postgisSpatialField ? (() => { try { return JSON.parse(postgisSpatialField); } catch { return null; } })() : null;
+  const lat = spatial?.lat;
+  const lng = spatial?.lng;
   const [favorited, setFavorited] = useState(preFavorited);
   const [initializing, setInitializing] = useState(!preFavorited);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
@@ -63,14 +66,14 @@ export default function PropertyCard({
     let cancelled = false;
 
     async function init() {
-      const sessionId = getSessionId();
-      if (!sessionId) {
-        setInitializing(false);
-        return;
-      }
+         const token = getSessionId();
+        if (!token) {
+          setInitializing(false);
+          return;
+        }
 
-      try {
-        const res = await webApi.getCustomerFavorites(sessionId);
+        try {
+          const res = await webApi.getCustomerFavorites(token);
         const favList = (res as any)?.favorites || [];
         if (!cancelled) {
           setFavorited(favList.some((f: any) => f.propertyId === id));
@@ -102,17 +105,16 @@ export default function PropertyCard({
     }
 
     try {
-      let sessionId = getSessionId();
-      if (!sessionId) {
+      let token = getSessionId();
+      if (!token) {
         const newSession = await ensureAnonymousSession();
-        sessionId = newSession || null;
+        token = newSession || null;
       }
-      if (!sessionId) {
+      if (!token) {
         window.alert("Unable to start a customer session right now. Please refresh and try again.");
         return;
       }
-      const res = await webApi.toggleFavorite({
-        sessionToken: sessionId,
+      const res = await webApi.toggleFavorite(token, {
         propertyId: id,
         propertyTitle: title,
         propertyLocation: location,
@@ -128,7 +130,7 @@ export default function PropertyCard({
   };
 
   return (
-    <Link href={`/properties/${id}`} className="group surface-card block overflow-hidden">
+    <Link href={`/properties/${id}${brokersUniqueCode ? `?brokerCode=${encodeURIComponent(brokersUniqueCode)}` : ''}`} className="group surface-card block overflow-hidden">
       <div className="aspect-video w-full overflow-hidden bg-gray-100 relative">
         <img src={mainImage} alt={title} className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-80" />

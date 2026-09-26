@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { OnboardingShell, PrimaryButton, Field, TextInput } from "@/components/Onboarding";
-import { webApi, ApiError } from "@/lib/api";
+import { webApi, ApiError, uploadToSpaces } from "@/lib/api";
 import { IdCard } from "lucide-react";
 
 function IdUpload({
@@ -71,15 +71,21 @@ export default function BrokerSignupPage() {
     idFront !== null &&
     idBack !== null;
 
-  async function handleSubmit(e: React.FormEvent) {
+async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
     try {
+      const [idFrontUrl, idBackUrl] = await Promise.all([
+        uploadToSpaces(idFront!, 'verification'),
+        uploadToSpaces(idBack!, 'verification'),
+      ]);
       const res = await webApi.registerBroker({
         fullName: fullName.trim(),
         email: email.trim(),
         phoneNumber: phone.trim(),
+        idFrontUrl,
+        idBackUrl,
       });
       router.push(
         `/brokers/verify?email=${encodeURIComponent(res.email)}&phone=${encodeURIComponent(

@@ -62,8 +62,7 @@ export default function CustomerFavoritesContent({ token }: CustomerFavoritesCon
   const handleRemoveFavorite = async (fav: FavoriteProperty) => {
     if (!token) return;
     try {
-      await webApi.toggleFavorite({
-        sessionToken: token,
+      await webApi.toggleFavorite(token, {
         propertyId: fav.propertyId,
         propertyTitle: fav.propertyTitle,
         propertyLocation: fav.propertyLocation,
@@ -90,7 +89,7 @@ export default function CustomerFavoritesContent({ token }: CustomerFavoritesCon
         brokerBrandName: fav.brokerBrandName || undefined,
         price: fav.price,
         createdAt: fav.createdAt,
-        postgis_spatial_field: fav.postgisSpatialField
+        postgisSpatialField: fav.postgisSpatialField
           ? (() => {
               try {
                 const parsed = JSON.parse(fav.postgisSpatialField);
@@ -115,7 +114,7 @@ export default function CustomerFavoritesContent({ token }: CustomerFavoritesCon
         brokerBrandName: p.brokerBrandName,
         price: p.price,
         createdAt: p.createdAt,
-        postgis_spatial_field: p.postgis_spatial_field || null,
+        postgisSpatialField: p.postgisSpatialField || null,
       }));
 
   if (loading) {
