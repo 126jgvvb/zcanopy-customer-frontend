@@ -477,6 +477,15 @@ customer: {
     loginGoogle: (body: { googleId: string; email?: string; firstName?: string; lastName?: string }) =>
       apiFetch<{ success: boolean; message: string; customer?: any; session?: any }>("/web/customer/login/google", { method: "POST", body, skipSessionHeader: true }),
 
+    sendForgotPasswordOtp: (body: { email: string }) =>
+      apiFetch<{ success: boolean; message: string }>("/customer/forgot-password/otp/send", { method: "POST", body, skipSessionHeader: true }),
+
+    verifyForgotPasswordOtp: (body: { email: string; otp: string }) =>
+      apiFetch<{ success: boolean; message: string; valid: boolean }>("/customer/forgot-password/otp/verify", { method: "POST", body, skipSessionHeader: true }),
+
+    resetPassword: (body: { email: string; password: string }) =>
+      apiFetch<{ success: boolean; message: string }>("/customer/forgot-password/reset", { method: "POST", body, skipSessionHeader: true }),
+
     confirmOtp: (body: { email: string; otpCode: string }) =>
       apiFetch<{ success: boolean; message: string; session?: any }>("/web/customer/confirm-otp", { method: "POST", body, skipSessionHeader: true }),
 
