@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { validateSession, getSessionId, clearSession, ensureAnonymousSession } from '@/lib/api';
 
-const PUBLIC_PATHS = new Set(['/', '/login', '/customer', '/customer/signup', '/customer/verify', '/brokers/signup', '/brokers/verify', '/brokers/welcome', '/about', '/help', '/terms']);
+const PUBLIC_PATHS = new Set(['/', '/login', '/customer', '/customer/signup', '/customer/verify', '/brokers/signup', '/brokers/verify', '/brokers/welcome', '/about', '/help', '/terms', '/properties', '/properties/[id]']);
 
 const CUSTOMER_PATHS = new Set([
   '/customer/transactions',
@@ -31,7 +31,7 @@ export default function SessionGate({ children }: SessionGateProps) {
   const [valid, setValid] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const isPublic = PUBLIC_PATHS.has(pathname) || pathname.startsWith('/properties') && !pathname.startsWith('/properties/favorites') || pathname.startsWith('/api/');
+    const isPublic = PUBLIC_PATHS.has(pathname) || pathname.startsWith('/properties') || pathname.startsWith('/api/');
     const isCustomerPath = CUSTOMER_PATHS.has(pathname);
 
     let cancelled = false;
