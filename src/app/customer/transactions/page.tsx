@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { webApi } from '@/lib/api';
-import { mockData } from '@/lib/mockData';
 
 interface CustomerTransactionsContentProps {
   token: string;
@@ -38,7 +37,7 @@ export default function CustomerTransactionsContent({ token }: CustomerTransacti
     );
   }
 
-  const displayTransactions = transactions.length > 0 ? transactions : mockData.customerTransactions().transactions;
+  const displayTransactions = transactions;
 
   return (
     <div className="min-h-[500px]">

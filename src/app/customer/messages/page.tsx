@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { webApi } from '@/lib/api';
-import { mockData } from '@/lib/mockData';
 
 interface CustomerMessagesContentProps {
   token: string;
@@ -38,7 +37,7 @@ export default function CustomerMessagesContent({ token }: CustomerMessagesConte
     );
   }
 
-  const displayMessages = messages.length > 0 ? messages : mockData.customerMessages().messages;
+  const displayMessages = messages;
 
   return (
     <div className="min-h-[500px]">

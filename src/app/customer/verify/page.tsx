@@ -31,19 +31,36 @@ export default function VerifyOtpPage() {
       });
       if (result.success) {
         const session = (result as { session?: { sessionToken?: string; sessionId?: string } }).session;
-        const token = (result as { token?: string }).token;
-        const sessionId = session?.sessionToken || session?.sessionId || token;
-        if (sessionId && typeof window !== 'undefined') {
-          const { setSession } = await import('@/lib/api');
-          setSession(sessionId, result, 'customer');
-          window.localStorage.setItem('zcanopy_token', token || sessionId);
+        const sessionToken = session?.sessionToken; // JWT for Authorization header
+        if (sessionToken && typeof window !== 'undefined') {
+          window.localStorage.setItem('zcanopy_token', sessionToken);
         }
         router.push('/customer');
       } else {
-        setError(result.message || 'OTP verification failed');
+        // Backend returned success: false with a specific message
+        const msg = (result.message || '').toLowerCase();
+        if (msg.includes('expired') || msg.includes('invalid') || msg.includes('not exist')) {
+          setError('The OTP is either expired or does not exist. Please request a new one.');
+        } else {
+          setError(result.message || 'OTP verification failed');
+        }
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'OTP verification failed');
+      // Network error or 5xx - show user-friendly message
+      if (err instanceof ApiError) {
+        const msg = err.message.toLowerCase();
+        if (msg.includes('expired') || msg.includes('invalid') || msg.includes('not exist')) {
+          setError('The OTP is either expired or does not exist. Please request a new one.');
+        } else if (err.status === 401 || err.status === 403) {
+          setError('Session expired. Please sign up again.');
+        } else if (err.status >= 500) {
+          setError('Unable to verify OTP at the moment. Please try again in a few moments.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('Unable to verify OTP. Please check your connection and try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -60,7 +77,7 @@ export default function VerifyOtpPage() {
       });
       setMessage('OTP resent to your email');
     } catch {
-      setError('Failed to resend OTP');
+      setError('Unable to resend OTP. Please try again in a few moments.');
     }
   };
 

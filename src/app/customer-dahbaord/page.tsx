@@ -21,7 +21,6 @@ import {
   X,
 } from 'lucide-react';
 import { clearSession, getSessionId, webApi } from '@/lib/api';
-import { mockData } from '@/lib/mockData';
 
 type Booking = {
   id: string;
@@ -173,7 +172,8 @@ export default function CustomerDashboardPage() {
         webApi.customer.getWallet(resolvedToken),
       ]);
 
-      const nextProfile = profileResult as Profile;
+      const profileData = profileResult?.customer || profileResult;
+      const nextProfile = profileData as Profile;
       const nextBookings = (bookingsResult.bookings || []) as Booking[];
       const nextTransactions = (transactionsResult.transactions || []) as Transaction[];
       const nextMessages = (messagesResult.messages || []) as Message[];
@@ -227,16 +227,8 @@ export default function CustomerDashboardPage() {
     })),
   ].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()).slice(0, 5);
 
-  const displayTransactions = transactions.length > 0 ? transactions : mockData.customerTransactions().transactions as Transaction[];
-  const displayFavorites = favorites.length > 0 ? favorites : mockData.customerProperties().properties.slice(0, 3).map((property) => ({
-    id: property.id,
-    propertyId: property.id,
-    propertyTitle: property.title,
-    propertyLocation: property.location,
-    imageUrl: property.imageUrl?.[0],
-    price: property.price,
-    isAvailable: property.isAvailable,
-  }));
+  const displayTransactions = transactions;
+  const displayFavorites = favorites.slice(0, 3);
 
   if (loading) {
     return (
@@ -355,7 +347,7 @@ export default function CustomerDashboardPage() {
               { label: 'Active bookings', value: String(completedBookings || bookings.length), hint: bookings.length ? `${bookings.length} total` : 'No bookings yet', icon: CalendarCheck },
               { label: 'Saved properties', value: String(displayFavorites.length), hint: 'Quick access to favorites', icon: Heart },
               { label: 'Unread messages', value: String(unreadCount), hint: messages.length ? `${messages.length} recent messages` : 'You are all caught up', icon: MessageCircle },
-              { label: 'Wallet balance', value: formatCurrency(wallet.balance ?? mockData.wallet().balance, wallet.currency || mockData.wallet().currency), hint: 'Available balance', icon: Wallet },
+              { label: 'Wallet balance', value: formatCurrency(wallet.balance ?? 0, wallet.currency || 'UGX'), hint: 'Available balance', icon: Wallet },
             ].map(({ label, value, hint, icon: Icon }) => (
               <div key={label} className="rounded-2xl border border-[var(--zcanopy-border)] bg-[var(--zcanopy-surface)] p-5 shadow-[var(--zcanopy-shadow)] transition-all hover:-translate-y-0.5 hover:border-[var(--zcanopy-accent-gold)]/40">
                 <div className="flex items-start justify-between">

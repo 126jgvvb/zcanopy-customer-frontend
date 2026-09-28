@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import PropertyCard from '@/components/PropertyCard';
-import { webApi, getSessionId, ensureAnonymousSession } from '@/lib/api';
-import { mockData } from '@/lib/mockData';
+import { webApi } from '@/lib/api';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 
 interface FavoriteProperty {
@@ -38,16 +37,12 @@ export default function CustomerFavoritesContent({ token }: CustomerFavoritesCon
       setLoading(true);
       setError('');
       try {
-        let sessionId = token || getSessionId();
-        if (!sessionId) {
-          sessionId = await ensureAnonymousSession();
-        }
-        if (!sessionId) {
-          setError('Unable to access favorites. Please refresh the page.');
+        if (!token) {
+          setError('Please log in to access favorites.');
           setLoading(false);
           return;
         }
-        const res = await webApi.getCustomerFavorites(sessionId);
+        const res = await webApi.getCustomerFavorites(token);
         const favs = (res as { favorites?: FavoriteProperty[] }).favorites || [];
         setFavorites(favs);
       } catch {
@@ -76,8 +71,7 @@ export default function CustomerFavoritesContent({ token }: CustomerFavoritesCon
     }
   };
 
-  const properties = favorites.length > 0
-    ? favorites.map((fav) => ({
+  const properties = favorites.map((fav) => ({
         id: fav.propertyId,
         title: fav.propertyTitle,
         description: fav.description,
@@ -90,20 +84,6 @@ export default function CustomerFavoritesContent({ token }: CustomerFavoritesCon
         price: fav.price,
         createdAt: fav.createdAt,
         postgisSpatialField: fav.postgisSpatialField,
-      }))
-    : mockData.customerProperties().properties.slice(0, 2).map((p) => ({
-        id: p.id,
-        title: p.title,
-        description: p.description,
-        propertyType: p.propertyType,
-        location: p.location,
-        isAvailable: p.isAvailable,
-        imageUrl: p.imageUrl,
-        videoUrl: p.videoUrl || [],
-        brokerBrandName: p.brokerBrandName,
-        price: p.price,
-        createdAt: p.createdAt,
-        postgisSpatialField: p.postgisSpatialField || null,
       }));
 
   if (loading) {

@@ -28,7 +28,7 @@ export default function LoginPage() {
         token;
 
       if (!sessionId) {
-        setError('Login failed');
+        setError('Login failed. Please try again.');
         return;
       }
 
@@ -37,7 +37,22 @@ export default function LoginPage() {
 
       router.push('/customer');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Login failed');
+      if (err instanceof ApiError) {
+        const msg = err.message.toLowerCase();
+        if (msg.includes('invalid') || msg.includes('incorrect') || msg.includes('wrong')) {
+          setError('Invalid broker code or password. Please check your credentials and try again.');
+        } else if (msg.includes('not found') || msg.includes('does not exist')) {
+          setError('Account not found. Please check your broker code or register for a new account.');
+        } else if (err.status === 401 || err.status === 403) {
+          setError('Invalid credentials. Please try again.');
+        } else if (err.status >= 500) {
+          setError('Unable to sign in at the moment. Please try again in a few moments.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('Unable to sign in. Please check your connection and try again.');
+      }
     } finally {
       setLoading(false);
     }

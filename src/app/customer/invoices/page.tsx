@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { webApi } from '@/lib/api';
-import { mockData } from '@/lib/mockData';
 
 interface CustomerInvoicesContentProps {
   token: string;
@@ -38,7 +37,7 @@ export default function CustomerInvoicesContent({ token }: CustomerInvoicesConte
     );
   }
 
-  const displayInvoices = invoices.length > 0 ? invoices : mockData.customerInvoices().invoices;
+  const displayInvoices = invoices;
 
   return (
     <div className="min-h-[500px]">

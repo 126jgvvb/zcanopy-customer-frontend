@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { webApi } from '@/lib/api';
-import { mockData } from '@/lib/mockData';
 
 interface CustomerBookingsContentProps {
   token: string;
@@ -48,7 +47,7 @@ export default function CustomerBookingsContent({ token }: CustomerBookingsConte
     );
   }
 
-  const displayBookings = bookings.length > 0 ? bookings : mockData.bookings().bookings;
+  const displayBookings = bookings;
 
   return (
     <div className="min-h-[500px]">

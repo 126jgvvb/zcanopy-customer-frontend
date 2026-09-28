@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { validateSession, getSessionId, clearSession, ensureAnonymousSession } from '@/lib/api';
 
-const PUBLIC_PATHS = new Set(['/', '/login', '/brokers/signup', '/brokers/verify', '/brokers/welcome', '/about', '/help', '/terms', '/customer', '/customer/signup']);
+const PUBLIC_PATHS = new Set(['/', '/login', '/customer', '/customer/signup', '/customer/verify', '/brokers/signup', '/brokers/verify', '/brokers/welcome', '/about', '/help', '/terms']);
 
 const CUSTOMER_PATHS = new Set([
   '/customer/transactions',
@@ -12,6 +12,9 @@ const CUSTOMER_PATHS = new Set([
   '/customer/messages',
   '/customer/notifications',
   '/customer/profile',
+  '/customer/favorites',
+  '/customer/bookings',
+  '/customer/find-booking',
   '/properties/favorites',
   '/bookings/retrieve',
   '/bookings/find',
@@ -28,8 +31,8 @@ export default function SessionGate({ children }: SessionGateProps) {
   const [valid, setValid] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const isPublic = PUBLIC_PATHS.has(pathname) || pathname.startsWith('/properties') || pathname.startsWith('/api/');
-    const isCustomer = CUSTOMER_PATHS.has(pathname);
+    const isPublic = PUBLIC_PATHS.has(pathname) || pathname.startsWith('/properties') && !pathname.startsWith('/properties/favorites') || pathname.startsWith('/api/');
+    const isCustomerPath = CUSTOMER_PATHS.has(pathname);
 
     let cancelled = false;
     (async () => {
@@ -38,8 +41,22 @@ export default function SessionGate({ children }: SessionGateProps) {
         if (cancelled) return;
       }
 
-      if (isPublic || isCustomer) {
+      if (isPublic) {
         setValid(true);
+        setReady(true);
+        return;
+      }
+
+      // Validate session for customer paths
+      if (isCustomerPath) {
+        const result = await validateSession();
+        if (cancelled) return;
+        if (!result || !result.valid || result.type !== 'customer') {
+          clearSession();
+          setValid(false);
+        } else {
+          setValid(true);
+        }
         setReady(true);
         return;
       }
@@ -62,7 +79,9 @@ export default function SessionGate({ children }: SessionGateProps) {
 
   useEffect(() => {
     if (ready && valid === false) {
-      router.replace(`/login?from=${encodeURIComponent(pathname)}`);
+      const isCustomerPath = CUSTOMER_PATHS.has(pathname);
+      const redirectTo = isCustomerPath ? '/customer' : '/login';
+      router.replace(`${redirectTo}?from=${encodeURIComponent(pathname)}`);
     }
   }, [ready, valid, pathname, router]);
 

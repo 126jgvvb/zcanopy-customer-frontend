@@ -1,4 +1,3 @@
-import { mockData } from "@/lib/mockData";
 import { decryptResponse } from "@/lib/crypto";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000/api";
@@ -45,6 +44,8 @@ function getCookie(name: string): string | null {
 
 export function getSessionId(): string | null {
   if (typeof window === "undefined") return null;
+  const token = window.localStorage.getItem('zcanopy_token');
+  if (token) return token;
   const cookieSession = getCookie(SESSION_STORAGE_KEY);
   if (cookieSession) return cookieSession;
   return window.localStorage.getItem(SESSION_STORAGE_KEY);
@@ -112,6 +113,66 @@ function buildUrl(path: string, query?: RequestOptions["query"]): string {
   return url.toString();
 }
 
+function getUserFriendlyMessage(message: string, status: number, path: string): string {
+    const msg = message.toLowerCase();
+    const isAuthPath = path.includes('/confirm-otp') || path.includes('/register') || path.includes('/login') || path.includes('/verify');
+    const isOtpPath = path.includes('/confirm-otp') || path.includes('/otp');
+
+    // Handle specific backend error messages
+    if (msg.includes('service unavailable') || msg.includes('not found') && status === 404) {
+      if (isOtpPath) {
+        return 'The OTP is either expired or does not exist. Please request a new one.';
+      }
+      if (isAuthPath) {
+        return 'Unable to process your request at the moment. Please try again in a few moments.';
+      }
+      return 'Service temporarily unavailable. Please try again shortly.';
+    }
+
+    if (msg.includes('unauthorized') || msg.includes('invalid token') || msg.includes('token expired')) {
+      return 'Your session has expired. Please sign in again.';
+    }
+
+    if (msg.includes('forbidden') || msg.includes('access denied')) {
+      return 'You do not have permission to perform this action.';
+    }
+
+    if (msg.includes('already') || msg.includes('exists') || msg.includes('duplicate') || msg.includes('conflict')) {
+      if (isAuthPath && path.includes('/register')) {
+        return 'An account with this email already exists. Please sign in instead.';
+      }
+      return 'This information is already in use. Please try a different value.';
+    }
+
+    if (msg.includes('invalid') || msg.includes('incorrect') || msg.includes('wrong')) {
+      if (isOtpPath) {
+        return 'The OTP is either expired or does not exist. Please request a new one.';
+      }
+      if (path.includes('/login')) {
+        return 'Invalid credentials. Please check your details and try again.';
+      }
+      return 'Invalid input. Please check your details and try again.';
+    }
+
+    if (msg.includes('expired') || msg.includes('not exist')) {
+      if (isOtpPath) {
+        return 'The OTP is either expired or does not exist. Please request a new one.';
+      }
+      return 'This session has expired. Please try again.';
+    }
+
+    if (status >= 500) {
+      return 'Unable to process your request at the moment. Please try again in a few moments.';
+    }
+
+    if (status === 0) {
+      return 'Unable to connect. Please check your internet connection and try again.';
+    }
+
+    // Return original message if no specific mapping
+    return message;
+  }
+
 function shouldUseFallback(err: unknown): boolean {
   if (!(err instanceof ApiError)) return true;
   return err.status >= 500 || err.status === 0;
@@ -123,20 +184,15 @@ export async function apiFetch<T = unknown>(
     method = "GET",
     body,
     token,
-    sessionId,
+    sessionId: _sessionId,
     query,
     fallback,
-    skipSessionHeader = false,
+    skipSessionHeader: _skipSessionHeader,
   }: RequestOptions = {},
 ): Promise<T> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  const resolvedSessionId = sessionId ?? getSessionId();
-  if (!skipSessionHeader && resolvedSessionId) {
-    headers["x-session-id"] = resolvedSessionId;
-  }
 
   try {
     const res = await fetch(buildUrl(path, query), {
@@ -161,19 +217,20 @@ export async function apiFetch<T = unknown>(
       }
     }
 
-    if (res.status === 401 && !skipSessionHeader) {
+    if (res.status === 401) {
       clearSession();
-      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
-        window.location.href = "/login";
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login") && !window.location.pathname.startsWith("/customer")) {
+        window.location.href = "/customer";
       }
       throw new ApiError("Session expired", 401);
     }
 
     if (!res.ok) {
-      const message =
+      const rawMessage =
         (data && typeof data === "object" && ((data as Record<string, unknown>).message || (data as Record<string, unknown>).error)) ||
         `Request failed with status ${res.status}`;
-      throw new ApiError(message as string, res.status);
+      const friendlyMessage = getUserFriendlyMessage(rawMessage as string, res.status, path);
+      throw new ApiError(friendlyMessage, res.status);
     }
 
     return data as T;
@@ -191,16 +248,15 @@ export async function apiFetch<T = unknown>(
 }
 
 export async function validateSession(): Promise<{ valid: boolean; type?: string; [k: string]: unknown } | null> {
-  const sessionId = getSessionId();
-  if (!sessionId) return null;
-  if (sessionId.startsWith('dev-')) {
-    return { valid: true, type: sessionId.includes('broker') ? 'broker' : 'customer' };
+  const token = typeof window !== 'undefined' ? window.localStorage.getItem('zcanopy_token') : null;
+  if (!token) return null;
+  if (token.startsWith('dev-')) {
+    return { valid: true, type: token.includes('broker') ? 'broker' : 'customer' };
   }
   try {
     return await apiFetch<{ valid: boolean; type?: string }>("/web/session/validate", {
       method: "POST",
-      sessionId,
-      skipSessionHeader: true,
+      token,
     });
   } catch {
     return null;
@@ -315,63 +371,69 @@ async function uploadToSpacesViaProxy(file: File, folder = 'properties'): Promis
 
 export const webApi = {
   publicProperties: (query?: Record<string, string | number | boolean | undefined>) =>
-    apiFetch<{ properties: any[]; total: number }>("/web/public/properties", { query, fallback: mockData.properties(query), skipSessionHeader: true }),
+    apiFetch<{ properties: any[]; total: number }>("/web/public/properties", { query, skipSessionHeader: true }),
 
   publicPropertiesPaginated: (page: number, limit: number = 12, query?: Record<string, string | number | boolean | undefined>) =>
     apiFetch<{ properties: any[]; total: number; page: number; limit: number; hasMore: boolean }>(
       "/web/public/properties",
-      { query: { page, limit, ...query }, fallback: { properties: mockData.properties(query).properties, total: 0, page, limit, hasMore: false }, skipSessionHeader: true },
+      { query: { page, limit, ...query }, skipSessionHeader: true },
     ),
 
   searchPropertiesPaginated: (q: string, page: number, limit: number = 12, query?: Record<string, string | number | boolean | undefined>) =>
     apiFetch<{ properties: any[]; total: number; page: number; limit: number; hasMore: boolean }>(
       `/web/public/search`,
-      { query: { q, page, limit, ...query }, fallback: { properties: mockData.search(q, query).properties, total: 0, page, limit, hasMore: false }, skipSessionHeader: true },
+      { query: { q, page, limit, ...query }, skipSessionHeader: true },
     ),
 
   featuredProperties: (limit = 6) =>
-    apiFetch<{ properties: any[]; total: number }>("/web/public/properties/featured", { query: { limit }, fallback: mockData.featuredProperties(), skipSessionHeader: true }),
+    apiFetch<{ properties: any[]; total: number }>("/web/public/properties/featured", { query: { limit }, skipSessionHeader: true }),
 
   propertyDetails: async (id: string, brokerCode?: string) => {
     try {
-      const data = await apiFetch<{ property: any }>(`/web/public/property-info?id=${encodeURIComponent(id)}${brokerCode ? `&brokerCode=${encodeURIComponent(brokerCode)}` : ''}`, { fallback: null, skipSessionHeader: true });
+      const data = await apiFetch<{ property: any }>(`/web/public/property-info?id=${encodeURIComponent(id)}${brokerCode ? `&brokerCode=${encodeURIComponent(brokerCode)}` : ''}`, { skipSessionHeader: true });
       const prop = (data as any)?.property || (data as any) || null;
       if (prop) return prop;
     } catch {
       // ignore and fall back
     }
 
-    const fallbackData = await apiFetch<{ properties: any[]; total: number }>(`/web/public/properties?id=${encodeURIComponent(id)}`, { fallback: mockData.propertyDetails(id), skipSessionHeader: true });
+    const fallbackData = await apiFetch<{ properties: any[]; total: number }>(`/web/public/properties?id=${encodeURIComponent(id)}`, { skipSessionHeader: true });
     const properties = (fallbackData as any)?.properties || [];
     return properties.find((item: any) => String(item.id) === String(id)) || null;
   },
 
   searchProperties: (q: string, queryParams?: Record<string, string | number | boolean | undefined>) =>
-    apiFetch<{ properties: any[]; total: number }>(`/web/public/search?q=${encodeURIComponent(q)}`, { fallback: mockData.search(q, queryParams), skipSessionHeader: true }),
+    apiFetch<{ properties: any[]; total: number }>(`/web/public/search?q=${encodeURIComponent(q)}`, { skipSessionHeader: true }),
 
   recordSearch: (token: string | null, body: { query?: string; location?: string; radius?: number; propertyType?: string; filters?: any; resultPropertyIds?: string[]; resultCount?: number; minPrice?: number; maxPrice?: number; subCounty?: string; district?: string }) =>
-    apiFetch<{ success: boolean }>("/web/customer/search/record", { method: "POST", token, body, fallback: { success: true } }),
+    apiFetch<{ success: boolean }>("/web/customer/search/record", { method: "POST", token, body }),
 
   getCustomerSearches: (token: string, page = 1, limit = 10) =>
-    apiFetch<{ searches: any[]; total: number }>(`/web/customer/searches?page=${page}&limit=${limit}`, { token, fallback: { searches: [], total: 0 } }),
+    apiFetch<{ searches: any[]; total: number }>(`/web/customer/searches?page=${page}&limit=${limit}`, { token }),
 
   toggleFavorite: (token: string, body: { propertyId: string; propertyTitle: string; propertyLocation?: string; brokerCode?: string; imageUrl?: string; price?: number }) =>
-    apiFetch<{ favorited: boolean }>("/web/customer/favorites/toggle", { method: "POST", token, body, fallback: { favorited: false } }),
+    apiFetch<{ favorited: boolean }>("/web/customer/favorites/toggle", { method: "POST", token, body }),
 
   getCustomerFavorites: (token: string, page = 1, limit = 10) =>
-    apiFetch<{ favorites: any[]; total: number }>(`/web/customer/favorites?page=${page}&limit=${limit}`, { token, fallback: { favorites: [], total: 0 } }),
+    apiFetch<{ favorites: any[]; total: number }>(`/web/customer/favorites?page=${page}&limit=${limit}`, { token }),
 
   addComment: (token: string, body: { propertyId: string; customerName: string; customerPhone: string; customerEmail?: string; comment: string; rating?: number }) =>
-    apiFetch<{ success: boolean; commentId?: string }>("/web/customer/comments", { method: "POST", token, body, fallback: { success: false } }),
+    apiFetch<{ success: boolean; commentId?: string }>("/web/customer/comments", { method: "POST", token, body }),
 
   getPropertyComments: (propertyId: string, page = 1, limit = 10) =>
-    apiFetch<{ comments: any[]; total: number; averageRating: number }>(`/web/customer/properties/${propertyId}/comments?page=${page}&limit=${limit}`, { fallback: { comments: [], total: 0, averageRating: 0 }, skipSessionHeader: true }),
+    apiFetch<{ comments: any[]; total: number; averageRating: number }>(`/web/customer/properties/${propertyId}/comments?page=${page}&limit=${limit}`, { skipSessionHeader: true }),
 
   brokerPropertiesByCode: (brokerCode: string, query?: Record<string, string | number | boolean | undefined>) =>
-    apiFetch<{ properties: any[]; total: number }>(`/web/customer/broker/${brokerCode}/properties`, { query, fallback: mockData.brokerProperties() }),
+    apiFetch<{ properties: any[]; total: number }>(`/web/customer/broker/${brokerCode}/properties`, { query }),
+
+  getBrokers: () =>
+    apiFetch<{ brokers: Array<{ id: string; brokerCode: string; brandName: string; username: string }> }>("/web/public/brokers", { skipSessionHeader: true }),
+
+  getLocations: () =>
+    apiFetch<{ locations: Array<{ propertyId: string; title: string; location: string; postgisSpatialField: string | null; brokerCode: string }> }>("/web/public/locations", { skipSessionHeader: true }),
 
   createBooking: (token: string, body: unknown) =>
-    apiFetch("/web/customer/bookings", { method: "POST", token, body, fallback: { success: true, booking: { id: "mock-booking-1", status: "pending" } } }),
+    apiFetch("/web/customer/bookings", { method: "POST", token, body }),
 
   brokerLogin: (brokerCode: string, password: string, email?: string) =>
     apiFetch<{ id: string; username: string; email: string; role: string; brokerCode: string; sessionId?: string; sessionToken?: string; token?: string }>(
@@ -380,7 +442,6 @@ export const webApi = {
         method: "POST",
         body: { brokerCode, password, email, deviceId: "web-dashboard" },
         skipSessionHeader: true,
-        fallback: { id: "brk-mock-1", username: "Demo Broker", email: "broker@example.com", role: "broker", brokerCode, sessionId: "mock-session-id", token: "mock-token-broker" },
       },
     ),
 
@@ -393,85 +454,94 @@ export const webApi = {
   }) =>
     apiFetch<{ brokerId: string; email: string; phoneNumber: string; brokerCode: string }>(
       "/broker/register",
-      { method: "POST", body: payload, skipSessionHeader: true, fallback: { brokerId: "brk-mock-1", email: payload.email, phoneNumber: payload.phoneNumber, brokerCode: payload.email } },
+      { method: "POST", body: payload, skipSessionHeader: true },
     ),
 
   sendBrokerOtp: (email: string, phoneNumber: string) =>
-    apiFetch("/broker/otp/send", { method: "POST", body: { email, phoneNumber }, skipSessionHeader: true, fallback: { success: true, message: "OTP sent (mock)", devCode: "123456" } }),
+    apiFetch("/broker/otp/send", { method: "POST", body: { email, phoneNumber }, skipSessionHeader: true }),
 
   verifyBrokerOtp: (email: string, phoneNumber: string, emailCode: string, phoneCode: string) =>
     apiFetch("/broker/otp/verify", {
       method: "POST",
       body: { email, phoneNumber, emailCode, phoneCode },
       skipSessionHeader: true,
-      fallback: { success: true, message: "Verified (mock)" },
     }),
 
-  customer: {
+customer: {
     register: (body: { email: string; password: string; firstName?: string; lastName?: string; phoneNumber?: string }) =>
-      apiFetch<{ success: boolean; message: string; customerId?: string }>("/web/customer/register", { method: "POST", body, skipSessionHeader: true, fallback: { success: true, message: "Registered (mock)", customerId: "mock-customer-id" } }),
+      apiFetch<{ success: boolean; message: string; customerId?: string }>("/web/customer/register", { method: "POST", body, skipSessionHeader: true }),
 
     login: (body: { email: string; password: string }) =>
-      apiFetch<{ success: boolean; message: string; customer?: any; session?: any }>("/web/customer/login", { method: "POST", body, skipSessionHeader: true, fallback: { success: true, message: "Logged in (mock)", customer: { id: "mock-customer-id", email: body.email, firstName: "Demo", lastName: "Customer", phoneNumber: "0700000000", isVerified: true, authProvider: "email", createdAt: new Date().toISOString() }, session: { sessionToken: "mock-token", sessionId: "mock-session-id", expiresAt: Date.now() + 2592000000, ttlSeconds: 2592000 } } }),
+      apiFetch<{ success: boolean; message: string; customer?: any; session?: any }>("/web/customer/login", { method: "POST", body, skipSessionHeader: true }),
 
     loginGoogle: (body: { googleId: string; email?: string; firstName?: string; lastName?: string }) =>
-      apiFetch<{ success: boolean; message: string; customer?: any; session?: any }>("/web/customer/login/google", { method: "POST", body, skipSessionHeader: true, fallback: { success: true, message: "Google login (mock)", customer: { id: "mock-customer-id", email: body.email || "customer@example.com", firstName: body.firstName || "Demo", lastName: body.lastName || "Customer", phoneNumber: "", isVerified: true, authProvider: "google", createdAt: new Date().toISOString() }, session: { sessionToken: "mock-token", sessionId: "mock-session-id", expiresAt: Date.now() + 2592000000, ttlSeconds: 2592000 } } }),
+      apiFetch<{ success: boolean; message: string; customer?: any; session?: any }>("/web/customer/login/google", { method: "POST", body, skipSessionHeader: true }),
 
     confirmOtp: (body: { email: string; otpCode: string }) =>
-      apiFetch<{ success: boolean; message: string; session?: any }>("/web/customer/confirm-otp", { method: "POST", body, skipSessionHeader: true, fallback: { success: true, message: "OTP confirmed (mock)", session: { sessionToken: "mock-token", sessionId: "mock-session-id", expiresAt: Date.now() + 2592000000, ttlSeconds: 2592000 } } }),
+      apiFetch<{ success: boolean; message: string; session?: any }>("/web/customer/confirm-otp", { method: "POST", body, skipSessionHeader: true }),
 
     updatePhone: (token: string, phoneNumber: string) =>
-      apiFetch<{ success: boolean; message: string }>("/web/customer/profile/phone", { method: "PUT", token, body: { phoneNumber }, fallback: { success: true, message: "Phone updated (mock)" } }),
+      apiFetch<{ success: boolean; message: string }>("/web/customer/profile/phone", { method: "PUT", token, body: { phoneNumber } }),
 
     getProfile: (token: string) =>
-      apiFetch<any>("/web/customer/profile", { token, fallback: { id: "mock-customer-id", email: "customer@example.com", firstName: "Demo", lastName: "Customer", phoneNumber: "0700000000", isVerified: true, authProvider: "email", createdAt: new Date().toISOString() } }),
+      apiFetch<any>("/web/customer/profile", { token }),
 
     getWallet: (token: string) =>
-      apiFetch<{ balance?: number; currency?: string; walletId?: string }>("/web/customer/wallet", { token, fallback: { balance: 0, currency: "UGX", walletId: "mock-wallet-id" } }),
+      apiFetch<{ balance?: number; currency?: string; walletId?: string }>("/web/customer/wallet", { token }),
 
     logout: (token: string) =>
-      apiFetch<{ success: boolean }>("/web/customer/logout", { method: "POST", token, fallback: { success: true } }),
+      apiFetch<{ success: boolean }>("/web/customer/logout", { method: "POST", token }),
 
     unsubscribe: (token: string) =>
-      apiFetch<{ success: boolean; message: string }>("/web/customer/unsubscribe", { method: "POST", token, fallback: { success: true, message: "Unsubscribed (mock)" } }),
+      apiFetch<{ success: boolean; message: string }>("/web/customer/unsubscribe", { method: "POST", token }),
 
     videoTours: (query?: Record<string, string | number | boolean | undefined>) =>
-      apiFetch<{ properties: any[]; total: number; videoCount: number }>("/web/customer/video-tours", { query, fallback: { properties: [], total: 0, videoCount: 0 }, skipSessionHeader: true }),
+      apiFetch<{ properties: any[]; total: number; videoCount: number }>("/web/customer/video-tours", { query, skipSessionHeader: true }),
 
     allProperties: (query?: Record<string, string | number | boolean | undefined>) =>
-      apiFetch<{ properties: any[]; total: number }>("/web/customer/all-properties", { query, fallback: { properties: [], total: 0 }, skipSessionHeader: true }),
+      apiFetch<{ properties: any[]; total: number }>("/web/customer/all-properties", { query, skipSessionHeader: true }),
 
     explorer: (query?: Record<string, string | number | boolean | undefined>) =>
-      apiFetch<{ properties: any[]; total: number; videoCount: number }>("/web/public/explorer", { query, fallback: mockData.customerProperties(query) }),
+      apiFetch<{ properties: any[]; total: number; videoCount: number }>("/web/public/explorer", { query, skipSessionHeader: true }),
 
     getPropertyDetails: (propertyId: string) =>
-      apiFetch<any>(`/web/customer/properties?propertyId=${encodeURIComponent(propertyId)}`, { fallback: { ...mockData.propertyDetails(propertyId).property }, skipSessionHeader: true }),
+      apiFetch<any>(`/web/customer/properties?propertyId=${encodeURIComponent(propertyId)}`, { skipSessionHeader: true }),
 
     getSimilarProperties: (propertyId: string) =>
-      apiFetch<{ properties: any[]; total: number }>(`/web/customer/properties/similar?propertyId=${encodeURIComponent(propertyId)}`, { fallback: { properties: [], total: 0 }, skipSessionHeader: true }),
+      apiFetch<{ properties: any[]; total: number }>(`/web/customer/properties/similar?propertyId=${encodeURIComponent(propertyId)}`, { skipSessionHeader: true }),
 
     getTransactions: (token: string, page = 1, limit = 10) =>
-      apiFetch<{ transactions: any[]; total: number }>(`/web/customer/transactions?page=${page}&limit=${limit}`, { token, fallback: { transactions: [], total: 0 } }),
+      apiFetch<{ transactions: any[]; total: number }>(`/web/customer/transactions?page=${page}&limit=${limit}`, { token }),
 
     getBookings: (token: string, page = 1, limit = 10) =>
-      apiFetch<{ bookings: any[]; total: number }>(`/web/customer/bookings?page=${page}&limit=${limit}`, { token, fallback: { bookings: mockData.customerBookings().bookings, total: mockData.customerBookings().bookings.length } }),
+      apiFetch<{ bookings: any[]; total: number }>(`/web/customer/bookings?page=${page}&limit=${limit}`, { token }),
 
     getInvoices: (token: string, page = 1, limit = 10) =>
-      apiFetch<{ invoices: any[]; total: number }>(`/web/customer/invoices?page=${page}&limit=${limit}`, { token, fallback: { invoices: [], total: 0 } }),
+      apiFetch<{ invoices: any[]; total: number }>(`/web/customer/invoices?page=${page}&limit=${limit}`, { token }),
 
     getMessages: (token: string, page = 1, limit = 10) =>
-      apiFetch<{ messages: any[]; total: number }>(`/web/customer/messages?page=${page}&limit=${limit}`, { token, fallback: { messages: [], total: 0 } }),
+      apiFetch<{ messages: any[]; total: number }>(`/web/customer/messages?page=${page}&limit=${limit}`, { token }),
 
     getNotifications: (token: string, page = 1, limit = 20) =>
-      apiFetch<{ notifications: any[]; total: number; unreadCount: number }>(`/web/customer/notifications?page=${page}&limit=${limit}`, { token, fallback: { notifications: [], total: 0, unreadCount: 0 } }),
+      apiFetch<{ notifications: any[]; total: number; unreadCount: number }>(`/web/customer/notifications?page=${page}&limit=${limit}`, { token }),
 
     initiateTransaction: (token: string, body: { phoneNumber: string; email: string; customerName?: string; propertyId?: string; reason?: string; amount?: number }) =>
-      apiFetch<{ success: boolean; message: string; transactionCode?: string }>("/web/customer/transactions/initiate", { method: "POST", token, body, fallback: { success: true, message: "Transaction initiated (mock)", transactionCode: "mock-txn-code" } }),
+      apiFetch<{ success: boolean; message: string; transactionCode?: string }>("/web/customer/transactions/initiate", { method: "POST", token, body }),
 
     recordSearch: (token: string, body: { query?: string; location?: string; radius?: number; propertyType?: string; minPrice?: number; maxPrice?: number; subCounty?: string; district?: string; hadResults?: boolean; resultPropertyIds?: string[]; resultCount?: number }) =>
-      apiFetch<{ success: boolean }>("/web/customer/search/record", { method: "POST", token, body, fallback: { success: true } }),
+      apiFetch<{ success: boolean }>("/web/customer/search/record", { method: "POST", token, body }),
 
     getSearches: (token: string, page = 1, limit = 10) =>
-      apiFetch<{ searches: any[]; total: number }>(`/web/customer/searches?page=${page}&limit=${limit}`, { token, fallback: { searches: [], total: 0 } }),
+      apiFetch<{ searches: any[]; total: number }>(`/web/customer/searches?page=${page}&limit=${limit}`, { token }),
+
+    // Admin wallet withdrawal OTP
+    sendAdminWithdrawalOtp: (token: string, body: { email: string; amount: number; walletType?: string }) =>
+      apiFetch<{ success: boolean; message: string; expiresIn: number }>("/web/admin/wallet/send-otp", { method: "POST", token, body }),
+
+    verifyAdminWithdrawalOtp: (token: string, body: { email: string; otp: string }) =>
+      apiFetch<{ success: boolean; message: string; valid: boolean }>("/web/admin/wallet/verify-otp", { method: "POST", token, body }),
+
+    adminWithdraw: (token: string, body: { amount: number; phoneNumber: string; provider: 'MTN' | 'AIRTEL'; payeeName?: string; payeeEmail?: string; externalId?: string; payerNote?: string; payeeNote?: string; currency?: string }) =>
+      apiFetch<{ success: boolean; message: string; transactionId?: string; referenceNumber?: string; status?: string; netAmount?: number }>("/web/admin/wallet/withdraw", { method: "POST", token, body }),
   },
 };

@@ -23,9 +23,20 @@ export default function CustomerProfileContent({ token, customerName, onProfileU
   const loadProfile = async (token: string) => {
     try {
       const data = await webApi.customer.getProfile(token);
-      setProfile(data);
-      setPhone(data.phoneNumber || '');
+      console.log('[Profile] API response:', data);
+      const profileData = data?.customer || data;
+      setProfile(profileData);
+      setPhone(profileData.phoneNumber || '');
+      if (typeof window !== 'undefined') {
+        if (profileData.phoneNumber) {
+          localStorage.setItem('zcanopy_customer_phone', profileData.phoneNumber);
+        }
+        if (profileData.email) {
+          localStorage.setItem('zcanopy_customer_email', profileData.email);
+        }
+      }
     } catch (err) {
+      console.error('[Profile] Error:', err);
       setError(err instanceof Error ? err.message : 'Failed to load profile');
     } finally {
       setLoading(false);

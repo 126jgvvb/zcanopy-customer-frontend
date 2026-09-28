@@ -39,6 +39,8 @@ interface Property {
   brokerName?: string;
   amount?: number;
   canBook?: boolean;
+  subCounty?: string;
+  district?: string;
 }
 
 interface BookingForm {
@@ -190,9 +192,19 @@ export default function PropertyDetailPage() {
       setSelectedProperty(property);
       return;
     }
+    // Pre-fill form with stored customer data
+    if (typeof window !== 'undefined') {
+      const storedName = localStorage.getItem('zcanopy_customer_name') || '';
+      const storedEmail = localStorage.getItem('zcanopy_customer_email') || '';
+      const storedPhone = localStorage.getItem('zcanopy_customer_phone') || '';
+      setForm({
+        customerName: storedName,
+        customerEmail: storedEmail,
+        customerPhone: storedPhone,
+      });
+    }
     setSelectedProperty(property);
     setNeedsAuth(false);
-    setForm(emptyForm);
     setSubmitError("");
     setSuccess("");
     setBookedProperty(null);
@@ -232,13 +244,13 @@ export default function PropertyDetailPage() {
         status: "pending",
       });
 
-      const paymentResult = result as { success?: boolean; message?: string; bookingCode?: string };
+      const paymentResult = result as { success?: boolean; message?: string; bookingCode?: string; brokerPhone?: string };
       
       if (paymentResult.success) {
         setPaymentStatus("Payment completed successfully!");
         setSuccess("Booking confirmed! Check your email and SMS for the invoice code.");
         setForm(emptyForm);
-        setBookedProperty(selectedProperty);
+        setBookedProperty({ ...selectedProperty, brokerPhone: paymentResult.brokerPhone });
       } else {
         setPaymentStatus("");
         setSubmitError(paymentResult.message || "Payment failed. Please try again.");

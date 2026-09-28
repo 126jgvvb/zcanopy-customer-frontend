@@ -93,7 +93,18 @@ async function handleSubmit(e: React.FormEvent) {
         )}&code=${encodeURIComponent(res.brokerCode)}`,
       );
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not create your account. Please try again.");
+      if (err instanceof ApiError) {
+        const msg = err.message.toLowerCase();
+        if (msg.includes('already') || msg.includes('exists') || msg.includes('duplicate')) {
+          setError('An account with this email or phone already exists. Please sign in instead.');
+        } else if (err.status >= 500) {
+          setError('Unable to create account at the moment. Please try again in a few moments.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('Unable to create account. Please check your connection and try again.');
+      }
     } finally {
       setSubmitting(false);
     }

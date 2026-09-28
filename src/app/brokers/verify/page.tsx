@@ -81,8 +81,16 @@ function BrokerVerifyPageInner() {
       if (typeof data.waitSeconds === "number") {
         setResendCountdown(data.waitSeconds);
       }
-    } catch {
-      setError("Failed to send verification codes. Please retry.");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status >= 500) {
+          setError("Unable to send codes at the moment. Please try again in a few moments.");
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError("Unable to send verification codes. Please check your connection and try again.");
+      }
     }
   }, [email, phone]);
 
@@ -117,10 +125,33 @@ function BrokerVerifyPageInner() {
     setError(null);
     setSubmitting(true);
     try {
-      await webApi.verifyBrokerOtp(email, phone, emailCode, phoneCode);
-      router.push(`/brokers/welcome?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`);
+      const result = await webApi.verifyBrokerOtp(email, phone, emailCode, phoneCode);
+      const data = result as Record<string, unknown>;
+      if (data.success) {
+        router.push(`/brokers/welcome?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`);
+      } else {
+        const msg = String(data.message || '').toLowerCase();
+        if (msg.includes('expired') || msg.includes('invalid') || msg.includes('not exist')) {
+          setError('The OTP is either expired or does not exist. Please request a new one.');
+        } else {
+          setError(String(data.message) || 'Invalid code. Please try again.');
+        }
+      }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Invalid code. Please try again.");
+      if (err instanceof ApiError) {
+        const msg = err.message.toLowerCase();
+        if (msg.includes('expired') || msg.includes('invalid') || msg.includes('not exist')) {
+          setError('The OTP is either expired or does not exist. Please request a new one.');
+        } else if (err.status === 401 || err.status === 403) {
+          setError('Session expired. Please sign up again.');
+        } else if (err.status >= 500) {
+          setError('Unable to verify OTP at the moment. Please try again in a few moments.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('Unable to verify OTP. Please check your connection and try again.');
+      }
     } finally {
       setSubmitting(false);
     }

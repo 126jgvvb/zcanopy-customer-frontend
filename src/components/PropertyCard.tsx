@@ -61,6 +61,7 @@ export default function PropertyCard({
   const [favorited, setFavorited] = useState(preFavorited);
   const [initializing, setInitializing] = useState(!preFavorited);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [isToggling, setIsToggling] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,6 +105,11 @@ export default function PropertyCard({
       return;
     }
 
+    // Optimistic update - immediately toggle UI with animation
+    const previousFavorited = favorited;
+    setFavorited(!favorited);
+    setIsToggling(true);
+
     try {
       let token = getSessionId();
       if (!token) {
@@ -112,6 +118,8 @@ export default function PropertyCard({
       }
       if (!token) {
         window.alert("Unable to start a customer session right now. Please refresh and try again.");
+        setFavorited(previousFavorited);
+        setIsToggling(false);
         return;
       }
       const res = await webApi.toggleFavorite(token, {
@@ -125,7 +133,10 @@ export default function PropertyCard({
       const nextFavorited = Boolean((res as any)?.favorited);
       setFavorited(nextFavorited);
     } catch {
-      // ignore
+      // Revert on error
+      setFavorited(previousFavorited);
+    } finally {
+      setIsToggling(false);
     }
   };
 
@@ -138,11 +149,13 @@ export default function PropertyCard({
           type="button"
           onClick={toggleFavorite}
           className="absolute top-3 right-3 rounded-full bg-white/80 p-2 text-gray-700 backdrop-blur-sm transition hover:bg-white"
+          disabled={isToggling}
         >
           <Heart
             size={18}
             fill={favorited ? "#ef4444" : "none"}
             color={favorited ? "#ef4444" : "currentColor"}
+            className={isToggling ? "animate-bounce" : ""}
           />
         </button>
         {showRemoveButton && (

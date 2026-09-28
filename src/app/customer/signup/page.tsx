@@ -37,10 +37,26 @@ export default function CustomerSignupPage() {
       if (result.success) {
         router.push(`/customer/verify?email=${encodeURIComponent(email.trim())}`);
       } else {
-        setError(result.message || 'Registration failed');
+        const msg = (result.message || '').toLowerCase();
+        if (msg.includes('already') || msg.includes('exists') || msg.includes('duplicate')) {
+          setError('An account with this email already exists. Please sign in instead.');
+        } else {
+          setError(result.message || 'Registration failed. Please try again.');
+        }
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Registration failed');
+      if (err instanceof ApiError) {
+        const msg = err.message.toLowerCase();
+        if (msg.includes('already') || msg.includes('exists') || msg.includes('duplicate')) {
+          setError('An account with this email already exists. Please sign in instead.');
+        } else if (err.status >= 500) {
+          setError('Unable to create account at the moment. Please try again in a few moments.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('Unable to create account. Please check your connection and try again.');
+      }
     } finally {
       setLoading(false);
     }

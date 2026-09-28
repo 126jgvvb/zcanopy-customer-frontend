@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { webApi, ApiError, setSession, clearSession } from '@/lib/api';
-import { mockData } from '@/lib/mockData';
 import { Heart, CalendarCheck, Search, Receipt, FileText, MessageCircle, Bell, User } from 'lucide-react';
 import CustomerTransactionsContent from './transactions/page';
 import CustomerInvoicesContent from './invoices/page';
@@ -44,25 +43,25 @@ export default function CustomerPage() {
     try {
       const result = await webApi.customer.login({ email, password });
       const session = (result as { session?: { sessionToken?: string; sessionId?: string } }).session;
-      const token = (result as { token?: string }).token;
-      const sessionId = session?.sessionToken || session?.sessionId || token;
+      const sessionToken = session?.sessionToken; // JWT for Authorization header
       const customer = (result as { customer?: { firstName?: string; lastName?: string; email?: string } }).customer;
 
-      if (!sessionId) {
-        setError('Login failed');
+      if (!sessionToken) {
+        setError('Login failed - invalid session');
         return;
       }
 
-      setSession(sessionId, result, 'customer');
+      // Store JWT token and customer info
       if (typeof window !== 'undefined') {
-        localStorage.setItem('zcanopy_token', token || sessionId);
+        localStorage.setItem('zcanopy_token', sessionToken);
+        localStorage.setItem('zcanopy_customer_email', customer?.email || email);
       }
       const name = customer?.firstName || customer?.email || 'Customer';
       setCustomerName(name);
       if (typeof window !== 'undefined') {
         localStorage.setItem('zcanopy_customer_name', name);
       }
-      setToken(token || sessionId);
+      setToken(sessionToken);
       setLoggedIn(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Login failed');
@@ -83,6 +82,7 @@ export default function CustomerPage() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('zcanopy_token', mockToken);
       localStorage.setItem('zcanopy_customer_name', 'Dev Customer');
+      localStorage.setItem('zcanopy_customer_email', 'dev@customer.com');
     }
     setCustomerName('Dev Customer');
     setToken(mockToken);
@@ -135,9 +135,8 @@ export default function CustomerPage() {
         return <FindBookingContent />;
       default:
         {
-          const mockStats = mockData.bookings().bookings;
-          const mockFavCount = mockData.customerProperties().properties.length;
-          const mockBookingCount = mockStats.length;
+          const mockFavCount = 0;
+          const mockBookingCount = 0;
           return (
             <div className="min-h-[500px]">
               <h2 className="text-2xl font-bold" style={{ color: 'var(--zcanopy-card-brown)' }}>Dashboard</h2>
@@ -156,11 +155,11 @@ export default function CustomerPage() {
                   <p className="mt-1 text-xs" style={{ color: 'var(--zcanopy-muted)' }}>Active Bookings</p>
                 </div>
                 <div className="rounded-xl border border-[var(--zcanopy-border)] bg-white p-4 text-center dark:bg-[var(--zcanopy-surface)]">
-                  <p className="text-2xl font-bold" style={{ color: 'var(--zcanopy-primary)' }}>2</p>
+                  <p className="text-2xl font-bold" style={{ color: 'var(--zcanopy-primary)' }}>0</p>
                   <p className="mt-1 text-xs" style={{ color: 'var(--zcanopy-muted)' }}>Unread Messages</p>
                 </div>
                 <div className="rounded-xl border border-[var(--zcanopy-border)] bg-white p-4 text-center dark:bg-[var(--zcanopy-surface)]">
-                  <p className="text-2xl font-bold" style={{ color: 'var(--zcanopy-primary)' }}>3</p>
+                  <p className="text-2xl font-bold" style={{ color: 'var(--zcanopy-primary)' }}>0</p>
                   <p className="mt-1 text-xs" style={{ color: 'var(--zcanopy-muted)' }}>Notifications</p>
                 </div>
               </div>

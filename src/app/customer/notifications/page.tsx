@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { webApi } from '@/lib/api';
-import { mockData } from '@/lib/mockData';
 
 interface CustomerNotificationsContentProps {
   token: string;
@@ -40,9 +39,8 @@ export default function CustomerNotificationsContent({ token }: CustomerNotifica
     );
   }
 
-  const mockNotifs = mockData.customerNotifications();
-  const displayNotifications = notifications.length > 0 ? notifications : mockNotifs.notifications;
-  const displayUnreadCount = notifications.length > 0 ? unreadCount : mockNotifs.unreadCount;
+  const displayNotifications = notifications;
+  const displayUnreadCount = unreadCount;
 
   return (
     <div className="min-h-[500px]">
