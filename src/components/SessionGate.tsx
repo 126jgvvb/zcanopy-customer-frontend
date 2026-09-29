@@ -34,17 +34,28 @@ export default function SessionGate({ children }: SessionGateProps) {
     const isPublic = PUBLIC_PATHS.has(pathname) || pathname.startsWith('/properties') || pathname.startsWith('/api/');
     const isCustomerPath = CUSTOMER_PATHS.has(pathname);
 
+    console.log('[SessionGate] pathname:', pathname, 'isPublic:', isPublic, 'isCustomerPath:', isCustomerPath, 'hasSessionId:', !!getSessionId());
+
     let cancelled = false;
     (async () => {
-      if (!getSessionId()) {
-        await ensureAnonymousSession();
-        if (cancelled) return;
-      }
-
+      // For public paths, set valid immediately regardless of session
       if (isPublic) {
+        console.log('[SessionGate] Public path, setting valid=true immediately');
         setValid(true);
         setReady(true);
         return;
+      }
+
+      // Only try to get session for non-public paths
+      if (!getSessionId()) {
+        console.log('[SessionGate] No session ID, calling ensureAnonymousSession...');
+        try {
+          await ensureAnonymousSession();
+        } catch (e) {
+          console.log('[SessionGate] ensureAnonymousSession failed:', e);
+        }
+        if (cancelled) return;
+        console.log('[SessionGate] ensureAnonymousSession done, sessionId:', getSessionId());
       }
 
       // Validate session for customer paths
@@ -80,8 +91,14 @@ export default function SessionGate({ children }: SessionGateProps) {
   useEffect(() => {
     if (ready && valid === false) {
       const isCustomerPath = CUSTOMER_PATHS.has(pathname);
-      const redirectTo = isCustomerPath ? '/customer' : '/login';
-      router.replace(`${redirectTo}?from=${encodeURIComponent(pathname)}`);
+      // Only redirect for actual customer-only paths, not public pages like /properties
+      if (isCustomerPath) {
+        const redirectTo = '/customer';
+        console.log('[SessionGate] Redirecting to customer login from:', pathname);
+        router.replace(`${redirectTo}?from=${encodeURIComponent(pathname)}`);
+      } else {
+        console.log('[SessionGate] Not redirecting for public path:', pathname);
+      }
     }
   }, [ready, valid, pathname, router]);
 

@@ -103,6 +103,7 @@ export interface RequestOptions {
 
 function buildUrl(path: string, query?: RequestOptions["query"]): string {
   const url = new URL(`${API_BASE}${path}`);
+  console.log('[apiFetch] Building URL:', url.toString());
   if (query) {
     for (const [key, value] of Object.entries(query)) {
       if (value !== undefined && value !== "") {
@@ -194,6 +195,8 @@ export async function apiFetch<T = unknown>(
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
+  console.log('[apiFetch] Request:', method, path, 'token?', !!token, 'skipSessionHeader?', _skipSessionHeader);
+
   try {
     const res = await fetch(buildUrl(path, query), {
       method,
@@ -201,6 +204,8 @@ export async function apiFetch<T = unknown>(
       body: body !== undefined ? JSON.stringify(body) : undefined,
       cache: "no-store",
     });
+
+    console.log('[apiFetch] Response status:', res.status, 'for', path);
 
     let data: Record<string, unknown> | string | null = null;
     const text = await res.text();
@@ -268,6 +273,7 @@ export async function ensureAnonymousSession(): Promise<string | null> {
   if (existing) return existing;
 
   const deviceId = getOrCreateDeviceId();
+  console.log('[ensureAnonymousSession] Creating session for device:', deviceId);
   try {
     const res = await fetch(`${API_BASE}/customer/session`, {
       method: "POST",
@@ -275,9 +281,12 @@ export async function ensureAnonymousSession(): Promise<string | null> {
       body: JSON.stringify({ deviceId, ttlSeconds: 60 * 60 * 24 * 7 }),
       cache: "no-store",
     });
+    console.log('[ensureAnonymousSession] Response status:', res.status);
     if (!res.ok) return null;
     const raw = await res.json().catch(() => null);
+    console.log('[ensureAnonymousSession] Raw response:', raw);
     const data = raw?.encrypted ? await decryptResponse(raw) : raw;
+    console.log('[ensureAnonymousSession] Decrypted data:', data);
     const sessionId =
       data?.sessionId ||
       data?.sessionToken ||
