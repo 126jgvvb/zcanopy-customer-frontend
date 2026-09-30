@@ -145,7 +145,15 @@ export default function CustomerDashboardPage() {
   useEffect(() => {
     const sessionId = getSessionId();
     const storedToken = typeof window !== 'undefined' ? window.localStorage.getItem('zcanopy_token') : null;
-    const resolvedToken = storedToken || sessionId;
+    const getCookie = (name: string) => {
+      if (typeof document === 'undefined') return null;
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+      return null;
+    };
+    const cookieToken = getCookie('zcanopy_token');
+    const resolvedToken = storedToken || cookieToken || sessionId;
 
     if (!resolvedToken) {
       clearSession();

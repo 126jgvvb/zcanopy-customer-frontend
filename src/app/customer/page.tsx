@@ -53,7 +53,8 @@ export default function CustomerPage() {
     const cookieToken = getCookie('zcanopy_token');
     if (cookieToken) {
       setToken(cookieToken);
-      const name = localStorage.getItem('zcanopy_customer_name');
+      const cookieName = getCookie('zcanopy_customer_name');
+      const name = cookieName || localStorage.getItem('zcanopy_customer_name');
       if (name) setCustomerName(name);
       setLoggedIn(true);
     }

@@ -62,7 +62,10 @@ export async function GET(request: NextRequest) {
 
     const session = loginData.session || {};
     const sessionId = session.sessionToken || session.sessionId || loginData.token;
-    const token = loginData.token;
+    const token = session.sessionToken || loginData.token;
+
+    const customer = loginData.customer || {};
+    const customerName = [customer.firstName, customer.lastName].filter(Boolean).join(' ') || customer.email || 'Customer';
 
     const response = NextResponse.redirect(new URL(returnTo || '/customer', request.url));
     response.cookies.set('zcanopy_session_id', sessionId, {
@@ -81,6 +84,13 @@ export async function GET(request: NextRequest) {
         path: '/',
       });
     }
+    response.cookies.set('zcanopy_customer_name', customerName, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30,
+      path: '/',
+    });
     return response;
   } catch {
     return NextResponse.redirect(new URL('/customer?error=google_auth_exception', request.url));
