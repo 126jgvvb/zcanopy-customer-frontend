@@ -434,7 +434,15 @@ export default function PropertiesPage() {
   const [needsAuth, setNeedsAuth] = useState(false);
 
   const isAuthenticated = () => {
-    return !!localStorage.getItem('zcanopy_token');
+    const getCookie = (name: string) => {
+      if (typeof document === 'undefined') return null;
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+      return null;
+    };
+
+    return !!localStorage.getItem('zcanopy_token') || !!getCookie('zcanopy_token');
   };
 
   const closeBooking = () => {

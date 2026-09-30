@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
 
     const response = NextResponse.redirect(new URL(returnTo || '/customer', request.url));
     response.cookies.set('zcanopy_session_id', sessionId, {
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 30,
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     });
     if (token) {
       response.cookies.set('zcanopy_token', token, {
-        httpOnly: true,
+        httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 30,

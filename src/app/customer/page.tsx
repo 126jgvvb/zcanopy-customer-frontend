@@ -39,6 +39,23 @@ export default function CustomerPage() {
       const name = localStorage.getItem('zcanopy_customer_name');
       if (name) setCustomerName(name);
       setLoggedIn(true);
+      return;
+    }
+
+    const getCookie = (name: string) => {
+      if (typeof document === 'undefined') return null;
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+      return null;
+    };
+
+    const cookieToken = getCookie('zcanopy_token');
+    if (cookieToken) {
+      setToken(cookieToken);
+      const name = localStorage.getItem('zcanopy_customer_name');
+      if (name) setCustomerName(name);
+      setLoggedIn(true);
     }
   }, []);
 
