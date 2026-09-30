@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code');
-  const redirectUri = request.nextUrl.searchParams.get('redirect_uri') || '/customer';
+  const returnTo = request.nextUrl.searchParams.get('redirect_uri') || '/customer';
 
   if (!code) {
     return NextResponse.redirect(new URL('/customer?error=google_auth_failed', request.url));
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     const sessionId = session.sessionToken || session.sessionId || loginData.token;
     const token = loginData.token;
 
-    const response = NextResponse.redirect(new URL(redirectUri || '/customer', request.url));
+    const response = NextResponse.redirect(new URL(returnTo || '/customer', request.url));
     response.cookies.set('zcanopy_session_id', sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
