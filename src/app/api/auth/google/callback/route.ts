@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000/api';
+  const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google/callback`;
 
   if (!googleClientId || !googleClientSecret) {
     return NextResponse.redirect(new URL('/customer?error=google_not_configured', request.url));
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
         code,
         client_id: googleClientId,
         client_secret: googleClientSecret,
-        redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google/callback`,
+        redirect_uri: redirectUri,
         grant_type: 'authorization_code',
       }),
     });

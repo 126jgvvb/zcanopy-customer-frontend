@@ -380,11 +380,11 @@ async function uploadToSpacesViaProxy(file: File, folder = 'properties'): Promis
 
 export const webApi = {
   publicProperties: (query?: Record<string, string | number | boolean | undefined>) =>
-    apiFetch<{ properties: any[]; total: number }>("/web/public/properties", { query, skipSessionHeader: true }),
+    apiFetch<{ properties: any[]; total: number }>("/web/public/explorer", { query, skipSessionHeader: true }),
 
   publicPropertiesPaginated: (page: number, limit: number = 12, query?: Record<string, string | number | boolean | undefined>) =>
     apiFetch<{ properties: any[]; total: number; page: number; limit: number; hasMore: boolean }>(
-      "/web/public/properties",
+      "/web/public/explorer",
       { query: { page, limit, ...query }, skipSessionHeader: true },
     ),
 
@@ -395,7 +395,7 @@ export const webApi = {
     ),
 
   featuredProperties: (limit = 6) =>
-    apiFetch<{ properties: any[]; total: number }>("/web/public/properties/featured", { query: { limit }, skipSessionHeader: true }),
+    apiFetch<{ properties: any[]; total: number }>("/web/public/explorer/featured", { query: { limit }, skipSessionHeader: true }),
 
   propertyDetails: async (id: string, brokerCode?: string) => {
     try {
@@ -406,7 +406,7 @@ export const webApi = {
       // ignore and fall back
     }
 
-    const fallbackData = await apiFetch<{ properties: any[]; total: number }>(`/web/public/properties?id=${encodeURIComponent(id)}`, { skipSessionHeader: true });
+    const fallbackData = await apiFetch<{ properties: any[]; total: number }>(`/web/public/explorer?id=${encodeURIComponent(id)}`, { skipSessionHeader: true });
     const properties = (fallbackData as any)?.properties || [];
     return properties.find((item: any) => String(item.id) === String(id)) || null;
   },
