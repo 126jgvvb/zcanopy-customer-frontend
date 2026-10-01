@@ -424,3 +424,78 @@ html.dark textarea::placeholder {
 .slide-up-4 { animation-delay: 0.24s; }
 .slide-up-5 { animation-delay: 0.30s; }
 .slide-up-6 { animation-delay: 0.36s; }
+
+@keyframes marqueeScroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee {
+  position: relative;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 1.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior-x: contain;
+}
+
+.marquee-track::-webkit-scrollbar {
+  display: none;
+}
+
+.marquee-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: flex;
+  height: 2.75rem;
+  width: 2.75rem;
+  transform: translateY(-50%);
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--zcanopy-surface) 92%, transparent);
+  color: var(--zcanopy-card-brown);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(10px);
+  transition: border-color 0.25s var(--ease-out), color 0.25s var(--ease-out),
+    transform 0.25s var(--ease-out), background-color 0.25s var(--ease-out);
+}
+
+.marquee-arrow:hover:not(:disabled) {
+  border-color: var(--zcanopy-primary);
+  color: var(--zcanopy-primary);
+  transform: translateY(-50%) scale(1.06);
+}
+
+.marquee-arrow:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.marquee-arrow-prev {
+  left: 0.5rem;
+}
+
+.marquee-arrow-next {
+  right: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
