@@ -395,7 +395,7 @@ export const webApi = {
     ),
 
   featuredProperties: (limit = 6) =>
-    apiFetch<{ properties: any[]; total: number }>("/web/public/explorer/featured", { query: { limit }, skipSessionHeader: true }),
+    apiFetch<{ properties: any[]; total: number }>("/web/public/properties/featured", { query: { limit }, skipSessionHeader: true }),
 
   propertyDetails: async (id: string, brokerCode?: string) => {
     try {
@@ -435,11 +435,13 @@ export const webApi = {
   brokerPropertiesByCode: (brokerCode: string, query?: Record<string, string | number | boolean | undefined>) =>
     apiFetch<{ properties: any[]; total: number }>(`/web/customer/broker/${brokerCode}/properties`, { query }),
 
-  getBrokers: () =>
-    apiFetch<{ brokers: Array<{ id: string; brokerCode: string; brandName: string; username: string }> }>("/web/public/brokers", { skipSessionHeader: true }),
+  // Unfiltered metadata for the property filter dropdowns. Note the gRPC Broker
+  // message exposes `brokerBrandName`, not `brandName`.
+  getBrokers: (query?: Record<string, string | number | boolean | undefined>) =>
+    apiFetch<{ brokers: Array<{ id: string; brokerCode: string; brokerBrandName?: string; brandName?: string; username: string }>; total?: number }>("/web/public/brokers", { query, skipSessionHeader: true }),
 
   getLocations: () =>
-    apiFetch<{ locations: Array<{ propertyId: string; title: string; location: string; postgisSpatialField: string | null; brokerCode: string }> }>("/web/public/locations", { skipSessionHeader: true }),
+    apiFetch<{ locations: Array<{ propertyId: string; title: string; location: string; postgisSpatialField: string | null; brokerCode: string; propertyType?: string }> }>("/web/public/locations", { skipSessionHeader: true }),
 
   createBooking: (token: string, body: unknown) =>
     apiFetch("/web/customer/bookings", { method: "POST", token, body }),

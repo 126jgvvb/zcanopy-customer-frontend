@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef, useCallback, useTransition, useDeferredValue } from "react";
+import { useEffect, useMemo, useState, useRef, useTransition, useDeferredValue } from "react";
 import PropertyCard from "@/components/PropertyCard";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
 import Link from "next/link";
@@ -70,7 +70,6 @@ export default function PropertiesPage() {
   const [paymentStatus, setPaymentStatus] = useState<string>("");
   const [viewMode, setViewMode] = useState<"all" | "broker">("all");
   const [selectedBrokerCode, setSelectedBrokerCode] = useState<string>("");
-  const [displayProperties, setDisplayProperties] = useState<Property[]>([]);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [localSearch, setLocalSearch] = useState("");
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
@@ -100,12 +99,30 @@ export default function PropertiesPage() {
 
   const isInitialMount = useRef(true);
 
+  // Single source of truth for the active filters. Every request path uses this,
+  // so no filter can be silently dropped from one endpoint but not another.
+  const activeFilters = {
+    location: locationFilter || undefined,
+    brokerBrandName: brokerFilter || undefined,
+    propertyType: propertyTypeFilter || undefined,
+    minPrice: minPrice ? Number(minPrice) : undefined,
+    maxPrice: maxPrice ? Number(maxPrice) : undefined,
+    subCounty: subCountyFilter || undefined,
+    district: districtFilter || undefined,
+    fromDate: dateFrom || undefined,
+    toDate: dateTo || undefined,
+  };
+
+  const [isFetching, setIsFetching] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       if (isInitialMount.current) {
         setLoading(true);
         isInitialMount.current = false;
+      } else {
+        setIsFetching(true);
       }
       setError("");
       try {
@@ -119,62 +136,18 @@ export default function PropertiesPage() {
           }
         } else if (search) {
           try {
-            const res = await webApi.searchPropertiesPaginated(search, 1, PAGE_SIZE, {
-              location: locationFilter || undefined,
-              brokerBrandName: brokerFilter || undefined,
-              minPrice: minPrice ? Number(minPrice) : undefined,
-              maxPrice: maxPrice ? Number(maxPrice) : undefined,
-              subCounty: subCountyFilter || undefined,
-              district: districtFilter || undefined,
-            });
+            const res = await webApi.searchPropertiesPaginated(search, 1, PAGE_SIZE, activeFilters);
             data = res as { properties?: Property[]; total?: number };
           } catch {
             data = { properties: [], total: 0 };
           }
         } else {
           try {
-            const res = await webApi.customer.explorer({
-              page: 1,
-              limit: PAGE_SIZE,
-              location: locationFilter || undefined,
-              brokerBrandName: brokerFilter || undefined,
-              minPrice: minPrice ? Number(minPrice) : undefined,
-              maxPrice: maxPrice ? Number(maxPrice) : undefined,
-              subCounty: subCountyFilter || undefined,
-              district: districtFilter || undefined,
-              fromDate: dateFrom || undefined,
-              toDate: dateTo || undefined,
-            });
+            const res = await webApi.customer.explorer({ page: 1, limit: PAGE_SIZE, ...activeFilters });
             data = res as { properties?: Property[]; total?: number };
-            if ((data.properties || []).length === 0) {
-              try {
-                const fallback = await webApi.publicPropertiesPaginated(1, PAGE_SIZE, {
-                  location: locationFilter || undefined,
-                  brokerBrandName: brokerFilter || undefined,
-                  minPrice: minPrice ? Number(minPrice) : undefined,
-                  maxPrice: maxPrice ? Number(maxPrice) : undefined,
-                  subCounty: subCountyFilter || undefined,
-                  district: districtFilter || undefined,
-                  fromDate: dateFrom || undefined,
-                  toDate: dateTo || undefined,
-                });
-                data = fallback as { properties?: Property[]; total?: number };
-              } catch {
-                data = { properties: [], total: 0 };
-              }
-            }
-          } catch (explorerError) {
+          } catch {
             try {
-              const fallback = await webApi.publicPropertiesPaginated(1, PAGE_SIZE, {
-                location: locationFilter || undefined,
-                brokerBrandName: brokerFilter || undefined,
-                minPrice: minPrice ? Number(minPrice) : undefined,
-                maxPrice: maxPrice ? Number(maxPrice) : undefined,
-                subCounty: subCountyFilter || undefined,
-                district: districtFilter || undefined,
-                fromDate: dateFrom || undefined,
-                toDate: dateTo || undefined,
-              });
+              const fallback = await webApi.publicPropertiesPaginated(1, PAGE_SIZE, activeFilters);
               data = fallback as { properties?: Property[]; total?: number };
             } catch {
               data = { properties: [], total: 0 };
@@ -183,6 +156,7 @@ export default function PropertiesPage() {
         }
         if (!cancelled) {
           startTransition(() => {
+            resetSeenKeys(data.properties || []);
             setProperties(data.properties || []);
             setTotal(data.total || 0);
             setHasMore(1 * PAGE_SIZE < (data.total || 0));
@@ -196,6 +170,7 @@ export default function PropertiesPage() {
       } finally {
         if (!cancelled) {
           setLoading(false);
+          setIsFetching(false);
         }
       }
     };
@@ -204,13 +179,6 @@ export default function PropertiesPage() {
       cancelled = true;
     };
   }, [search, viewMode, selectedBrokerCode, locationFilter, brokerFilter, propertyTypeFilter, minPrice, maxPrice, subCountyFilter, districtFilter, dateFrom, dateTo]);
-
-  // Reset displayProperties when properties loads from API
-  useEffect(() => {
-    if (properties.length > 0 && displayProperties.length !== properties.length) {
-      setDisplayProperties(properties);
-    }
-  }, [properties]);
 
   useEffect(() => {
     if (!search) return;
@@ -242,6 +210,37 @@ export default function PropertiesPage() {
     setShowLocationSuggestions(false);
   };
 
+  const seenKeysRef = useRef<Set<string>>(new Set());
+
+  const propertyIdentity = (p: Property): string => {
+    const id = p.id?.trim();
+    if (id) return `id:${id}`;
+    return `k:${p.title}|${p.location}|${p.brokerCode ?? ""}|${p.createdAt}`;
+  };
+
+  // Rebuilds the identity set whenever the result set is replaced (page 1).
+  const resetSeenKeys = (list: Property[]) => {
+    seenKeysRef.current = new Set(list.map(propertyIdentity));
+    return list;
+  };
+
+  // Appends only properties not already tracked. The set is maintained incrementally,
+  // so each page costs O(incoming) instead of rebuilding from the whole array.
+  const appendUniqueProperties = (incoming: Property[] | undefined): number => {
+    if (!incoming?.length) return 0;
+    const fresh: Property[] = [];
+    for (const p of incoming) {
+      const key = propertyIdentity(p);
+      if (seenKeysRef.current.has(key)) continue;
+      seenKeysRef.current.add(key);
+      fresh.push(p);
+    }
+    if (fresh.length > 0) {
+      setProperties((prev) => [...prev, ...fresh]);
+    }
+    return fresh.length;
+  };
+
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
@@ -257,63 +256,30 @@ export default function PropertiesPage() {
         }
       } else if (search) {
         try {
-          const res = await webApi.searchPropertiesPaginated(search, nextPage, PAGE_SIZE, {
-            location: locationFilter || undefined,
-            brokerBrandName: brokerFilter || undefined,
-            minPrice: minPrice ? Number(minPrice) : undefined,
-            maxPrice: maxPrice ? Number(maxPrice) : undefined,
-            subCounty: subCountyFilter || undefined,
-            district: districtFilter || undefined,
-          });
+          const res = await webApi.searchPropertiesPaginated(search, nextPage, PAGE_SIZE, activeFilters);
           data = res as { properties?: Property[]; total?: number };
         } catch {
           data = { properties: [], total: 0 };
         }
       } else {
         try {
-          const res = await webApi.customer.explorer({
-            page: nextPage,
-            limit: PAGE_SIZE,
-            location: locationFilter || undefined,
-            brokerBrandName: brokerFilter || undefined,
-            minPrice: minPrice ? Number(minPrice) : undefined,
-            maxPrice: maxPrice ? Number(maxPrice) : undefined,
-            subCounty: subCountyFilter || undefined,
-            district: districtFilter || undefined,
-            fromDate: dateFrom || undefined,
-            toDate: dateTo || undefined,
-          });
+          const res = await webApi.customer.explorer({ page: nextPage, limit: PAGE_SIZE, ...activeFilters });
           data = res as { properties?: Property[]; total?: number };
           if ((data.properties || []).length === 0) {
-            const fallback = await webApi.publicPropertiesPaginated(nextPage, PAGE_SIZE, {
-              location: locationFilter || undefined,
-              brokerBrandName: brokerFilter || undefined,
-              minPrice: minPrice ? Number(minPrice) : undefined,
-              maxPrice: maxPrice ? Number(maxPrice) : undefined,
-              subCounty: subCountyFilter || undefined,
-              district: districtFilter || undefined,
-              fromDate: dateFrom || undefined,
-              toDate: dateTo || undefined,
-            });
+            const fallback = await webApi.publicPropertiesPaginated(nextPage, PAGE_SIZE, activeFilters);
             data = fallback as { properties?: Property[]; total?: number };
           }
-        } catch (explorerError) {
-          const fallback = await webApi.publicPropertiesPaginated(nextPage, PAGE_SIZE, {
-            location: locationFilter || undefined,
-            brokerBrandName: brokerFilter || undefined,
-            minPrice: minPrice ? Number(minPrice) : undefined,
-            maxPrice: maxPrice ? Number(maxPrice) : undefined,
-            subCounty: subCountyFilter || undefined,
-            district: districtFilter || undefined,
-            fromDate: dateFrom || undefined,
-            toDate: dateTo || undefined,
-          });
+        } catch {
+          const fallback = await webApi.publicPropertiesPaginated(nextPage, PAGE_SIZE, activeFilters);
           data = fallback as { properties?: Property[]; total?: number };
         }
       }
-      setProperties((prev) => [...prev, ...(data.properties || [])]);
+      const incomingCount = (data.properties || []).length;
+      const addedCount = appendUniqueProperties(data.properties);
+      // A page that adds nothing new means we have caught up with the server's
+      // result set. Stop paging instead of re-fetching the same window forever.
+      setHasMore(addedCount > 0 && incomingCount > 0 && nextPage * PAGE_SIZE < (data.total || 0));
       setTotal(data.total || 0);
-      setHasMore(nextPage * PAGE_SIZE < (data.total || 0));
       setPage(nextPage);
     } catch {
       // silently fail
@@ -342,12 +308,83 @@ export default function PropertiesPage() {
     return () => observer.disconnect();
   }, [loading, loadingMore, hasMore, page, deferredSearch, deferredViewMode, deferredSelectedBrokerCode, deferredLocationFilter, deferredBrokerFilter, deferredPropertyTypeFilter, deferredMinPrice, deferredMaxPrice, deferredSubCountyFilter, deferredDistrictFilter, deferredDateFrom, deferredDateTo]);
 
-  const uniqueLocations = useMemo(() => {
-    const locs = new Set(properties.map((p) => p.location).filter(Boolean));
-    return Array.from(locs).sort();
-  }, [properties]);
+  // Filter options are loaded once from unfiltered endpoints. Deriving them from
+  // `properties` would mean that selecting a filter shrinks the dropdown to only
+  // the currently-selected value, making it impossible to switch to another.
+  const [filterOptions, setFilterOptions] = useState<{
+    locations: string[];
+    propertyTypes: string[];
+    brokers: Array<{ code: string; name: string }>;
+  }>({ locations: [], propertyTypes: [], brokers: [] });
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadOptions = async () => {
+      // Locations + types come from one unfiltered call; brokers need their own
+      // endpoint for the code -> brand name mapping.
+      const [locationsRes, brokersRes] = await Promise.allSettled([
+        webApi.getLocations(),
+        webApi.getBrokers({ limit: 200 }),
+      ]);
+      if (cancelled) return;
+
+      const locations: string[] = [];
+      const propertyTypes: string[] = [];
+      const brokerCodes = new Set<string>();
+      if (locationsRes.status === "fulfilled") {
+        const seenLoc = new Set<string>();
+        const seenType = new Set<string>();
+        for (const row of locationsRes.value?.locations || []) {
+          if (row.location && !seenLoc.has(row.location)) {
+            seenLoc.add(row.location);
+            locations.push(row.location);
+          }
+          if (row.propertyType && !seenType.has(row.propertyType)) {
+            seenType.add(row.propertyType);
+            propertyTypes.push(row.propertyType);
+          }
+          if (row.brokerCode) brokerCodes.add(row.brokerCode);
+        }
+      }
+
+      const brokers: Array<{ code: string; name: string }> = [];
+      if (brokersRes.status === "fulfilled") {
+        const seenBroker = new Set<string>();
+        for (const b of brokersRes.value?.brokers || []) {
+          if (!b.brokerCode || seenBroker.has(b.brokerCode)) continue;
+          // Only offer brokers that actually have listings.
+          if (brokerCodes.size > 0 && !brokerCodes.has(b.brokerCode)) continue;
+          seenBroker.add(b.brokerCode);
+          brokers.push({ code: b.brokerCode, name: b.brokerBrandName || b.brandName || b.brokerCode });
+        }
+      }
+
+      setFilterOptions({
+        locations: locations.sort((a, b) => a.localeCompare(b)),
+        propertyTypes: propertyTypes.sort((a, b) => a.localeCompare(b)),
+        brokers: brokers.sort((a, b) => a.name.localeCompare(b.name)),
+      });
+    };
+    loadOptions().catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Fall back to the loaded page's values while the option request is in flight,
+  // so the dropdowns are never empty on first paint.
+  const uniqueLocations = useMemo(
+    () => (filterOptions.locations.length > 0 ? filterOptions.locations : Array.from(new Set(properties.map((p) => p.location).filter(Boolean) as string[])).sort()),
+    [filterOptions.locations, properties],
+  );
+
+  const uniquePropertyTypes = useMemo(
+    () => (filterOptions.propertyTypes.length > 0 ? filterOptions.propertyTypes : Array.from(new Set(properties.map((p) => p.propertyType).filter(Boolean) as string[])).sort()),
+    [filterOptions.propertyTypes, properties],
+  );
 
   const uniqueBrokers = useMemo(() => {
+    if (filterOptions.brokers.length > 0) return filterOptions.brokers;
     const brokers = new Map<string, string>();
     properties.forEach((p) => {
       if (p.brokerCode && p.brokerBrandName) {
@@ -355,51 +392,9 @@ export default function PropertiesPage() {
       }
     });
     return Array.from(brokers.entries()).map(([code, name]) => ({ code, name }));
-  }, [properties]);
+  }, [filterOptions.brokers, properties]);
 
-  const uniquePropertyTypes = useMemo(() => {
-    const types = new Set(properties.map((p) => p.propertyType).filter(Boolean));
-    return Array.from(types).sort();
-  }, [properties]);
-
-  const applyClientFilters = useCallback((props: Property[], filters: {
-    locationFilter: string;
-    brokerFilter: string;
-    propertyTypeFilter: string;
-    minPrice: string;
-    maxPrice: string;
-    subCountyFilter: string;
-    districtFilter: string;
-    dateFrom: string;
-    dateTo: string;
-  }) => {
-    return props.filter((p) => {
-      if (filters.locationFilter && p.location?.toLowerCase() !== filters.locationFilter.toLowerCase()) return false;
-      if (filters.brokerFilter && p.brokerBrandName?.toLowerCase() !== filters.brokerFilter.toLowerCase()) return false;
-      if (filters.propertyTypeFilter && p.propertyType?.toLowerCase() !== filters.propertyTypeFilter.toLowerCase()) return false;
-      if (filters.minPrice && p.price && p.price < Number(filters.minPrice)) return false;
-      if (filters.maxPrice && p.price && p.price > Number(filters.maxPrice)) return false;
-      if (filters.subCountyFilter && p.subCounty?.toLowerCase() !== filters.subCountyFilter.toLowerCase()) return false;
-      if (filters.districtFilter && p.district?.toLowerCase() !== filters.districtFilter.toLowerCase()) return false;
-      if (filters.dateFrom && p.createdAt && new Date(p.createdAt) < new Date(filters.dateFrom)) return false;
-      if (filters.dateTo && p.createdAt && new Date(p.createdAt) > new Date(filters.dateTo)) return false;
-      return true;
-    });
-  }, []);
-
-  const filteredProperties = useMemo(() => {
-    return applyClientFilters(displayProperties.length > 0 ? displayProperties : properties, {
-      locationFilter,
-      brokerFilter,
-      propertyTypeFilter,
-      minPrice,
-      maxPrice,
-      subCountyFilter,
-      districtFilter,
-      dateFrom,
-      dateTo,
-    });
-  }, [displayProperties, properties, locationFilter, brokerFilter, propertyTypeFilter, minPrice, maxPrice, subCountyFilter, districtFilter, dateFrom, dateTo, applyClientFilters]);
+  const filteredProperties = properties;
 
   // Scroll reveal for property cards
   useEffect(() => {
@@ -565,11 +560,7 @@ export default function PropertiesPage() {
             <label className="block text-sm font-medium text-gray-700">Location</label>
             <select
               value={locationFilter}
-              onChange={(e) => {
-                const val = e.target.value;
-                setLocationFilter(val);
-                setDisplayProperties(applyClientFilters(properties, { locationFilter: val, brokerFilter, propertyTypeFilter, minPrice, maxPrice, subCountyFilter, districtFilter, dateFrom, dateTo }));
-              }}
+              onChange={(e) => setLocationFilter(e.target.value)}
               className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
             >
               <option value="">All locations</option>
@@ -584,11 +575,7 @@ export default function PropertiesPage() {
             <label className="block text-sm font-medium text-gray-700">Broker</label>
             <select
               value={brokerFilter}
-              onChange={(e) => {
-                const val = e.target.value;
-                setBrokerFilter(val);
-                setDisplayProperties(applyClientFilters(properties, { locationFilter, brokerFilter: val, propertyTypeFilter, minPrice, maxPrice, subCountyFilter, districtFilter, dateFrom, dateTo }));
-              }}
+              onChange={(e) => setBrokerFilter(e.target.value)}
               className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
             >
               <option value="">All brokers</option>
@@ -603,11 +590,7 @@ export default function PropertiesPage() {
             <label className="block text-sm font-medium text-gray-700">Property Type</label>
             <select
               value={propertyTypeFilter}
-              onChange={(e) => {
-                const val = e.target.value;
-                setPropertyTypeFilter(val);
-                setDisplayProperties(applyClientFilters(properties, { locationFilter, brokerFilter, propertyTypeFilter: val, minPrice, maxPrice, subCountyFilter, districtFilter, dateFrom, dateTo }));
-              }}
+              onChange={(e) => setPropertyTypeFilter(e.target.value)}
               className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
             >
               <option value="">All types</option>
@@ -698,12 +681,23 @@ export default function PropertiesPage() {
         </div>
       </div>
 
-      {filteredProperties.length === 0 ? (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-5 shadow-[var(--shadow-soft)]">
-          <div className="py-12 text-center">
-            <p className="text-gray-500">No properties found.</p>
-          </div>
+      {/* Filter/query refetches keep the current results on screen and show an
+          inline indicator, so changing a filter never blanks the grid. */}
+      {isFetching && (
+        <div className="mb-6 flex items-center justify-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] px-4 py-3">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--border-strong)] border-t-[var(--zcanopy-primary)]" />
+          <span className="text-sm font-medium text-gray-600">Updating properties…</span>
         </div>
+      )}
+
+      {filteredProperties.length === 0 ? (
+        isFetching ? null : (
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-5 shadow-[var(--shadow-soft)]">
+            <div className="py-12 text-center">
+              <p className="text-gray-500">No properties found.</p>
+            </div>
+          </div>
+        )
       ) : (
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {filteredProperties.map((property, idx) => (
