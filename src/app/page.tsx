@@ -1,15 +1,17 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { COLORS } from "@/lib/theme";
 import { BROKER_SIGNUP_URL } from "@/lib/navigation";
 import HeroShowcase from "@/components/HeroShowcase";
 import FeaturedPropertiesRow from "@/components/FeaturedPropertiesRow";
+import FeaturedMosaic from "@/components/FeaturedMosaic";
 import ScrollReveal from "@/components/ScrollReveal";
 import Footer from "@/components/Footer";
 import {
   ArrowRight,
   ArrowUpRight,
-  Play,
-  MapPin,
+  UserPlus,
+  ShieldCheck,
+  TrendingUp,
   Home as HomeIcon,
   Handshake,
   BarChart3,
@@ -81,9 +83,24 @@ const STEPS = [
 ];
 
 const BROKER_STEPS = [
-  { n: "01", t: "Create your account", d: "Sign up, confirm email & phone with an OTP, and upload your National ID." },
-  { n: "02", t: "Get verified", d: "Our team reviews your documents, then emails your confirmation and broker code." },
-  { n: "03", t: "List & earn", d: "Finish setup in the mobile app, publish properties, and track commissions live." },
+  {
+    icon: UserPlus,
+    n: "01",
+    t: "Create your account",
+    d: "Sign up, confirm email & phone with an OTP, and upload your National ID.",
+  },
+  {
+    icon: ShieldCheck,
+    n: "02",
+    t: "Get verified",
+    d: "Our team reviews your documents, then emails your confirmation and broker code.",
+  },
+  {
+    icon: TrendingUp,
+    n: "03",
+    t: "List & earn",
+    d: "Finish setup in the mobile app, publish properties, and track commissions live.",
+  },
 ];
 
 const STATS = [
@@ -91,18 +108,6 @@ const STATS = [
   { value: "3k+", label: "Verified brokers" },
   { value: "UGX 22M+", label: "Paid out in commissions" },
   { value: "99.9%", label: "Platform uptime" },
-];
-
-const PAYMENT_STEPS = [
-  { n: "01", t: "Book & pay", d: "Clients pay booking fees and subscriptions instantly via mobile money." },
-  { n: "02", t: "Escrow hold", d: "Funds are secured and reconciled automatically against the transaction." },
-  { n: "03", t: "Commission split", d: "The platform commission is calculated and the broker's share is earmarked." },
-  { n: "04", t: "Payout", d: "Verified brokers withdraw earnings straight to their mobile money wallet." },
-];
-
-const CARRIERS = [
-  { name: "MTN MoMo", logo: "https://upload.wikimedia.org/wikipedia/commons/a/af/MTN_Logo.svg" },
-  { name: "Airtel Money", logo: "https://upload.wikimedia.org/wikipedia/commons/d/da/Airtel_Africa_logo.svg" },
 ];
 
 function CircleArrow({
@@ -127,7 +132,7 @@ function CircleArrow({
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+    <main className="tight-cards min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       {/* ---------------------------------------------------------------- Hero */}
       <HeroShowcase>
         <div className="max-w-2xl">
@@ -230,46 +235,100 @@ export default function Home() {
 
       {/* ------------------------------------------------ Featured properties */}
       <section id="properties" className="mx-auto max-w-6xl px-6 py-20 lg:py-28">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex items-center gap-6">
-            <div>
-              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-500">
-                Latest Properties
-              </span>
-              <h2 className="mt-4 max-w-sm text-4xl sm:text-5xl">
-                Explore available homes, apartments, and land across Uganda.
-              </h2>
-            </div>
-            <CircleArrow href="/properties" label="View all properties" className="text-[var(--zcanopy-card-brown)]" />
-          </div>
-
-          <div className="max-w-sm lg:pt-8">
-            <p className="text-sm leading-relaxed text-gray-600">
-              Browse verified properties from trusted brokers, view details, and book directly — all
-              in one place.
-            </p>
+        {/* Flip mosaic */}
+        <div className="grid gap-12 lg:grid-cols-12 lg:items-center lg:gap-16">
+          <div className="lg:col-span-3">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-500">
+              Featured Properties
+            </span>
+            <h2 className="mt-4 text-3xl sm:text-4xl">Featured properties</h2>
             <Link
               href="/properties"
-              className="mt-4 inline-flex items-center gap-1.5 font-sans text-sm font-semibold transition-colors hover:text-[var(--zcanopy-primary)]"
-              style={{ color: COLORS.primary }}
+              className="mt-7 inline-flex items-center gap-2 rounded-lg border border-[var(--border-strong)] px-5 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--zcanopy-card-brown)] transition-colors hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)]"
             >
-              View all properties <ArrowRight size={15} />
+              View all properties <ArrowRight size={14} />
             </Link>
+          </div>
+
+          <div className="lg:col-span-9">
+            <FeaturedMosaic />
           </div>
         </div>
 
-        <FeaturedPropertiesRow />
+        {/* Latest properties */}
+        <div className="mt-20 border-t border-[var(--border)] pt-20 lg:mt-28 lg:pt-24">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex items-center gap-6">
+              <div>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-500">
+                  Latest Properties
+                </span>
+                <h2 className="mt-4 max-w-sm text-4xl sm:text-5xl">
+                  Explore available homes, apartments, and land across Uganda.
+                </h2>
+              </div>
+              <CircleArrow
+                href="/properties"
+                label="View all properties"
+                className="text-[var(--zcanopy-card-brown)]"
+              />
+            </div>
+
+            <div className="max-w-sm lg:pt-8">
+              <p className="text-sm leading-relaxed text-gray-600">
+                Browse verified properties from trusted brokers, view details, and book directly —
+                all in one place.
+              </p>
+              <Link
+                href="/properties"
+                className="mt-4 inline-flex items-center gap-1.5 font-sans text-sm font-semibold transition-colors hover:text-[var(--zcanopy-primary)]"
+                style={{ color: COLORS.primary }}
+              >
+                View all properties <ArrowRight size={15} />
+              </Link>
+            </div>
+          </div>
+
+          <FeaturedPropertiesRow />
+        </div>
+      </section>
+
+      {/* ---------------------------------------- Stats — straddles the seam */}
+      {/* Negative margins pull the band up over the bottom of #properties and
+          down over the top of #how, so it sits on the border between them.
+          z-30 keeps it above both; the sticky header is z-40 so it stays put. */}
+      <section
+        aria-label="Platform statistics"
+        className="relative z-30 -my-14 px-5 sm:-my-16 sm:px-8 lg:-my-24"
+      >
+        <dl className="mx-auto grid max-w-[1500px] grid-cols-2 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--zcanopy-surface)] shadow-[var(--shadow-lift)] sm:grid-cols-2 lg:grid-cols-4">
+          {STATS.map((s, i) => (
+            <div
+              key={s.label}
+              className={`px-5 py-9 text-center lg:px-6 lg:py-11 ${
+                i % 2 === 1 ? "border-l border-[var(--border)]" : ""
+              } ${i > 1 ? "border-t border-[var(--border)] lg:border-t-0" : ""} ${
+                i === 2 ? "lg:border-l lg:border-[var(--border)]" : ""
+              }`}
+            >
+              <dt className="font-display text-4xl sm:text-5xl" style={{ color: COLORS.primary }}>
+                {s.value}
+              </dt>
+              <dd className="mt-2 text-sm text-gray-500">{s.label}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       {/* ------------------------------------------------- How it works block */}
       <section id="how" className="bg-[var(--zcanopy-surface)]">
         <div className="mx-auto max-w-[1500px] px-5 py-20 sm:px-8 lg:py-28">
-          <div className="grid gap-12 lg:grid-cols-12 lg:gap-20 xl:gap-24">
-            {/* Media */}
-            <div className="lg:col-span-6">
-              <div className="group relative overflow-hidden rounded-3xl shadow-[var(--shadow-lift)] ring-1 ring-black/5">
+          <div className="grid gap-12 lg:grid-cols-12 lg:gap-12 xl:gap-14">
+            {/* Media — sharp corners, no play control */}
+            <div className="min-w-0 lg:col-span-7">
+              <div className="group relative overflow-hidden shadow-[var(--shadow-lift)]">
                 <video
-                  className="h-[340px] w-full object-cover sm:h-[460px] lg:h-full lg:min-h-[540px]"
+                  className="h-[340px] w-full object-cover sm:h-[460px] lg:h-full lg:min-h-[480px]"
                   autoPlay
                   loop
                   muted
@@ -280,49 +339,36 @@ export default function Home() {
                     type="video/mp4"
                   />
                 </video>
-
-                <button
-                  type="button"
-                  aria-label="Play video"
-                  className="absolute inset-0 flex items-center justify-center"
-                >
-                  <span
-                    className="flex h-16 w-16 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-transform duration-300 group-hover:scale-105 sm:h-20 sm:w-20"
-                    style={{ border: "1px solid rgba(255,255,255,0.5)" }}
-                  >
-                    <Play size={22} className="ml-1" fill="currentColor" />
-                  </span>
-                </button>
               </div>
-              <p className="mt-4 text-center text-sm text-gray-500">
+              <p className="mt-4 text-sm text-gray-500">
                 Discover homes across Uganda — tours, bookings, and verified brokers, all in one
                 place.
               </p>
             </div>
 
             {/* Copy */}
-            <div className="lg:col-span-6 lg:self-center">
+            <div className="relative z-10 min-w-0 lg:col-span-5 lg:self-start">
               <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-500">
                 How it works
               </span>
-              <h2 className="mt-4 max-w-xl text-4xl sm:text-5xl">
+              <h2 className="mt-4 text-[1.75rem] leading-[1.12] sm:text-3xl">
                 From browsing to booking in three simple steps.
               </h2>
 
-              <div className="mt-10 space-y-7">
+              <div className="mt-7 space-y-5">
                 {STEPS.map((step, idx) => (
-                  <div key={step.n} className={`flex gap-5 slide-up slide-up-${(idx % 6) + 1}`}>
+                  <div key={step.n} className={`flex gap-3.5 slide-up slide-up-${(idx % 6) + 1}`}>
                     <span
-                      className="font-display text-3xl leading-none"
+                      className="font-display text-[1.375rem] leading-none"
                       style={{ color: COLORS.accentGold }}
                     >
                       {step.n}
                     </span>
-                    <div className="border-b border-[var(--border)] pb-6 last:border-b-0 last:pb-0">
-                      <h3 className="text-lg" style={{ color: COLORS.cardBrown }}>
+                    <div className="border-b border-[var(--border)] pb-4 last:border-b-0 last:pb-0">
+                      <h3 className="text-[15px]" style={{ color: COLORS.cardBrown }}>
                         {step.t}
                       </h3>
-                      <p className="mt-1.5 text-sm leading-relaxed text-gray-600">{step.d}</p>
+                      <p className="mt-1 text-[12.5px] leading-relaxed text-gray-600">{step.d}</p>
                     </div>
                   </div>
                 ))}
@@ -330,83 +376,14 @@ export default function Home() {
 
               <Link
                 href="/properties"
-                className="mt-9 inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+                className="mt-7 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
                 style={{
                   background: COLORS.primary,
                   boxShadow: "0 8px 18px rgba(169,113,14,0.28)",
                 }}
               >
-                Browse Properties <ArrowRight size={15} />
+                Browse Properties <ArrowRight size={14} />
               </Link>
-            </div>
-          </div>
-
-          {/* Stats — own row */}
-          <dl className="mt-16 grid grid-cols-2 border-y border-[var(--border)] lg:mt-24 lg:grid-cols-4">
-            {STATS.map((s, i) => (
-              <div
-                key={s.label}
-                className={`py-10 text-center lg:py-12 ${
-                  i % 2 === 1 ? "border-l border-[var(--border)]" : ""
-                } ${i > 1 ? "border-t border-[var(--border)] lg:border-t-0" : ""} ${
-                  i === 2 ? "lg:border-l lg:border-[var(--border)]" : ""
-                }`}
-              >
-                <dt className="font-display text-4xl sm:text-5xl" style={{ color: COLORS.primary }}>
-                  {s.value}
-                </dt>
-                <dd className="mt-2 text-sm text-gray-500">{s.label}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
-
-      {/* ---------------------------------------------------------- Payments */}
-      <section id="payments" className="mx-auto max-w-6xl px-6 py-20 lg:py-28">
-        <div className="max-w-2xl">
-          <span className="eyebrow">Payments</span>
-          <h2 className="mt-4 text-4xl sm:text-5xl">A payment flow you can trust</h2>
-          <p className="mt-3 text-gray-600">
-            From booking to payout, every shilling moves through secure, locally trusted rails.
-          </p>
-        </div>
-
-        <div className="mt-12 grid gap-5 md:grid-cols-4">
-          {PAYMENT_STEPS.map((s, idx) => (
-            <div key={s.n} className={`surface-card p-6 slide-up slide-up-${(idx % 6) + 1}`}>
-              <span className="font-display text-3xl" style={{ color: COLORS.accentGold }}>
-                {s.n}
-              </span>
-              <h3 className="mt-3 text-lg">{s.t}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-gray-600">{s.d}</p>
-            </div>
-          ))}
-        </div>
-
-        <div
-          className="mt-10 overflow-hidden rounded-3xl p-8 sm:p-10"
-          style={{ background: `linear-gradient(135deg, ${COLORS.cardBrown}, ${COLORS.primary})` }}
-        >
-          <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
-            <div>
-              <h3 className="text-xl font-semibold text-white" style={{ color: "#fff" }}>
-                Carriers we support today
-              </h3>
-              <p className="mt-2 max-w-md text-sm text-white/80">
-                ZCanopy settles payments through Uganda&apos;s most widely used mobile money
-                networks, with card and bank rails on the roadmap.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              {CARRIERS.map((c) => (
-                <span
-                  key={c.name}
-                  className="flex items-center gap-2 rounded-2xl bg-white/95 px-4 py-2.5 shadow-sm ring-1 ring-white/40"
-                >
-                  <img src={c.logo} alt={c.name} className="h-7 w-auto object-contain" />
-                </span>
-              ))}
             </div>
           </div>
         </div>
@@ -414,38 +391,57 @@ export default function Home() {
 
       {/* ---------------------------------------------------------- Features */}
       <section id="features" className="bg-[var(--zcanopy-surface)]">
-        <div className="mx-auto max-w-6xl px-6 py-20 lg:py-28">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-xl">
-              <h2 className="text-4xl sm:text-5xl">Everything brokers need</h2>
-              <p className="mt-3 text-gray-600">
+        <div className="mx-auto max-w-[1500px] px-5 py-20 sm:px-8 lg:py-28">
+          <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
+            {/* Heading block */}
+            <div className="lg:col-span-3">
+              <span
+                className="text-[11px] font-semibold uppercase tracking-[0.22em]"
+                style={{ color: COLORS.primary }}
+              >
+                Our process
+              </span>
+              <h2 className="mt-5 max-w-xs text-4xl sm:text-5xl">Everything brokers need</h2>
+              <p className="mt-4 max-w-sm text-gray-600">
                 A complete toolkit to list, connect, and earn — built for clarity and trust.
               </p>
-            </div>
-            <div className="max-w-sm lg:pt-8">
               <Link
                 href={BROKER_SIGNUP_URL}
-                className="inline-flex items-center gap-1.5 font-sans text-sm font-semibold transition-colors hover:text-[var(--zcanopy-primary)]"
+                className="mt-6 inline-flex items-center gap-1.5 font-sans text-sm font-semibold transition-colors hover:text-[var(--zcanopy-primary)]"
                 style={{ color: COLORS.primary }}
               >
                 Become a broker today <ArrowUpRight size={15} />
               </Link>
             </div>
-          </div>
 
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f, idx) => (
-              <div key={f.title} className={`surface-card p-7 slide-up slide-up-${(idx % 6) + 1}`}>
-                <div
-                  className="flex h-12 w-12 items-center justify-center rounded-2xl"
-                  style={{ backgroundColor: `${COLORS.accentGold}22` }}
-                >
-                  <f.icon className="h-6 w-6" style={{ color: COLORS.primary }} />
+            {/* Numbered rail */}
+            <div className="grid grid-cols-2 gap-x-7 gap-y-11 sm:grid-cols-3 lg:col-span-9 xl:grid-cols-6">
+              {FEATURES.map((f, idx) => (
+                <div key={f.title} className={`relative slide-up slide-up-${(idx % 6) + 1}`}>
+                  <span
+                    className="font-display text-[1.75rem] leading-none"
+                    style={{ color: COLORS.accentGold }}
+                  >
+                    {String(idx + 1).padStart(2, "0")}
+                  </span>
+
+                  {/* Rail: the rule runs across the row, the icon sits on it */}
+                  <div className="relative mt-4 border-t border-[var(--border-strong)]">
+                    <span
+                      className="absolute -top-[1.15rem] left-0 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--zcanopy-surface)]"
+                      style={{ color: COLORS.primary }}
+                    >
+                      <f.icon size={17} strokeWidth={1.6} />
+                    </span>
+                  </div>
+
+                  <h3 className="mt-6 font-sans text-xs font-semibold uppercase tracking-[0.16em] text-[var(--foreground)]">
+                    {f.title}
+                  </h3>
+                  <p className="mt-2.5 text-[13px] leading-relaxed text-gray-600">{f.text}</p>
                 </div>
-                <h3 className="mt-4 text-xl">{f.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-gray-600">{f.text}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -459,14 +455,31 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
           {BROKER_STEPS.map((step, idx) => (
-            <div key={step.n} className={`surface-card relative p-7 slide-up slide-up-${(idx % 6) + 1}`}>
-              <span className="font-display text-4xl" style={{ color: COLORS.accentGold }}>
-                {step.n}
+            <div
+              key={step.n}
+              className={`step-card px-8 py-11 slide-up slide-up-${(idx % 6) + 1}`}
+            >
+              <span
+                className="flex h-12 w-12 items-center justify-center rounded-full"
+                style={{ backgroundColor: `${COLORS.accentGold}1f`, color: COLORS.primary }}
+              >
+                <step.icon size={21} strokeWidth={1.6} />
               </span>
-              <h3 className="mt-3 text-xl">{step.t}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-gray-600">{step.d}</p>
+
+              <p
+                className="mt-6 font-display text-2xl leading-none"
+                style={{ color: COLORS.accentGold }}
+              >
+                {step.n}
+              </p>
+              <h3 className="mt-3 text-lg" style={{ color: COLORS.cardBrown }}>
+                {step.t}
+              </h3>
+              <p className="mt-2.5 max-w-[16rem] text-sm leading-relaxed text-gray-500">
+                {step.d}
+              </p>
             </div>
           ))}
         </div>
@@ -511,7 +524,7 @@ export default function Home() {
           <div className="lg:col-span-4 lg:justify-self-end">
             <Link
               href="/properties"
-              className="flex w-40 flex-col items-center gap-3 rounded-3xl bg-black/25 p-8 text-center backdrop-blur-sm transition-colors hover:bg-black/35"
+              className="tight-card flex w-40 flex-col items-center gap-3 bg-black/25 p-8 text-center backdrop-blur-sm transition-colors hover:bg-black/35"
             >
               <span
                 className="flex h-16 w-16 items-center justify-center rounded-full bg-white"

@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef, useTransition, useDeferredValue } from "react";
+import { useEffect, useMemo, useState, useRef, useTransition, useDeferredValue, useSyncExternalStore } from "react";
 import PropertyCard from "@/components/PropertyCard";
+import PropertyShowcaseRow from "@/components/PropertyShowcaseRow";
+import { LayoutGrid, Rows3 } from "lucide-react";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
 import Link from "next/link";
 import { usePlacePredictions } from "@/hooks/useGooglePlaces";
@@ -47,6 +49,40 @@ const emptyForm: BookingForm = {
   customerEmail: "",
 };
 
+type LayoutMode = "grid" | "showcase";
+const LAYOUT_KEY = "zcanopy_properties_layout";
+const LAYOUT_EVENT = "zcanopy-layout-change";
+
+/**
+ * localStorage read through useSyncExternalStore so the preference survives
+ * reloads without a setState-in-effect, and so SSR can send the default.
+ */
+const layoutStore = {
+  subscribe(cb: () => void) {
+    window.addEventListener(LAYOUT_EVENT, cb);
+    window.addEventListener("storage", cb);
+    return () => {
+      window.removeEventListener(LAYOUT_EVENT, cb);
+      window.removeEventListener("storage", cb);
+    };
+  },
+  get(): LayoutMode {
+    return window.localStorage.getItem(LAYOUT_KEY) === "showcase" ? "showcase" : "grid";
+  },
+  getServerSnapshot(): LayoutMode {
+    return "grid";
+  },
+  set(next: LayoutMode) {
+    window.localStorage.setItem(LAYOUT_KEY, next);
+    window.dispatchEvent(new Event(LAYOUT_EVENT));
+  },
+};
+
+const LAYOUT_OPTIONS: Array<{ value: LayoutMode; label: string; Icon: typeof LayoutGrid }> = [
+  { value: "grid", label: "Grid", Icon: LayoutGrid },
+  { value: "showcase", label: "Showcase", Icon: Rows3 },
+];
+
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +106,11 @@ export default function PropertiesPage() {
   const [paymentStatus, setPaymentStatus] = useState<string>("");
   const [viewMode, setViewMode] = useState<"all" | "broker">("all");
   const [selectedBrokerCode, setSelectedBrokerCode] = useState<string>("");
+  const layout = useSyncExternalStore(
+    layoutStore.subscribe,
+    layoutStore.get,
+    layoutStore.getServerSnapshot,
+  );
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [localSearch, setLocalSearch] = useState("");
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
@@ -396,7 +437,10 @@ export default function PropertiesPage() {
 
   const filteredProperties = properties;
 
-  // Scroll reveal for property cards
+  // Scroll reveal for property cards.
+  // `layout` is a dependency because switching views swaps the rendered tree:
+  // the newly mounted .slide-up nodes start at opacity 0 and would never be
+  // observed if this only re-ran when the result count changed.
   useEffect(() => {
     const elements = document.querySelectorAll(".slide-up");
     if (!elements.length) return;
@@ -424,7 +468,7 @@ export default function PropertiesPage() {
     });
 
     return () => observer.disconnect();
-  }, [filteredProperties.length]);
+  }, [filteredProperties.length, layout]);
 
   const [needsAuth, setNeedsAuth] = useState(false);
 
@@ -510,9 +554,38 @@ export default function PropertiesPage() {
   return (
     <div className="w-full space-y-6 px-4 py-8 md:px-6">
       <BackButton />
-      <div>
-        <h2 className="text-3xl">Browse Properties</h2>
-        <p className="mt-2 text-gray-500">Find your next home or investment and book directly.</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-3xl">Browse Properties</h2>
+          <p className="mt-2 text-gray-500">Find your next home or investment and book directly.</p>
+        </div>
+
+        {/* Layout switcher */}
+        <div
+          role="group"
+          aria-label="Property layout"
+          className="flex items-center gap-1 rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] p-1 shadow-sm"
+        >
+          {LAYOUT_OPTIONS.map(({ value, label, Icon }) => {
+            const active = layout === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => layoutStore.set(value)}
+                aria-pressed={active}
+                title={`${label} view`}
+                className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors ${
+                  active ? "text-white" : "text-gray-600 hover:text-[var(--zcanopy-primary)]"
+                }`}
+                style={active ? { background: "var(--zcanopy-primary)" } : undefined}
+              >
+                <Icon size={16} />
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-5 shadow-[var(--shadow-soft)]">
@@ -698,6 +771,18 @@ export default function PropertiesPage() {
             </div>
           </div>
         )
+      ) : layout === "showcase" ? (
+        <div className="flex flex-col gap-5">
+          {filteredProperties.map((property, idx) => (
+            <div
+              key={property.id || `${property.title}-${idx}`}
+              className="slide-up"
+              style={{ animationDelay: `${Math.min(idx, 8) * 60}ms` }}
+            >
+              <PropertyShowcaseRow property={property} />
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {filteredProperties.map((property, idx) => (

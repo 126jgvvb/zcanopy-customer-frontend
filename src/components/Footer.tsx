@@ -55,6 +55,7 @@ const NAV_LINKS: { label: string; href: string }[] = [
   { label: "Properties", href: "/properties" },
   { label: "About", href: "/about" },
   { label: "How it works", href: "/#how" },
+  { label: "How to make payments", href: "/payments" },
   { label: "Help", href: "/help" },
   { label: "Contact", href: "/#brokers" },
 ];

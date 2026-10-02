@@ -18,7 +18,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   return (
     <>
-      <header className="site-header sticky top-0 z-20">
+      <header className="site-header sticky top-0 z-40">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
           <Link href="/" className="flex items-center gap-2.5">
             <img

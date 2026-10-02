@@ -11,6 +11,13 @@ const HERO_POSTER =
   "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1600&q=70";
 const SLIDE_MS = 6000;
 
+type RawProperty = {
+  id?: string | number;
+  title?: string;
+  location?: string;
+  imageUrl?: string[];
+};
+
 type Slide = {
   id: string;
   title: string;
@@ -18,16 +25,21 @@ type Slide = {
   image: string;
 };
 
-function toSlides(properties: any[]): Slide[] {
-  return properties
-    .filter((p) => Array.isArray(p?.imageUrl) && p.imageUrl.length)
-    .slice(0, 4)
-    .map((p, i) => ({
-      id: String(p.id ?? i),
+function toSlides(properties: RawProperty[]): Slide[] {
+  const slides: Slide[] = [];
+
+  for (const p of properties.slice(0, 4)) {
+    const image = p.imageUrl?.[0];
+    if (!image) continue;
+    slides.push({
+      id: String(p.id ?? slides.length),
       title: p.title ?? "",
       location: p.location ?? "",
-      image: p.imageUrl[0],
-    }));
+      image,
+    });
+  }
+
+  return slides;
 }
 
 export default function HeroShowcase({ children }: { children: React.ReactNode }) {
@@ -53,7 +65,6 @@ export default function HeroShowcase({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (slides.length <= 1) return;
     const startedAt = Date.now();
-    setProgress(0);
     const tick = setInterval(() => {
       const pct = ((Date.now() - startedAt) / SLIDE_MS) * 100;
       if (pct >= 100) {

@@ -6,6 +6,17 @@ import { ArrowLeft, ArrowRight, MapPin } from "lucide-react";
 import { COLORS } from "@/lib/theme";
 import { webApi } from "@/lib/api";
 
+type RawProperty = {
+  id?: string | number;
+  title?: string;
+  location?: string;
+  propertyType?: string;
+  brokerBrandName?: string;
+  price?: number;
+  isAvailable?: boolean;
+  imageUrl?: string[];
+};
+
 type Listing = {
   id: string;
   title: string;
@@ -17,12 +28,14 @@ type Listing = {
   image: string;
 };
 
-const PLACEHOLDER = "https://picsum.photos/seed/zcanopy/800/600";
+const PLACEHOLDER = "https://picsum.photos/seed/zcanopy/900/700";
 const FETCH_LIMIT = 12;
-const CARD_WIDTH = 344; // 320px card + 24px gap
-const BASE_SPEED = 0.035; // px per ms
-const CLICK_STEP = CARD_WIDTH * 2;
-const HOLD_INTERVAL = 55;
+
+// Card sizing lives in one place so the track, skeletons and fallbacks match.
+const CARD_CLASS = "w-[300px] sm:w-[360px] lg:w-[420px]";
+const SETS = 4; // identical copies rendered so the loop can wrap forever
+const SPEED_PX_PER_SEC = 80; // auto-scroll speed
+const HOLD_INTERVAL = 40; // ms between set-jumps while an arrow is held
 
 function formatUGX(n?: number): string | null {
   if (n === undefined || n === null || Number.isNaN(n)) return null;
@@ -37,7 +50,7 @@ function formatUGX(n?: number): string | null {
   }
 }
 
-function toListings(properties: any[]): Listing[] {
+function toListings(properties: RawProperty[]): Listing[] {
   const seen = new Set<string>();
   const out: Listing[] = [];
 
@@ -64,48 +77,48 @@ function PropertyCard({ listing }: { listing: Listing }) {
   return (
     <Link
       href={`/properties/${listing.id}`}
-      className="surface-card group block w-[280px] shrink-0 overflow-hidden sm:w-[320px]"
+      className={`surface-card group block shrink-0 overflow-hidden ${CARD_CLASS}`}
     >
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
+      <div className="relative aspect-[16/11] w-full overflow-hidden bg-gray-100">
         <img
           src={listing.image}
           alt={listing.title}
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
-        <span className="absolute bottom-4 left-4 rounded-full bg-white/92 px-3.5 py-1.5 text-xs font-semibold text-[var(--zcanopy-card-brown)] shadow-sm backdrop-blur-sm">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        <span className="absolute bottom-4 left-4 rounded-full bg-white/92 px-4 py-1.5 text-sm font-semibold text-[var(--zcanopy-card-brown)] shadow-sm backdrop-blur-sm">
           {listing.isAvailable ? "Available" : "Booked"}
         </span>
         {listing.propertyType && (
-          <span className="absolute left-4 top-4 rounded-full bg-black/45 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-sm">
+          <span className="absolute left-4 top-4 rounded-full bg-black/45 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-sm">
             {listing.propertyType}
           </span>
         )}
       </div>
 
-      <div className="p-5">
+      <div className="p-6">
         <h3
-          className="line-clamp-2 font-display text-xl leading-snug"
+          className="line-clamp-2 font-display text-2xl leading-snug"
           style={{ color: COLORS.cardBrown }}
         >
           {listing.title}
         </h3>
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-          <span className="flex min-w-0 items-center gap-1.5 text-sm text-gray-500">
-            <MapPin size={14} className="shrink-0" />
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <span className="flex min-w-0 items-center gap-1.5 text-[15px] text-gray-500">
+            <MapPin size={15} className="shrink-0" />
             <span className="truncate">{listing.location}</span>
           </span>
           {formatUGX(listing.price) && (
-            <span className="font-display text-lg" style={{ color: COLORS.primary }}>
+            <span className="font-display text-xl" style={{ color: COLORS.primary }}>
               {formatUGX(listing.price)}
             </span>
           )}
         </div>
 
         {listing.brokerBrandName && (
-          <p className="mt-2 truncate text-sm text-gray-500">
+          <p className="mt-2.5 truncate text-sm text-gray-500">
             <span className="font-medium text-gray-600">Broker:</span> {listing.brokerBrandName}
           </p>
         )}
@@ -116,11 +129,11 @@ function PropertyCard({ listing }: { listing: Listing }) {
 
 function SkeletonCard() {
   return (
-    <div className="surface-card w-[280px] shrink-0 overflow-hidden sm:w-[320px]">
-      <div className="aspect-[4/3] w-full animate-pulse bg-gray-100" />
-      <div className="space-y-3 p-5">
-        <div className="h-5 w-2/3 animate-pulse rounded bg-gray-100" />
-        <div className="h-3 w-1/2 animate-pulse rounded bg-gray-100" />
+    <div className={`surface-card shrink-0 overflow-hidden ${CARD_CLASS}`}>
+      <div className="aspect-[16/11] w-full animate-pulse bg-gray-100" />
+      <div className="space-y-3 p-6">
+        <div className="h-6 w-2/3 animate-pulse rounded bg-gray-100" />
+        <div className="h-4 w-1/2 animate-pulse rounded bg-gray-100" />
       </div>
     </div>
   );
@@ -130,8 +143,10 @@ export default function FeaturedPropertiesRow() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loaded, setLoaded] = useState(false);
 
-  const trackRef = useRef<HTMLDivElement>(null);
+  const runnerRef = useRef<HTMLDivElement>(null);
+  const setRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef(0);
+  const setWidthRef = useRef(0);
   const pausedRef = useRef(false);
   const holdRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -164,45 +179,64 @@ export default function FeaturedPropertiesRow() {
     };
   }, []);
 
-  // Repeat the set a few times so there is always somewhere to scroll to.
+  // Repeat the base list if it is too short to fill the viewport.
   const cards = useMemo(() => {
     if (!listings.length) return [];
-    return [...listings, ...listings, ...listings];
+    return listings.length >= 4 ? listings : [...listings, ...listings];
   }, [listings]);
 
-  // Auto-scroll loop.
+  // Measure a single set so the loop can wrap on an exact content boundary.
+  useEffect(() => {
+    if (!loaded || !cards.length) return;
+    const el = setRef.current;
+    if (el) {
+      setWidthRef.current = el.offsetWidth;
+      offsetRef.current = 0;
+      if (runnerRef.current) runnerRef.current.style.transform = "translate3d(0,0,0)";
+    }
+  }, [loaded, cards.length]);
+
+  const paint = useCallback(() => {
+    const el = runnerRef.current;
+    if (el) el.style.transform = `translate3d(${-offsetRef.current}px, 0, 0)`;
+  }, []);
+
+  // Auto-scroll: advances every frame using elapsed time, so the speed is the
+  // same on 60Hz and 120Hz displays. Offsets wrap on whole set boundaries,
+  // which is invisible because every set is identical.
   useEffect(() => {
     if (!loaded || !cards.length) return;
     let frame = 0;
+    let last = performance.now();
 
-    const tick = () => {
-      const el = trackRef.current;
-      if (el) {
-        if (!pausedRef.current) offsetRef.current += BASE_SPEED;
+    const tick = (now: number) => {
+      const dt = Math.min(now - last, 64);
+      last = now;
 
-        const max = el.scrollWidth - el.clientWidth;
-        // Wrap once we run past the end; content is identical, so it is seamless.
-        if (offsetRef.current >= max) offsetRef.current = 0;
-        if (offsetRef.current < 0) offsetRef.current = max;
-
-        el.scrollLeft = offsetRef.current;
+      const setWidth = setWidthRef.current;
+      if (setWidth > 0) {
+        if (!pausedRef.current) {
+          offsetRef.current += (SPEED_PX_PER_SEC * dt) / 1000;
+          if (offsetRef.current >= setWidth) offsetRef.current -= setWidth;
+          if (offsetRef.current < 0) offsetRef.current += setWidth;
+        }
+        paint();
       }
       frame = requestAnimationFrame(tick);
     };
 
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [loaded, cards.length]);
+  }, [loaded, cards.length, paint]);
 
-  const scrollBy = useCallback((direction: 1 | -1) => {
-    const el = trackRef.current;
-    if (!el) return;
-
-    const max = el.scrollWidth - el.clientWidth;
-    const next = offsetRef.current + direction * CLICK_STEP;
-    offsetRef.current = next > max ? 0 : next < 0 ? max : next;
-    el.scrollLeft = offsetRef.current;
-  }, []);
+  /** Jump a whole set at a time; repeats are identical so wrapping is seamless. */
+  const jumpSets = useCallback((direction: 1 | -1) => {
+    const setWidth = setWidthRef.current;
+    if (setWidth <= 0) return;
+    offsetRef.current = (offsetRef.current + direction * setWidth) % setWidth;
+    if (offsetRef.current < 0) offsetRef.current += setWidth;
+    paint();
+  }, [paint]);
 
   const stopHold = useCallback(() => {
     if (holdRef.current !== null) {
@@ -213,93 +247,58 @@ export default function FeaturedPropertiesRow() {
 
   const startHold = useCallback(
     (direction: 1 | -1) => {
-      scrollBy(direction);
+      jumpSets(direction);
       stopHold();
-      holdRef.current = setInterval(() => scrollBy(direction), HOLD_INTERVAL);
+      // One whole set every 40ms tears through the list very fast.
+      holdRef.current = setInterval(() => jumpSets(direction), HOLD_INTERVAL);
     },
-    [scrollBy, stopHold],
+    [jumpSets, stopHold],
   );
 
-  useEffect(() => stopHold, [stopHold]);
+  useEffect(() => () => stopHold(), [stopHold]);
 
-  const pause = () => {
-    const el = trackRef.current;
-    if (el) offsetRef.current = el.scrollLeft;
+  const pause = useCallback(() => {
     pausedRef.current = true;
-  };
+  }, []);
 
-  const resume = () => {
-    const el = trackRef.current;
-    if (el) offsetRef.current = el.scrollLeft;
+  const resume = useCallback(() => {
     pausedRef.current = false;
-  };
+  }, []);
 
-  const controls =
-    loaded && listings.length > 0 ? (
-      <>
-        <button
-          type="button"
-          aria-label="Scroll properties left"
-          title="Scroll left"
-          className="marquee-arrow marquee-arrow-prev"
-          onPointerDown={(e) => {
-            e.preventDefault();
-            startHold(-1);
-          }}
-          onPointerUp={stopHold}
-          onPointerLeave={stopHold}
-          onPointerCancel={stopHold}
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <button
-          type="button"
-          aria-label="Scroll properties right"
-          title="Scroll right"
-          className="marquee-arrow marquee-arrow-next"
-          onPointerDown={(e) => {
-            e.preventDefault();
-            startHold(1);
-          }}
-          onPointerUp={stopHold}
-          onPointerLeave={stopHold}
-          onPointerCancel={stopHold}
-        >
-          <ArrowRight size={18} />
-        </button>
-      </>
-    ) : null;
+  const staticRow = (node: React.ReactNode) => (
+    <div className="mt-12 flex gap-6 overflow-hidden px-6">{node}</div>
+  );
 
   if (!loaded) {
-    return (
-      <div className="mt-12 flex gap-6 overflow-hidden px-6">
+    return staticRow(
+      <>
         {[0, 1, 2, 3, 4].map((i) => (
           <SkeletonCard key={i} />
         ))}
-      </div>
+      </>,
     );
   }
 
   if (!listings.length) {
-    return (
-      <div className="mt-12 flex gap-6 overflow-hidden px-6">
+    return staticRow(
+      <>
         {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} className="surface-card w-[280px] shrink-0 overflow-hidden sm:w-[320px]">
-            <div className="aspect-[4/3] w-full overflow-hidden bg-gray-100">
+          <div key={i} className={`surface-card shrink-0 overflow-hidden ${CARD_CLASS}`}>
+            <div className="aspect-[16/11] w-full overflow-hidden bg-gray-100">
               <img src={PLACEHOLDER} alt="" className="h-full w-full object-cover" />
             </div>
-            <div className="p-5">
-              <h3 className="font-display text-xl" style={{ color: COLORS.cardBrown }}>
+            <div className="p-6">
+              <h3 className="font-display text-2xl" style={{ color: COLORS.cardBrown }}>
                 Featured property
               </h3>
-              <p className="mt-2 flex items-center gap-1.5 text-sm text-gray-500">
-                <MapPin size={14} />
+              <p className="mt-3 flex items-center gap-1.5 text-[15px] text-gray-500">
+                <MapPin size={15} />
                 Uganda
               </p>
             </div>
           </div>
         ))}
-      </div>
+      </>,
     );
   }
 
@@ -311,12 +310,53 @@ export default function FeaturedPropertiesRow() {
       onFocus={pause}
       onBlur={resume}
     >
-      <div className="marquee-track" ref={trackRef}>
-        {cards.map((l, i) => (
-          <PropertyCard key={`${l.id}-${i}`} listing={l} />
-        ))}
+      <div className="marquee-viewport">
+        <div className="marquee-runner" ref={runnerRef}>
+          {Array.from({ length: SETS }, (_, s) => (
+            <div
+              key={s}
+              ref={s === 0 ? setRef : undefined}
+              aria-hidden={s > 0}
+              className="marquee-set"
+            >
+              {cards.map((l) => (
+                <PropertyCard key={`${s}-${l.id}`} listing={l} />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
-      {controls}
+
+      <button
+        type="button"
+        aria-label="Scroll properties left"
+        title="Scroll left"
+        className="marquee-arrow marquee-arrow-prev"
+        onPointerDown={(e) => {
+          e.preventDefault();
+          startHold(-1);
+        }}
+        onPointerUp={stopHold}
+        onPointerLeave={stopHold}
+        onPointerCancel={stopHold}
+      >
+        <ArrowLeft size={18} />
+      </button>
+      <button
+        type="button"
+        aria-label="Scroll properties right"
+        title="Scroll right"
+        className="marquee-arrow marquee-arrow-next"
+        onPointerDown={(e) => {
+          e.preventDefault();
+          startHold(1);
+        }}
+        onPointerUp={stopHold}
+        onPointerLeave={stopHold}
+        onPointerCancel={stopHold}
+      >
+        <ArrowRight size={18} />
+      </button>
     </div>
   );
 }
