@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { webApi, ApiError, setSession, clearSession } from '@/lib/api';
 import { Heart, CalendarCheck, Search, Receipt, FileText, MessageCircle, Bell, User } from 'lucide-react';
 import CustomerTransactionsContent from './transactions/page';
@@ -15,7 +16,10 @@ import FindBookingContent from './find-booking/page';
 
 type ActiveView = 'dashboard' | 'favorites' | 'bookings' | 'find-booking' | 'transactions' | 'invoices' | 'messages' | 'notifications' | 'profile';
 
+const VALID_VIEWS: ActiveView[] = ['dashboard', 'favorites', 'bookings', 'find-booking', 'transactions', 'invoices', 'messages', 'notifications', 'profile'];
+
 export default function CustomerPage() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -31,6 +35,27 @@ export default function CustomerPage() {
   const [forgotPasswordConfirmPassword, setForgotPasswordConfirmPassword] = useState('');
   const [forgotPasswordStep, setForgotPasswordStep] = useState<'email' | 'otp' | 'reset'>('email');
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
+
+  const router = useRouter();
+
+  // Honours ?view=<tab> deep links, e.g. /customer?view=bookings right after a
+  // successful booking.
+  const requestedView = searchParams.get('view');
+
+  useEffect(() => {
+    if (requestedView && VALID_VIEWS.includes(requestedView as ActiveView)) {
+      setActiveView(requestedView as ActiveView);
+    }
+  }, [requestedView]);
+
+  // Switching tabs by hand clears the deep-link param so a refresh does not
+  // snap the user back to the tab they arrived on.
+  const selectView = (view: ActiveView) => {
+    setActiveView(view);
+    if (requestedView && requestedView !== view) {
+      router.replace('/customer', { scroll: false });
+    }
+  };
 
   useEffect(() => {
     const savedToken = localStorage.getItem('zcanopy_token');
@@ -466,7 +491,7 @@ export default function CustomerPage() {
                   return (
                     <button
                       key={link.name}
-                      onClick={() => setActiveView(link.view)}
+                      onClick={() => selectView(link.view)}
                       className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${
                         isActive
                           ? 'bg-[var(--zcanopy-accent-gold)]/10 text-[var(--zcanopy-primary)]'

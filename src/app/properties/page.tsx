@@ -8,6 +8,7 @@ import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
 import Link from "next/link";
 import { usePlacePredictions } from "@/hooks/useGooglePlaces";
 import BackButton from "@/components/BackButton";
+import { useBookingRedirect } from "@/hooks/useBookingRedirect";
 
 function formatUGX(n: number) {
   try {
@@ -472,6 +473,13 @@ export default function PropertiesPage() {
 
   const [needsAuth, setNeedsAuth] = useState(false);
 
+  // After a successful booking the customer is sent to their dashboard.
+  const {
+    schedule: scheduleBookingRedirect,
+    cancel: cancelBookingRedirect,
+    goToBookings,
+  } = useBookingRedirect();
+
   const isAuthenticated = () => {
     const getCookie = (name: string) => {
       if (typeof document === 'undefined') return null;
@@ -485,6 +493,7 @@ export default function PropertiesPage() {
   };
 
   const closeBooking = () => {
+    cancelBookingRedirect();
     setSelectedProperty(null);
     setNeedsAuth(false);
     setBookedProperty(null);
@@ -522,7 +531,7 @@ export default function PropertiesPage() {
         setSuccess("Booking confirmed! Check your email and SMS for the invoice code.");
         setForm(emptyForm);
         setBookedProperty({ ...selectedProperty, brokerPhone: paymentResult.brokerPhone });
-        setTimeout(closeBooking, 1500);
+        scheduleBookingRedirect();
       } else {
         setPaymentStatus("");
         setSubmitError(paymentResult.message || "Payment failed. Please try again.");
@@ -833,6 +842,13 @@ export default function PropertiesPage() {
                     className="btn-ghost px-4 py-2 text-sm"
                   >
                     Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goToBookings}
+                    className="btn-primary px-4 py-2 text-sm"
+                  >
+                    Go to my bookings
                   </button>
                 </div>
               </div>

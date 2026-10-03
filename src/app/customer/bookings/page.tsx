@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { webApi } from '@/lib/api';
+import { webApi, getSessionId } from '@/lib/api';
 
 interface CustomerBookingsContentProps {
-  token: string;
+  token?: string;
 }
 
 interface Booking {
@@ -23,11 +23,20 @@ export default function CustomerBookingsContent({ token }: CustomerBookingsConte
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Rendered as the /customer/bookings route this receives no token prop, so
+  // fall back to the stored session instead of issuing an unauthenticated call.
+  const effectiveToken = token || getSessionId() || '';
+
   useEffect(() => {
-    loadBookings(token);
-  }, [token]);
+    loadBookings(effectiveToken);
+  }, [effectiveToken]);
 
   const loadBookings = async (token: string) => {
+    if (!token) {
+      setError('Please sign in to view your bookings.');
+      setLoading(false);
+      return;
+    }
     try {
       const result = await webApi.customer.getBookings(token, 1, 20);
       setBookings(result.bookings || []);

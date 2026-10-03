@@ -319,8 +319,11 @@ export default function FeaturedPropertiesRow() {
               aria-hidden={s > 0}
               className="marquee-set"
             >
-              {cards.map((l) => (
-                <PropertyCard key={`${s}-${l.id}`} listing={l} />
+              {cards.map((l, i) => (
+                // `cards` repeats the list when it is too short to fill the
+                // viewport, so listing ids repeat within a set. Index keeps the
+                // key unique.
+                <PropertyCard key={`${s}-${i}`} listing={l} />
               ))}
             </div>
           ))}

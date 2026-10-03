@@ -7,6 +7,7 @@ import { MapPin, Calendar, Video, ArrowLeft, ExternalLink, Heart, MessageSquare,
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import AuthPromptModal from "@/components/AuthPromptModal";
+import { useBookingRedirect } from "@/hooks/useBookingRedirect";
 
 function formatUGX(n: number) {
   try {
@@ -93,6 +94,14 @@ export default function PropertyDetailPage() {
   const [averageRating, setAverageRating] = useState(0);
   const [commentForm, setCommentForm] = useState(emptyCommentForm);
   const [submittingComment, setSubmittingComment] = useState(false);
+
+  // After a successful booking the customer is sent to their dashboard's
+  // "My Bookings" tab.
+  const {
+    schedule: scheduleBookingsRedirect,
+    cancel: cancelBookingsRedirect,
+    goToBookings,
+  } = useBookingRedirect();
 
    useEffect(() => {
     const load = async () => {
@@ -219,6 +228,7 @@ export default function PropertyDetailPage() {
   };
 
   const closeBooking = () => {
+    cancelBookingsRedirect();
     setSelectedProperty(null);
     setNeedsAuth(false);
     setBookedProperty(null);
@@ -252,13 +262,14 @@ export default function PropertyDetailPage() {
         status: "pending",
       });
 
-      const paymentResult = result as { success?: boolean; message?: string; bookingCode?: string; brokerPhone?: string };
-      
+      const paymentResult = result as { success?: boolean; message?: string; bookingId?: string; bookingCode?: string; brokerPhone?: string };
+
       if (paymentResult.success) {
         setPaymentStatus("Payment completed successfully!");
         setSuccess("Booking confirmed! Check your email and SMS for the invoice code.");
         setForm(emptyForm);
         setBookedProperty({ ...selectedProperty, brokerPhone: paymentResult.brokerPhone });
+        scheduleBookingsRedirect();
       } else {
         setPaymentStatus("");
         setSubmitError(paymentResult.message || "Payment failed. Please try again.");
@@ -598,7 +609,7 @@ export default function PropertyDetailPage() {
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-[var(--zcanopy-card-brown)]">Booking Confirmed</h3>
                 <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-                  Your booking request has been submitted successfully.
+                  Your booking request has been submitted successfully. Taking you to your bookings…
                 </div>
                 <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
                   <p className="font-semibold text-[var(--zcanopy-card-brown)]">Broker contact: {bookedProperty.brokerPhone || "Not provided"}</p>
@@ -616,7 +627,14 @@ export default function PropertyDetailPage() {
                     onClick={closeBooking}
                     className="btn-ghost px-4 py-2 text-sm"
                   >
-                    Close
+                    Stay here
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goToBookings}
+                    className="btn-primary px-4 py-2 text-sm"
+                  >
+                    View my booking
                   </button>
                 </div>
               </div>
