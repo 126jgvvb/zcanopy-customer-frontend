@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
-import { MapPin, MapPinOff, Calendar, Video, ArrowLeft, ExternalLink, Heart, MessageSquare, Star } from "lucide-react";
+import { MapPin, MapPinOff, Calendar, Video, ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, Heart, MessageSquare, Star } from "lucide-react";
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import AuthPromptModal from "@/components/AuthPromptModal";
+import AspectRatioVideo from "@/components/AspectRatioVideo";
 import { useBookingRedirect } from "@/hooks/useBookingRedirect";
 import { useBookedPropertyIds, invalidateBookedPropertyIds } from "@/hooks/useBookedPropertyIds";
 
@@ -95,6 +96,7 @@ export default function PropertyDetailPage() {
   const [averageRating, setAverageRating] = useState(0);
   const [commentForm, setCommentForm] = useState(emptyCommentForm);
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [videoIndex, setVideoIndex] = useState(0);
   const { ids: bookedPropertyIds } = useBookedPropertyIds();
   const canViewMap = bookedPropertyIds.has(id);
 
@@ -376,20 +378,39 @@ export default function PropertyDetailPage() {
 
           {videos.length > 0 && (
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
-              <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--zcanopy-card-brown)]">
-                <Video size={18} />
-                Videos
+              <h3 className="mb-4 flex items-center justify-between text-lg font-semibold text-[var(--zcanopy-card-brown)]">
+                <span className="flex items-center gap-2">
+                  <Video size={18} />
+                  Videos
+                </span>
+                <span className="text-xs font-medium text-gray-500">
+                  {videoIndex + 1} / {videos.length}
+                </span>
               </h3>
-              <div className="space-y-4">
-                {videos.map((video, idx) => (
-                  <video
-                    key={idx}
-                    src={video}
-                    className="h-64 w-full rounded-xl object-cover"
-                    controls
-                    preload="metadata"
-                  />
-                ))}
+              <div className="relative">
+                <AspectRatioVideo src={videos[videoIndex]} className="rounded-xl" />
+                {videos.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Previous video"
+                      onClick={() => setVideoIndex((prev) => Math.max(prev - 1, 0))}
+                      disabled={videoIndex === 0}
+                      className="absolute left-5 top-1/2 inline-flex h-14 w-14 shrink-0 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white p-0 text-[var(--zcanopy-card-brown)] shadow-[var(--shadow-lift)] transition hover:scale-105 hover:border-[var(--zcanopy-primary)] hover:bg-[var(--zcanopy-primary)] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-40 disabled:hover:scale-100 disabled:hover:border-[var(--border-strong)] disabled:hover:bg-white disabled:hover:text-[var(--zcanopy-card-brown)]"
+                    >
+                      <ChevronLeft className="h-7 w-7" strokeWidth={2.25} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Next video"
+                      onClick={() => setVideoIndex((prev) => Math.min(prev + 1, videos.length - 1))}
+                      disabled={videoIndex === videos.length - 1}
+                      className="absolute right-5 top-1/2 inline-flex h-14 w-14 shrink-0 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white p-0 text-[var(--zcanopy-card-brown)] shadow-[var(--shadow-lift)] transition hover:scale-105 hover:border-[var(--zcanopy-primary)] hover:bg-[var(--zcanopy-primary)] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-40 disabled:hover:scale-100 disabled:hover:border-[var(--border-strong)] disabled:hover:bg-white disabled:hover:text-[var(--zcanopy-card-brown)]"
+                    >
+                      <ChevronRight className="h-7 w-7" strokeWidth={2.25} />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )}

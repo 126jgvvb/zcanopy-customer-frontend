@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { webApi, ApiError, setSession, clearSession } from '@/lib/api';
+import { webApi, ApiError, clearSession } from '@/lib/api';
 import { Heart, CalendarCheck, Search, Receipt, FileText, MessageCircle, Bell, User } from 'lucide-react';
 import CustomerTransactionsContent from './transactions/page';
 import CustomerInvoicesContent from './invoices/page';
@@ -123,20 +123,6 @@ export default function CustomerPage() {
   const handleGoogleLogin = () => {
     const redirectUri = encodeURIComponent(window.location.pathname + window.location.search);
     window.location.href = `/api/auth/google?redirect_uri=${redirectUri}`;
-  };
-
-  const handleDevBypass = () => {
-    const mockSessionId = 'dev-customer-session-' + Date.now();
-    const mockToken = 'dev-customer-token-' + Date.now();
-    setSession(mockSessionId, { customer: { firstName: 'Dev', email: 'dev@customer.com' }, session: { sessionId: mockSessionId, sessionToken: mockToken } }, 'customer');
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('zcanopy_token', mockToken);
-      localStorage.setItem('zcanopy_customer_name', 'Dev Customer');
-      localStorage.setItem('zcanopy_customer_email', 'dev@customer.com');
-    }
-    setCustomerName('Dev Customer');
-    setToken(mockToken);
-    setLoggedIn(true);
   };
 
   async function handleForgotPasswordSendOtp(e: React.FormEvent) {
@@ -367,19 +353,6 @@ export default function CustomerPage() {
                      Sign in with Google
                   </button>
 
-                  <div className="flex items-center gap-3 pt-2">
-                    <div className="h-px flex-1" style={{ backgroundColor: 'var(--zcanopy-border)' }} />
-                    <span className="text-xs" style={{ color: 'var(--zcanopy-muted)' }}>development</span>
-                    <div className="h-px flex-1" style={{ backgroundColor: 'var(--zcanopy-border)' }} />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleDevBypass}
-                    className="w-full rounded-xl border-2 border-dashed border-gray-300 px-4 py-3 text-sm font-medium transition hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)]"
-                    style={{ color: 'var(--zcanopy-muted)', borderColor: 'var(--zcanopy-border)' }}
-                  >
-                    Dev Bypass (skip login)
-                  </button>
                   <p className="text-center text-sm" style={{ color: 'var(--zcanopy-muted)' }}>
                     Not a customer?{' '}
                     <Link href="/customer/signup" className="font-semibold underline-offset-4 hover:underline" style={{ color: 'var(--zcanopy-primary)' }}>

@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
 import { useBookedPropertyIds } from "@/hooks/useBookedPropertyIds";
 import AuthPromptModal from "./AuthPromptModal";
+import AspectRatioVideo from "./AspectRatioVideo";
 
 function formatUGX(n: number) {
   try {
@@ -272,18 +273,10 @@ export default function PropertyCard({
           <div className="mt-3">
             <p className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
               <Video size={12} />
-              Videos
+              Videos ({videos.length})
             </p>
             <div className="space-y-2">
-              {videos.slice(0, 2).map((video, idx) => (
-                <video
-                  key={idx}
-                  src={video}
-                  className="h-40 w-full rounded-xl object-cover"
-                  controls
-                  preload="metadata"
-                />
-              ))}
+              <AspectRatioVideo src={videos[0]} className="rounded-xl" />
             </div>
           </div>
         )}
