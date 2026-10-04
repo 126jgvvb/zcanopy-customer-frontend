@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Calendar, Video, Heart, Trash2 } from "lucide-react";
+import { MapPin, MapPinOff, Calendar, Video, Heart, Trash2 } from "lucide-react";
 import { COLORS } from "@/lib/theme";
 import { useEffect, useState } from "react";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
+import { useBookedPropertyIds } from "@/hooks/useBookedPropertyIds";
 import AuthPromptModal from "./AuthPromptModal";
 
 function formatUGX(n: number) {
@@ -62,6 +63,8 @@ export default function PropertyCard({
   const [initializing, setInitializing] = useState(!preFavorited);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
+  const { ids: bookedPropertyIds } = useBookedPropertyIds();
+  const canViewMap = bookedPropertyIds.has(id);
 
   useEffect(() => {
     let cancelled = false;
@@ -229,15 +232,36 @@ export default function PropertyCard({
         )}
 
         {(lat != null && lng != null && lat !== 0 && lng !== 0) ? (
-          <div className="mt-3 h-40 w-full overflow-hidden rounded-xl border border-gray-100">
-            <iframe
-              title={`Map of ${title}`}
-              src={`https://www.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
-              className="h-full w-full border-0"
-              loading="lazy"
-              allowFullScreen
-            />
-          </div>
+          canViewMap ? (
+            <div className="mt-3 h-40 w-full overflow-hidden rounded-xl border border-gray-100">
+              <iframe
+                title={`Map of ${title}`}
+                src={`https://www.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
+                className="h-full w-full border-0"
+                loading="lazy"
+                allowFullScreen
+              />
+            </div>
+          ) : (
+            <div className="relative mt-3 h-40 w-full overflow-hidden rounded-xl border border-[var(--border-strong)]">
+              <iframe
+                title=""
+                aria-hidden="true"
+                tabIndex={-1}
+                src={`https://www.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
+                className="pointer-events-none h-full w-full scale-110 border-0 blur-xl opacity-70"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--zcanopy-surface)_55%,transparent)] backdrop-blur-[2px]">
+                <div className="flex flex-col items-center gap-2 px-6 text-center">
+                  <MapPinOff size={22} style={{ color: COLORS.primary }} />
+                  <p className="text-sm font-semibold" style={{ color: "var(--zcanopy-card-brown)" }}>
+                    Viewing the location is only available after booking
+                  </p>
+                </div>
+              </div>
+            </div>
+          )
         ) : (
           <div className="mt-3 rounded-xl border border-gray-100 bg-gray-50 p-3 text-center text-xs text-gray-500">
             This property was not lively captured on site,please refer to the location text

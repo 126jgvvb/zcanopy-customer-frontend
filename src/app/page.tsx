@@ -1,6 +1,6 @@
 ﻿import Link from "next/link";
 import { COLORS } from "@/lib/theme";
-import { BROKER_SIGNUP_URL } from "@/lib/navigation";
+import { BROKER_LOGIN_URL, BROKER_SIGNUP_URL } from "@/lib/navigation";
 import HeroShowcase from "@/components/HeroShowcase";
 import FeaturedPropertiesRow from "@/components/FeaturedPropertiesRow";
 import FeaturedMosaic from "@/components/FeaturedMosaic";
@@ -178,12 +178,14 @@ export default function Home() {
               </Link>
             </div>
 
-            <Link
-              href="/login"
-              className="rounded-xl border border-white/40 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:border-white hover:bg-white/10"
+            <a
+              href={BROKER_LOGIN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block rounded-xl border border-white/40 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:border-white hover:bg-white/10"
             >
               Broker Login
-            </Link>
+            </a>
           </div>
         </div>
 
@@ -512,12 +514,14 @@ export default function Home() {
               >
                 Become a broker today
               </a>
-              <Link
-                href="/login"
+              <a
+                href={BROKER_LOGIN_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-block rounded-xl border border-white/40 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
               >
                 Broker Login
-              </Link>
+              </a>
             </div>
           </div>
 

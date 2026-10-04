@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useState, useRef, useTransition, useDeferredValue, useSyncExternalStore } from "react";
 import PropertyCard from "@/components/PropertyCard";
 import PropertyShowcaseRow from "@/components/PropertyShowcaseRow";
-import { LayoutGrid, Rows3 } from "lucide-react";
+import PropertyVideoReel from "@/components/PropertyVideoReel";
+import { LayoutGrid, Rows3, Video } from "lucide-react";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
 import Link from "next/link";
 import { usePlacePredictions } from "@/hooks/useGooglePlaces";
 import BackButton from "@/components/BackButton";
 import { useBookingRedirect } from "@/hooks/useBookingRedirect";
+import { invalidateBookedPropertyIds } from "@/hooks/useBookedPropertyIds";
 
 function formatUGX(n: number) {
   try {
@@ -18,7 +20,7 @@ function formatUGX(n: number) {
   }
 }
 
-interface Property {
+export interface Property {
   id: string;
   title: string;
   description: string;
@@ -50,7 +52,7 @@ const emptyForm: BookingForm = {
   customerEmail: "",
 };
 
-type LayoutMode = "grid" | "showcase";
+type LayoutMode = "grid" | "showcase" | "video";
 const LAYOUT_KEY = "zcanopy_properties_layout";
 const LAYOUT_EVENT = "zcanopy-layout-change";
 
@@ -68,7 +70,9 @@ const layoutStore = {
     };
   },
   get(): LayoutMode {
-    return window.localStorage.getItem(LAYOUT_KEY) === "showcase" ? "showcase" : "grid";
+    const stored = window.localStorage.getItem(LAYOUT_KEY);
+    if (stored === "showcase" || stored === "video") return stored;
+    return "grid";
   },
   getServerSnapshot(): LayoutMode {
     return "grid";
@@ -82,6 +86,7 @@ const layoutStore = {
 const LAYOUT_OPTIONS: Array<{ value: LayoutMode; label: string; Icon: typeof LayoutGrid }> = [
   { value: "grid", label: "Grid", Icon: LayoutGrid },
   { value: "showcase", label: "Showcase", Icon: Rows3 },
+  { value: "video", label: "Reel", Icon: Video },
 ];
 
 export default function PropertiesPage() {
@@ -104,10 +109,8 @@ export default function PropertiesPage() {
   const [submitError, setSubmitError] = useState("");
   const [success, setSuccess] = useState("");
   const [bookedProperty, setBookedProperty] = useState<Property | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<string>("");
-  const [viewMode, setViewMode] = useState<"all" | "broker">("all");
-  const [selectedBrokerCode, setSelectedBrokerCode] = useState<string>("");
-  const layout = useSyncExternalStore(
+const [paymentStatus, setPaymentStatus] = useState<string>("");
+const layout = useSyncExternalStore(
     layoutStore.subscribe,
     layoutStore.get,
     layoutStore.getServerSnapshot,
@@ -135,9 +138,7 @@ export default function PropertiesPage() {
   const deferredSubCountyFilter = useDeferredValue(subCountyFilter);
   const deferredDistrictFilter = useDeferredValue(districtFilter);
   const deferredDateFrom = useDeferredValue(dateFrom);
-  const deferredDateTo = useDeferredValue(dateTo);
-  const deferredViewMode = useDeferredValue(viewMode);
-  const deferredSelectedBrokerCode = useDeferredValue(selectedBrokerCode);
+const deferredDateTo = useDeferredValue(dateTo);
 
   const isInitialMount = useRef(true);
 
@@ -169,14 +170,7 @@ export default function PropertiesPage() {
       setError("");
       try {
         let data: { properties?: Property[]; total?: number } = { properties: [], total: 0 };
-        if (viewMode === "broker" && selectedBrokerCode) {
-          try {
-            const res = await webApi.brokerPropertiesByCode(selectedBrokerCode);
-            data = res as { properties?: Property[]; total?: number };
-          } catch {
-            data = { properties: [], total: 0 };
-          }
-        } else if (search) {
+        if (search) {
           try {
             const res = await webApi.searchPropertiesPaginated(search, 1, PAGE_SIZE, activeFilters);
             data = res as { properties?: Property[]; total?: number };
@@ -220,7 +214,7 @@ export default function PropertiesPage() {
     return () => {
       cancelled = true;
     };
-  }, [search, viewMode, selectedBrokerCode, locationFilter, brokerFilter, propertyTypeFilter, minPrice, maxPrice, subCountyFilter, districtFilter, dateFrom, dateTo]);
+  }, [search, locationFilter, brokerFilter, propertyTypeFilter, minPrice, maxPrice, subCountyFilter, districtFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     if (!search) return;
@@ -228,11 +222,10 @@ export default function PropertiesPage() {
       webApi.recordSearch(getSessionId(), {
         query: search,
         location: locationFilter,
-        propertyType: viewMode === "broker" ? "broker" : undefined,
       }).catch(() => {});
     }, 300);
     return () => clearTimeout(timeout);
-  }, [search, locationFilter, viewMode]);
+  }, [search, locationFilter]);
 
   const handleSearchChange = (value: string) => {
     setLocalSearch(value);
@@ -289,14 +282,7 @@ export default function PropertiesPage() {
     try {
       const nextPage = page + 1;
       let data: { properties?: Property[]; total?: number } = { properties: [], total: 0 };
-      if (viewMode === "broker" && selectedBrokerCode) {
-        try {
-          const res = await webApi.brokerPropertiesByCode(deferredSelectedBrokerCode, { page: nextPage, limit: PAGE_SIZE });
-          data = res as { properties?: Property[]; total?: number };
-        } catch {
-          data = { properties: [], total: 0 };
-        }
-      } else if (search) {
+      if (search) {
         try {
           const res = await webApi.searchPropertiesPaginated(search, nextPage, PAGE_SIZE, activeFilters);
           data = res as { properties?: Property[]; total?: number };
@@ -348,7 +334,7 @@ export default function PropertiesPage() {
     observer.observe(el);
 
     return () => observer.disconnect();
-  }, [loading, loadingMore, hasMore, page, deferredSearch, deferredViewMode, deferredSelectedBrokerCode, deferredLocationFilter, deferredBrokerFilter, deferredPropertyTypeFilter, deferredMinPrice, deferredMaxPrice, deferredSubCountyFilter, deferredDistrictFilter, deferredDateFrom, deferredDateTo]);
+  }, [loading, loadingMore, hasMore, page, deferredSearch, deferredLocationFilter, deferredBrokerFilter, deferredPropertyTypeFilter, deferredMinPrice, deferredMaxPrice, deferredSubCountyFilter, deferredDistrictFilter, deferredDateFrom, deferredDateTo]);
 
   // Filter options are loaded once from unfiltered endpoints. Deriving them from
   // `properties` would mean that selecting a filter shrinks the dropdown to only
@@ -531,6 +517,7 @@ export default function PropertiesPage() {
         setSuccess("Booking confirmed! Check your email and SMS for the invoice code.");
         setForm(emptyForm);
         setBookedProperty({ ...selectedProperty, brokerPhone: paymentResult.brokerPhone });
+        invalidateBookedPropertyIds();
         scheduleBookingRedirect();
       } else {
         setPaymentStatus("");
@@ -742,25 +729,6 @@ export default function PropertiesPage() {
             />
           </div>
         </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-4">
-          <span className="text-sm font-medium text-gray-700">View:</span>
-          <button
-            onClick={() => { setViewMode("all"); setSelectedBrokerCode(""); }}
-            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${viewMode === "all" ? "btn-primary" : "btn-ghost"}`}
-          >
-            All Properties
-          </button>
-          {uniqueBrokers.map((b) => (
-            <button
-              key={b.code}
-              onClick={() => { setViewMode("broker"); setSelectedBrokerCode(b.code); }}
-              className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${viewMode === "broker" && selectedBrokerCode === b.code ? "btn-primary" : "btn-ghost"}`}
-            >
-              {b.name}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Filter/query refetches keep the current results on screen and show an
@@ -792,6 +760,8 @@ export default function PropertiesPage() {
             </div>
           ))}
         </div>
+      ) : layout === "video" ? (
+        <PropertyVideoReel initialProperties={filteredProperties} onClose={() => layoutStore.set("grid")} />
       ) : (
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {filteredProperties.map((property, idx) => (

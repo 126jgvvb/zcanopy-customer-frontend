@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
-import { MapPin, Calendar, Video, ArrowLeft, ExternalLink, Heart, MessageSquare, Star } from "lucide-react";
+import { MapPin, MapPinOff, Calendar, Video, ArrowLeft, ExternalLink, Heart, MessageSquare, Star } from "lucide-react";
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import AuthPromptModal from "@/components/AuthPromptModal";
 import { useBookingRedirect } from "@/hooks/useBookingRedirect";
+import { useBookedPropertyIds, invalidateBookedPropertyIds } from "@/hooks/useBookedPropertyIds";
 
 function formatUGX(n: number) {
   try {
@@ -94,6 +95,8 @@ export default function PropertyDetailPage() {
   const [averageRating, setAverageRating] = useState(0);
   const [commentForm, setCommentForm] = useState(emptyCommentForm);
   const [submittingComment, setSubmittingComment] = useState(false);
+  const { ids: bookedPropertyIds } = useBookedPropertyIds();
+  const canViewMap = bookedPropertyIds.has(id);
 
   // After a successful booking the customer is sent to their dashboard's
   // "My Bookings" tab.
@@ -269,6 +272,7 @@ export default function PropertyDetailPage() {
         setSuccess("Booking confirmed! Check your email and SMS for the invoice code.");
         setForm(emptyForm);
         setBookedProperty({ ...selectedProperty, brokerPhone: paymentResult.brokerPhone });
+        invalidateBookedPropertyIds();
         scheduleBookingsRedirect();
       } else {
         setPaymentStatus("");
@@ -396,24 +400,50 @@ export default function PropertyDetailPage() {
                 <MapPin size={18} />
                 Location
               </h3>
-              <div className="h-80 w-full overflow-hidden rounded-xl">
-                <iframe
-                  title={`Map of ${property.title}`}
-                  src={`https://www.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
-                  className="h-full w-full border-0"
-                  loading="lazy"
-                  allowFullScreen
-                />
-              </div>
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)]"
-              >
-                <ExternalLink size={16} />
-                Open in Google Maps
-              </a>
+              {canViewMap ? (
+                <>
+                  <div className="h-80 w-full overflow-hidden rounded-xl">
+                    <iframe
+                      title={`Map of ${property.title}`}
+                      src={`https://www.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
+                      className="h-full w-full border-0"
+                      loading="lazy"
+                      allowFullScreen
+                    />
+                  </div>
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)]"
+                  >
+                    <ExternalLink size={16} />
+                    Open in Google Maps
+                  </a>
+                </>
+              ) : (
+                <div className="relative h-80 w-full overflow-hidden rounded-xl border border-[var(--border-strong)]">
+                  <iframe
+                    title=""
+                    aria-hidden="true"
+                    tabIndex={-1}
+                    src={`https://www.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
+                    className="pointer-events-none h-full w-full scale-110 border-0 blur-xl opacity-70"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--zcanopy-surface)_55%,transparent)] backdrop-blur-[2px]">
+                    <div className="flex max-w-xs flex-col items-center gap-3 px-6 text-center">
+                      <MapPinOff size={26} style={{ color: "var(--zcanopy-primary)" }} />
+                      <p className="text-base font-semibold" style={{ color: "var(--zcanopy-card-brown)" }}>
+                        Viewing the location is only available after booking
+                      </p>
+                      <p className="text-sm" style={{ color: "var(--zcanopy-muted)" }}>
+                        Book this property to reveal its exact position and directions.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">

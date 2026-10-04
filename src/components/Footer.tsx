@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { MapPin, Phone, Mail } from "lucide-react";
 import { COLORS } from "@/lib/theme";
+import { BROKER_LOGIN_URL } from "@/lib/navigation";
 
 type IconProps = { size?: number };
 
@@ -154,12 +155,14 @@ export default function Footer() {
               >
                 Become a Broker
               </Link>
-              <Link
-                href="/login"
+              <a
+                href={BROKER_LOGIN_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-block rounded-xl border border-white/25 px-5 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-white/10"
               >
                 Broker Login
-              </Link>
+              </a>
             </div>
           </div>
         </div>
