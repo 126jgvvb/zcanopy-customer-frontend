@@ -179,6 +179,57 @@ function shouldUseFallback(err: unknown): boolean {
   return err.status >= 500 || err.status === 0;
 }
 
+export type AuthErrorKind = 'credentials' | 'network' | 'server' | 'unknown';
+
+const CREDENTIAL_HINTS = [
+  'invalid',
+  'incorrect',
+  'wrong',
+  'unauthorized',
+  'not found',
+  'does not exist',
+  'deactivated',
+  'not verified',
+  'no such',
+];
+
+// apiFetch rewrites every 401 into "Session expired" after clearing the session.
+// On a sign-in form that wording is wrong, so it must not reach the user.
+const SESSION_EXPIRED = 'session expired';
+
+export function classifyAuthError(err: unknown): AuthErrorKind {
+  if (err instanceof ApiError) {
+    if (err.status >= 500) return 'server';
+    if (err.status === 0) return 'network';
+    if (err.status === 401 || err.status === 403) return 'credentials';
+    const msg = err.message.toLowerCase();
+    if (CREDENTIAL_HINTS.some((hint) => msg.includes(hint))) return 'credentials';
+    return 'unknown';
+  }
+  // fetch rejects with a TypeError when the host is unreachable, DNS fails,
+  // the device is offline, or a CORS preflight is blocked.
+  if (err instanceof TypeError) return 'network';
+  return 'unknown';
+}
+
+export function authErrorMessage(err: unknown, subject = 'email or password'): string {
+  const kind = classifyAuthError(err);
+  if (kind === 'network') {
+    return "Unable to reach our servers. Please check your internet connection and try again.";
+  }
+  if (kind === 'server') {
+    return 'Our servers are unavailable right now. Please try again in a few moments.';
+  }
+  if (kind === 'credentials') {
+    const raw = err instanceof ApiError ? err.message : '';
+    if (!raw || raw.toLowerCase().includes(SESSION_EXPIRED)) {
+      return `Invalid ${subject}. Please check your details and try again.`;
+    }
+    return raw;
+  }
+  return err instanceof Error && err.message ? err.message : 'Something went wrong. Please try again.';
+}
+
 export async function apiFetch<T = unknown>(
   path: string,
   {

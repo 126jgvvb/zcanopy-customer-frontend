@@ -288,7 +288,7 @@ export default function PropertyVideoReel({ initialProperties = [], onClose }: {
               <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-black/10" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/25" />
 
-              <div className="relative flex h-full flex-col justify-between p-6 sm:p-8">
+              <div className="relative flex h-full flex-col justify-between p-4 sm:p-8">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-2">
                     <button
@@ -344,17 +344,17 @@ export default function PropertyVideoReel({ initialProperties = [], onClose }: {
                 </button>
               </div>
 
-                <div>
+                <div className="pr-24 sm:pr-28">
                   <p className="text-xs uppercase tracking-wider text-white/75">{property.location || "Property"}</p>
-                  <h3 className="mt-1 text-2xl font-bold sm:text-3xl">{property.title}</h3>
-                  {property.description && (
-                    <p className="mt-2 line-clamp-2 max-w-md text-sm leading-relaxed text-white/80">
-                      {property.description}
+                  <h3 className="mt-1 text-xl font-bold sm:text-3xl">{property.title}</h3>
+                  {property.price !== undefined && (
+                    <p className="mt-1.5 text-base font-semibold text-[var(--zcanopy-accent-gold)] sm:mt-2 sm:text-lg">
+                      {new Intl.NumberFormat("en-UG", { style: "currency", currency: "UGX", maximumFractionDigits: 0 }).format(property.price)}
                     </p>
                   )}
-                  {property.price !== undefined && (
-                    <p className="mt-2 text-lg font-semibold">
-                      {new Intl.NumberFormat("en-UG", { style: "currency", currency: "UGX", maximumFractionDigits: 0 }).format(property.price)}
+                  {property.description && (
+                    <p className="mt-1.5 line-clamp-2 max-w-md text-xs leading-relaxed text-white/80 sm:mt-2 sm:text-sm">
+                      {property.description}
                     </p>
                   )}
                 </div>

@@ -2,14 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { User, ChevronDown, UserRound, Briefcase, Building2 } from "lucide-react";
+import { User, ChevronDown, UserRound, Briefcase } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
-import { BROKER_LOGIN_URL, BROKER_SIGNUP_URL } from "@/lib/navigation";
+import { BROKER_LOGIN_URL } from "@/lib/navigation";
 
 const ACCOUNT_LINKS = [
   { label: "Customer Login", href: "/customer", Icon: UserRound },
   { label: "Broker Login", href: BROKER_LOGIN_URL, Icon: Briefcase },
-  { label: "Become a Broker", href: BROKER_SIGNUP_URL, Icon: Building2 },
 ];
 
 function isExternal(href: string) {
@@ -79,12 +78,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           </nav>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/properties"
-              className="btn-primary btn-glow hidden px-4 py-2 text-sm sm:inline-flex"
-            >
-              Browse Properties
-            </Link>
+            <div className="hidden sm:block">
+              <Link href="/properties" className="btn-primary btn-glow px-4 py-2 text-sm">
+                Browse Properties
+              </Link>
+            </div>
 
             {/* Account: sign in as a customer or a broker */}
             <div className="relative" ref={menuRef}>

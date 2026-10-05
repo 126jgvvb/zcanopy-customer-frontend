@@ -4,11 +4,12 @@ import Link from "next/link";
 import Footer from "@/components/Footer";
 import { Phone, Mail, MapPin } from "lucide-react";
 import { COLORS } from "@/lib/theme";
+import { SUPPORT_EMAIL } from "@/lib/navigation";
 import BackButton from "@/components/BackButton";
 
 const CONTACT = {
   phone: "+256741882818",
-  email: "support@zcanopy.com",
+  email: SUPPORT_EMAIL,
   location: "Kampala, Uganda",
 };
 

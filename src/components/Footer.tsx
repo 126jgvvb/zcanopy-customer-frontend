@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { MapPin, Phone, Mail } from "lucide-react";
 import { COLORS } from "@/lib/theme";
-import { BROKER_LOGIN_URL } from "@/lib/navigation";
+import { BROKER_LOGIN_URL, SUPPORT_EMAIL } from "@/lib/navigation";
 
 type IconProps = { size?: number };
 
@@ -47,7 +47,7 @@ function YoutubeIcon({ size = 16 }: IconProps) {
 
 const CONTACT = {
   phone: "+256741882818",
-  email: "support@zcanopy.com",
+  email: SUPPORT_EMAIL,
   location: "Kampala, Uganda",
 };
 

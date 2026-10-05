@@ -4,3 +4,6 @@ export const BROKER_SIGNUP_URL =
 export const BROKER_LOGIN_URL =
   process.env.NEXT_PUBLIC_BROKER_LOGIN_URL ||
   "https://zcanopy-broker-web-dashbaord.vercel.app";
+
+export const SUPPORT_EMAIL =
+  process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@support.zcanopy.com";

@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { webApi, ApiError, clearSession } from '@/lib/api';
-import { Heart, CalendarCheck, Search, Receipt, FileText, MessageCircle, Bell, User } from 'lucide-react';
+import { webApi, authErrorMessage, clearSession } from '@/lib/api';
+import { Heart, CalendarCheck, Search, Receipt, FileText, MessageCircle, Bell, User, Eye, EyeOff } from 'lucide-react';
 import CustomerTransactionsContent from './transactions/page';
 import CustomerInvoicesContent from './invoices/page';
 import CustomerMessagesContent from './messages/page';
@@ -33,6 +33,8 @@ export default function CustomerPage() {
   const [forgotPasswordOtp, setForgotPasswordOtp] = useState('');
   const [forgotPasswordNewPassword, setForgotPasswordNewPassword] = useState('');
   const [forgotPasswordConfirmPassword, setForgotPasswordConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [forgotPasswordStep, setForgotPasswordStep] = useState<'email' | 'otp' | 'reset'>('email');
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
 
@@ -114,7 +116,7 @@ export default function CustomerPage() {
       setToken(sessionToken);
       setLoggedIn(true);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Login failed');
+      setError(authErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -306,13 +308,24 @@ export default function CustomerPage() {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--zcanopy-muted)' }}>Password</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-xl border border-[var(--zcanopy-border)] bg-white px-4 py-3 shadow-sm outline-none transition focus:border-[var(--zcanopy-primary)] focus:ring-2 focus:ring-[var(--zcanopy-primary)]/30 dark:bg-[var(--zcanopy-surface)]"
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full rounded-xl border border-[var(--zcanopy-border)] bg-white px-4 py-3 pr-12 shadow-sm outline-none transition focus:border-[var(--zcanopy-primary)] focus:ring-2 focus:ring-[var(--zcanopy-primary)]/30 dark:bg-[var(--zcanopy-surface)]"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[var(--zcanopy-muted)] transition hover:bg-[color-mix(in_srgb,var(--zcanopy-primary)_10%,transparent)] hover:text-[var(--zcanopy-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--zcanopy-primary)]/40"
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                   </div>
                   {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -409,24 +422,46 @@ export default function CustomerPage() {
 
                    {forgotPasswordStep === 'reset' && (
                      <form onSubmit={handleForgotPasswordReset} className="space-y-4">
-                       <label className="mb-1.5 block text-sm font-medium text-[var(--zcanopy-card-brown)]">New Password</label>
-                       <input
-                         type="password"
-                         required
-                         minLength={6}
-                         value={forgotPasswordNewPassword}
-                         onChange={(e) => setForgotPasswordNewPassword(e.target.value)}
-                         className="w-full rounded-xl border border-[var(--zcanopy-border)] bg-white px-4 py-3 shadow-sm outline-none transition focus:border-[var(--zcanopy-primary)] focus:ring-2 focus:ring-[var(--zcanopy-primary)]/30"
-                       />
-                       <label className="mb-1.5 block text-sm font-medium text-[var(--zcanopy-card-brown)]">Confirm New Password</label>
-                       <input
-                         type="password"
-                         required
-                         minLength={6}
-                         value={forgotPasswordConfirmPassword}
-                         onChange={(e) => setForgotPasswordConfirmPassword(e.target.value)}
-                         className="w-full rounded-xl border border-[var(--zcanopy-border)] bg-white px-4 py-3 shadow-sm outline-none transition focus:border-[var(--zcanopy-primary)] focus:ring-2 focus:ring-[var(--zcanopy-primary)]/30"
-                       />
+<label className="mb-1.5 block text-sm font-medium text-[var(--zcanopy-card-brown)]">New Password</label>
+                       <div className="relative">
+                         <input
+                           type={showNewPassword ? 'text' : 'password'}
+                           required
+                           minLength={6}
+                           value={forgotPasswordNewPassword}
+                           onChange={(e) => setForgotPasswordNewPassword(e.target.value)}
+                           className="w-full rounded-xl border border-[var(--zcanopy-border)] bg-white px-4 py-3 pr-12 shadow-sm outline-none transition focus:border-[var(--zcanopy-primary)] focus:ring-2 focus:ring-[var(--zcanopy-primary)]/30"
+                         />
+                         <button
+                           type="button"
+                           onClick={() => setShowNewPassword((prev) => !prev)}
+                           aria-label={showNewPassword ? 'Hide passwords' : 'Show passwords'}
+                           title={showNewPassword ? 'Hide passwords' : 'Show passwords'}
+                           className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[var(--zcanopy-muted)] transition hover:bg-[color-mix(in_srgb,var(--zcanopy-primary)_10%,transparent)] hover:text-[var(--zcanopy-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--zcanopy-primary)]/40"
+                         >
+                           {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                         </button>
+                       </div>
+                       <label className="mb-1.5 mt-4 block text-sm font-medium text-[var(--zcanopy-card-brown)]">Confirm New Password</label>
+                       <div className="relative">
+                         <input
+                           type={showNewPassword ? 'text' : 'password'}
+                           required
+                           minLength={6}
+                           value={forgotPasswordConfirmPassword}
+                           onChange={(e) => setForgotPasswordConfirmPassword(e.target.value)}
+                           className="w-full rounded-xl border border-[var(--zcanopy-border)] bg-white px-4 py-3 pr-12 shadow-sm outline-none transition focus:border-[var(--zcanopy-primary)] focus:ring-2 focus:ring-[var(--zcanopy-primary)]/30"
+                         />
+                         <button
+                           type="button"
+                           onClick={() => setShowNewPassword((prev) => !prev)}
+                           aria-label={showNewPassword ? 'Hide passwords' : 'Show passwords'}
+                           title={showNewPassword ? 'Hide passwords' : 'Show passwords'}
+                           className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[var(--zcanopy-muted)] transition hover:bg-[color-mix(in_srgb,var(--zcanopy-primary)_10%,transparent)] hover:text-[var(--zcanopy-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--zcanopy-primary)]/40"
+                         >
+                           {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                         </button>
+                       </div>
                        {error && <p className="text-sm text-red-600">{error}</p>}
                        {forgotPasswordMessage && <p className="text-sm text-green-600">{forgotPasswordMessage}</p>}
                        <button type="submit" disabled={loading} className="w-full rounded-xl px-4 py-3 text-sm font-semibold tracking-wide text-white shadow-md transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50" style={{ backgroundColor: 'var(--zcanopy-primary)' }}>

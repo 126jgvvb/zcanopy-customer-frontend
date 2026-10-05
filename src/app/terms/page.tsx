@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Footer from "@/components/Footer";
 import { COLORS } from "@/lib/theme";
+import { SUPPORT_EMAIL } from "@/lib/navigation";
 import BackButton from "@/components/BackButton";
 
 interface Section {
@@ -82,7 +83,7 @@ const SECTIONS: Section[] = [
     id: "contact",
     title: "10. Contact Us",
     body: [
-      "For questions about these terms, contact us at support@zcanopy.com or +256741882818, Kampala, Uganda.",
+      `For questions about these terms, contact us at ${SUPPORT_EMAIL} or +256741882818, Kampala, Uganda.`,
     ],
   },
 ];

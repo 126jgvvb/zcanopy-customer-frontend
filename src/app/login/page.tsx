@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { webApi, ApiError, setSession } from '@/lib/api';
+import { Eye, EyeOff } from 'lucide-react';
+import { webApi, authErrorMessage, setSession } from '@/lib/api';
 import Footer from '@/components/Footer';
 
 export default function LoginPage() {
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,33 +39,10 @@ export default function LoginPage() {
 
       router.push('/customer');
     } catch (err) {
-      if (err instanceof ApiError) {
-        const msg = err.message.toLowerCase();
-        if (msg.includes('invalid') || msg.includes('incorrect') || msg.includes('wrong')) {
-          setError('Invalid broker code or password. Please check your credentials and try again.');
-        } else if (msg.includes('not found') || msg.includes('does not exist')) {
-          setError('Account not found. Please check your broker code or register for a new account.');
-        } else if (err.status === 401 || err.status === 403) {
-          setError('Invalid credentials. Please try again.');
-        } else if (err.status >= 500) {
-          setError('Unable to sign in at the moment. Please try again in a few moments.');
-        } else {
-          setError(err.message);
-        }
-      } else {
-        setError('Unable to sign in. Please check your connection and try again.');
-      }
+      setError(authErrorMessage(err, 'broker code or password'));
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDevBypass = () => {
-    const mockSessionId = 'dev-broker-session-' + Date.now();
-    const mockToken = 'dev-broker-token-' + Date.now();
-    setSession(mockSessionId, { id: 'dev-broker', username: 'Dev Broker', email: 'dev@broker.com', brokerCode: 'DEV-001', role: 'broker', session: { sessionId: mockSessionId, sessionToken: mockToken } }, 'broker');
-    localStorage.setItem('zcanopy_token', mockToken);
-    router.push('/customer');
   };
 
   return (
@@ -106,13 +85,24 @@ export default function LoginPage() {
               <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--zcanopy-card-brown)' }}>
                 Password
               </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-[var(--zcanopy-border)] bg-white px-4 py-3 shadow-sm outline-none transition focus:border-[var(--zcanopy-primary)] focus:ring-2 focus:ring-[var(--zcanopy-primary)]/30"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--zcanopy-border)] bg-white px-4 py-3 pr-12 shadow-sm outline-none transition focus:border-[var(--zcanopy-primary)] focus:ring-2 focus:ring-[var(--zcanopy-primary)]/30"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[var(--zcanopy-muted)] transition hover:bg-[color-mix(in_srgb,var(--zcanopy-primary)_10%,transparent)] hover:text-[var(--zcanopy-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--zcanopy-primary)]/40"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
 
             {error && <p className="text-sm text-red-600">{error}</p>}
@@ -126,20 +116,6 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
-
-          <div className="mt-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-gray-200" />
-            <span className="text-xs text-gray-400">development</span>
-            <div className="h-px flex-1 bg-gray-200" />
-          </div>
-
-          <button
-            type="button"
-            onClick={handleDevBypass}
-            className="mt-3 w-full rounded-xl border-2 border-dashed border-gray-300 px-4 py-3 text-sm font-medium text-gray-600 transition hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)]"
-          >
-            Dev Bypass (skip login)
-          </button>
 
           <p className="mt-7 text-center text-sm" style={{ color: 'var(--zcanopy-muted)' }}>
             Not a broker?{' '}

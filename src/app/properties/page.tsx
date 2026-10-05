@@ -6,6 +6,7 @@ import PropertyShowcaseRow from "@/components/PropertyShowcaseRow";
 import PropertyVideoReel from "@/components/PropertyVideoReel";
 import { LayoutGrid, Rows3, Video } from "lucide-react";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
+import { SUPPORT_EMAIL } from "@/lib/navigation";
 import Link from "next/link";
 import { usePlacePredictions } from "@/hooks/useGooglePlaces";
 import BackButton from "@/components/BackButton";
@@ -802,7 +803,7 @@ const deferredDateTo = useDeferredValue(dateTo);
                 <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
                   <p className="font-semibold text-[var(--zcanopy-card-brown)]">Complaints or inquiries</p>
                   <p className="mt-1">If you have successfully made a payment but have not received an SMS or email, please contact us:</p>
-                  <p className="mt-1">Email: <a href="mailto:support@zcanopy.com" className="text-[var(--zcanopy-primary)]">support@zcanopy.com</a></p>
+                  <p className="mt-1">Email: <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[var(--zcanopy-primary)]">{SUPPORT_EMAIL}</a></p>
                   <p>Phone: <a href="tel:+256741882818" className="text-[var(--zcanopy-primary)]">+256 741 882 818</a></p>
                 </div>
                 <div className="flex items-center justify-end gap-3 pt-2">
