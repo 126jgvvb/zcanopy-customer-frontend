@@ -218,8 +218,9 @@ export function authErrorMessage(err: unknown, subject = 'email or password'): s
     return "Unable to reach our servers. Please check your internet connection and try again.";
   }
   if (kind === 'server') {
-    return 'Our servers are unavailable right now. Please try again in a few moments.';
-  }
+  //  return 'Our servers are unavailable right now. Please try again in a few moments.';
+  return 'Your credentials might be incorrect or the server might be down. Please try again.';  
+}
   if (kind === 'credentials') {
     const raw = err instanceof ApiError ? err.message : '';
     if (!raw || raw.toLowerCase().includes(SESSION_EXPIRED)) {
