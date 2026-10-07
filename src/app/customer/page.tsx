@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { webApi, authErrorMessage, clearSession } from '@/lib/api';
-import { Heart, CalendarCheck, Search, Receipt, FileText, MessageCircle, Bell, User, Eye, EyeOff } from 'lucide-react';
+import { Heart, CalendarCheck, Search, Receipt, FileText, MessageCircle, Bell, User, Eye, EyeOff, Menu, X } from 'lucide-react';
 import CustomerTransactionsContent from './transactions/page';
 import CustomerInvoicesContent from './invoices/page';
 import CustomerMessagesContent from './messages/page';
@@ -37,6 +37,7 @@ export default function CustomerPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [forgotPasswordStep, setForgotPasswordStep] = useState<'email' | 'otp' | 'reset'>('email');
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const router = useRouter();
 
@@ -58,6 +59,18 @@ export default function CustomerPage() {
       router.replace('/customer', { scroll: false });
     }
   };
+
+  const toggleMobileMenu = () => setMobileMenuOpen((open) => !open);
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeMobileMenu();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [mobileMenuOpen, closeMobileMenu]);
 
   useEffect(() => {
     const savedToken = localStorage.getItem('zcanopy_token');
@@ -478,7 +491,7 @@ export default function CustomerPage() {
       ) : (
         <div className="flex-1 bg-[var(--zcanopy-background)] px-6 py-12">
           <div className="mx-auto flex min-h-[600px] max-w-6xl gap-8">
-            <aside className="w-64 flex-shrink-0 rounded-2xl border border-[var(--zcanopy-border)] bg-[var(--zcanopy-surface)] p-4 shadow-sm">
+            <aside className="hidden w-64 flex-shrink-0 rounded-2xl border border-[var(--zcanopy-border)] bg-[var(--zcanopy-surface)] p-4 shadow-sm lg:block">
               <div className="flex items-center gap-3 px-3 py-3">
                 <span
                   className="flex h-9 w-9 items-center justify-center rounded-xl text-base font-bold text-white shadow"
@@ -526,6 +539,75 @@ export default function CustomerPage() {
             <div className="flex-1 rounded-2xl border border-[var(--zcanopy-border)] bg-[var(--zcanopy-surface)] p-8 shadow-sm">
               {renderContent()}
             </div>
+          </div>
+
+          {mobileMenuOpen && (
+            <div className="fixed inset-0 z-50 lg:hidden">
+              <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={closeMobileMenu} />
+              <aside className="absolute inset-y-0 left-0 w-72 overflow-y-auto border-r border-[var(--zcanopy-border)] bg-[var(--zcanopy-surface)] p-4 shadow-[var(--zcanopy-shadow)]">
+                <div className="flex items-center justify-between gap-3 px-2 py-2">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="flex h-9 w-9 items-center justify-center rounded-xl text-base font-bold text-white shadow"
+                      style={{ backgroundColor: 'var(--zcanopy-accent-gold)', color: 'var(--zcanopy-card-brown)' }}
+                    >
+                      Z
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>{customerName || 'Customer'}</p>
+                      <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--zcanopy-primary)' }}>Customer</p>
+                    </div>
+                  </div>
+                  <button onClick={closeMobileMenu} aria-label="Close navigation" className="rounded-lg border border-[var(--zcanopy-border)] p-1.5">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <nav className="mt-5 flex flex-col gap-1">
+                  {sidebarLinks.map((link) => {
+                    const Icon = link.icon;
+                    const isActive = activeView === link.view;
+                    return (
+                      <button
+                        key={link.name}
+                        onClick={() => {
+                          selectView(link.view);
+                          closeMobileMenu();
+                        }}
+                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${
+                          isActive
+                            ? 'bg-[var(--zcanopy-accent-gold)]/10 text-[var(--zcanopy-primary)]'
+                            : 'text-[var(--zcanopy-card-brown)] hover:bg-[var(--zcanopy-accent-gold)]/10 hover:text-[var(--zcanopy-primary)]'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" style={{ color: 'var(--zcanopy-card-brown)' }} />
+                        <span className="font-medium">{link.name}</span>
+                      </button>
+                    );
+                  })}
+                </nav>
+
+                <div className="mt-6 border-t border-[var(--zcanopy-border)] pt-4">
+                  <button
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                  >
+                    <span className="font-medium">Sign out</span>
+                  </button>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          <div className="fixed bottom-6 right-6 lg:hidden">
+            <button
+              onClick={toggleMobileMenu}
+              aria-label="Toggle navigation"
+              aria-expanded={mobileMenuOpen}
+              className="rounded-full border border-[var(--zcanopy-border)] bg-[var(--zcanopy-surface)] p-3.5 shadow-[var(--zcanopy-shadow)]"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
           </div>
         </div>
       )}

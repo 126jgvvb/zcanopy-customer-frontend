@@ -142,6 +142,24 @@ export default function CustomerDashboardPage() {
   const [error, setError] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const toggleMobileMenu = useCallback(() => {
+    setMobileMenuOpen((open) => !open);
+  }, []);
+  const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeMobileMenu();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [mobileMenuOpen, closeMobileMenu]);
+
+  useEffect(() => {
+    if (mobileMenuOpen) closeMobileMenu();
+  }, [pathname, mobileMenuOpen, closeMobileMenu]);
+
   useEffect(() => {
     const sessionId = getSessionId();
     const storedToken = typeof window !== 'undefined' ? window.localStorage.getItem('zcanopy_token') : null;
@@ -261,7 +279,7 @@ export default function CustomerDashboardPage() {
   return (
     <main className="min-h-[calc(100vh-4.5rem)] bg-[var(--background)]">
       <div className="mx-auto flex max-w-7xl gap-6 px-4 py-8 lg:px-8 lg:py-10">
-        <aside className="hidden w-64 shrink-0 rounded-2xl border border-[var(--zcanopy-border)] bg-[var(--zcanopy-surface)] p-4 shadow-[var(--zcanopy-shadow)] lg:block">
+        <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 shrink-0 flex-col rounded-r-2xl border border-[var(--zcanopy-border)] bg-[var(--zcanopy-surface)] p-4 shadow-[var(--zcanopy-shadow)] lg:flex">
           <div className="flex items-center gap-3 px-2 py-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--zcanopy-accent-gold)] font-display text-lg font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>Z</div>
             <div>
@@ -270,7 +288,7 @@ export default function CustomerDashboardPage() {
             </div>
           </div>
 
-          <nav className="mt-5 flex flex-col gap-1">
+          <nav className="mt-5 flex flex-1 flex-col gap-1">
             {navItems.map(({ href, label, icon: Icon }) => {
               const active = pathname === href || (href !== '/customer-dahbaord' && pathname.startsWith(href));
               return (
@@ -303,14 +321,15 @@ export default function CustomerDashboardPage() {
         </aside>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-4 lg:hidden">
+          <div className="flex items-center justify-between gap-4 lg:hidden">
             <div>
               <p className="text-xs uppercase tracking-[0.18em]" style={{ color: 'var(--zcanopy-primary)' }}>Customer portal</p>
               <h1 className="mt-1 font-display text-3xl" style={{ color: 'var(--zcanopy-card-brown)' }}>Dashboard</h1>
             </div>
             <button
-              onClick={() => setMobileMenuOpen((open) => !open)}
+              onClick={toggleMobileMenu}
               aria-label="Toggle navigation"
+              aria-expanded={mobileMenuOpen}
               className="rounded-xl border border-[var(--zcanopy-border)] bg-[var(--zcanopy-surface)] p-2.5"
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -318,18 +337,55 @@ export default function CustomerDashboardPage() {
           </div>
 
           {mobileMenuOpen && (
-            <nav className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border border-[var(--zcanopy-border)] bg-[var(--zcanopy-surface)] p-3 lg:hidden">
-              {navItems.map(({ href, label, icon: Icon }) => (
-                <Link key={href} href={href} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-[var(--zcanopy-card-brown)] hover:bg-[var(--zcanopy-accent-gold)]/10">
-                  <Icon className="h-4 w-4" />
-                  <span>{label}</span>
-                </Link>
-              ))}
-              <button onClick={handleLogout} className="col-span-2 flex items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50">
-                <LogOut className="h-4 w-4" />
-                <span>Sign out</span>
-              </button>
-            </nav>
+            <div className="fixed inset-0 z-50 lg:hidden">
+              <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={closeMobileMenu} />
+              <aside className="absolute inset-y-0 left-0 w-72 overflow-y-auto border-r border-[var(--zcanopy-border)] bg-[var(--zcanopy-surface)] p-4 shadow-[var(--zcanopy-shadow)]">
+                <div className="flex items-center justify-between gap-3 px-2 py-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--zcanopy-accent-gold)] font-display text-lg font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>Z</div>
+                    <div>
+                      <p className="font-display text-lg" style={{ color: 'var(--zcanopy-card-brown)' }}>Customer</p>
+                      <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: 'var(--zcanopy-primary)' }}>Dashboard</p>
+                    </div>
+                  </div>
+                  <button onClick={closeMobileMenu} aria-label="Close navigation" className="rounded-lg border border-[var(--zcanopy-border)] p-1.5">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <nav className="mt-5 flex flex-col gap-1">
+                  {navItems.map(({ href, label, icon: Icon }) => {
+                    const active = pathname === href || (href !== '/customer-dahbaord' && pathname.startsWith(href));
+                    return (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={closeMobileMenu}
+                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${
+                          active
+                            ? 'bg-[var(--zcanopy-accent-gold)]/15 font-semibold text-[var(--zcanopy-primary)]'
+                            : 'text-[var(--zcanopy-card-brown)] hover:bg-[var(--zcanopy-accent-gold)]/10 hover:text-[var(--zcanopy-primary)]'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{label}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+
+                <div className="mt-6 border-t border-[var(--zcanopy-border)] pt-4">
+                  <div className="rounded-xl bg-[var(--zcanopy-background)] p-3">
+                    <p className="truncate text-sm font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>{customerName}</p>
+                    <p className="text-xs" style={{ color: 'var(--zcanopy-muted)' }}>{profile?.email || 'Customer account'}</p>
+                  </div>
+                  <button onClick={handleLogout} className="mt-2 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50">
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign out</span>
+                  </button>
+                </div>
+              </aside>
+            </div>
           )}
 
           <div className="hidden lg:block">

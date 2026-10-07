@@ -29,6 +29,13 @@ export const metadata = {
   description: "Browse verified properties from trusted brokers across Uganda and book directly.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
