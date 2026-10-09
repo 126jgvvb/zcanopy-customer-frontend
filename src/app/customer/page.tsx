@@ -4,9 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { webApi, authErrorMessage, clearSession } from '@/lib/api';
-import { Heart, CalendarCheck, Search, Receipt, FileText, MessageCircle, Bell, User, Eye, EyeOff, Menu, X } from 'lucide-react';
+import { Heart, CalendarCheck, Search, Receipt, MessageCircle, Bell, User, LayoutDashboard, Eye, EyeOff, Menu, X } from 'lucide-react';
 import CustomerTransactionsContent from './transactions/page';
-import CustomerInvoicesContent from './invoices/page';
 import CustomerMessagesContent from './messages/page';
 import CustomerNotificationsContent from './notifications/page';
 import CustomerProfileContent from './profile/page';
@@ -14,9 +13,9 @@ import CustomerFavoritesContent from './favorites/page';
 import CustomerBookingsContent from './bookings/page';
 import FindBookingContent from './find-booking/page';
 
-type ActiveView = 'dashboard' | 'favorites' | 'bookings' | 'find-booking' | 'transactions' | 'invoices' | 'messages' | 'notifications' | 'profile';
+type ActiveView = 'dashboard' | 'favorites' | 'bookings' | 'find-booking' | 'transactions' | 'messages' | 'notifications' | 'profile';
 
-const VALID_VIEWS: ActiveView[] = ['dashboard', 'favorites', 'bookings', 'find-booking', 'transactions', 'invoices', 'messages', 'notifications', 'profile'];
+const VALID_VIEWS: ActiveView[] = ['dashboard', 'favorites', 'bookings', 'find-booking', 'transactions', 'messages', 'notifications', 'profile'];
 
 export default function CustomerPage() {
   const searchParams = useSearchParams();
@@ -28,6 +27,9 @@ export default function CustomerPage() {
   const [customerName, setCustomerName] = useState('');
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [token, setToken] = useState<string | null>(null);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [bookingCount, setBookingCount] = useState(0);
+  const [transactionCount, setTransactionCount] = useState(0);
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [forgotPasswordOtp, setForgotPasswordOtp] = useState('');
@@ -99,6 +101,30 @@ export default function CustomerPage() {
       setLoggedIn(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    const loadCounts = async () => {
+      try {
+        const [notifRes, bookingRes, txnRes] = await Promise.all([
+          webApi.customer.getNotifications(token, 1, 20),
+          webApi.customer.getBookings(token, 1, 10),
+          webApi.customer.getTransactions(token, 1, 10),
+        ]);
+        if (cancelled) return;
+        setNotificationCount(notifRes.unreadCount || 0);
+        setBookingCount(bookingRes.count ?? bookingRes.total ?? 0);
+        setTransactionCount(txnRes.total || 0);
+      } catch {
+        // Counts are best-effort; the sidebar still works without them.
+      }
+    };
+    loadCounts();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -226,16 +252,31 @@ export default function CustomerPage() {
     setActiveView('dashboard');
   };
 
-  const sidebarLinks: { name: string; icon: any; view: ActiveView; external?: boolean; href?: string }[] = [
+  const sidebarLinks: { name: string; icon: any; view: ActiveView; external?: boolean; href?: string; badge?: number }[] = [
+    { name: 'Overview', icon: LayoutDashboard, view: 'dashboard' },
     { name: 'My Favorites', icon: Heart, view: 'favorites' },
-    { name: 'My Bookings', icon: CalendarCheck, view: 'bookings' },
+    { name: 'My Bookings', icon: CalendarCheck, view: 'bookings', badge: bookingCount },
     { name: 'Find Booking', icon: Search, view: 'find-booking' },
-    { name: 'My Transactions', icon: Receipt, view: 'transactions' },
-    { name: 'My Invoices', icon: FileText, view: 'invoices' },
+    { name: 'My Transactions', icon: Receipt, view: 'transactions', badge: transactionCount },
     { name: 'Messages', icon: MessageCircle, view: 'messages' },
-    { name: 'Notifications', icon: Bell, view: 'notifications' },
+    { name: 'Notifications', icon: Bell, view: 'notifications', badge: notificationCount },
     { name: 'My Profile', icon: User, view: 'profile' },
   ];
+
+  function renderBadge(badge?: number, isActive = false) {
+    if (!badge || badge <= 0) return null;
+    return (
+      <span
+        className={`ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold ${
+          isActive
+            ? 'bg-white text-black dark:bg-black dark:text-white'
+            : 'bg-[var(--zcanopy-primary)] text-white'
+        }`}
+      >
+        {badge > 99 ? '99+' : badge}
+      </span>
+    );
+  }
 
   function renderContent() {
     if (!token) return null;
@@ -243,8 +284,6 @@ export default function CustomerPage() {
     switch (activeView) {
       case 'transactions':
         return <CustomerTransactionsContent token={token} />;
-      case 'invoices':
-        return <CustomerInvoicesContent token={token} />;
       case 'messages':
         return <CustomerMessagesContent token={token} />;
       case 'notifications':
@@ -259,8 +298,6 @@ export default function CustomerPage() {
         return <FindBookingContent />;
       default:
         {
-          const mockFavCount = 0;
-          const mockBookingCount = 0;
           return (
             <div className="min-h-[500px]">
               <h2 className="text-2xl font-bold" style={{ color: 'var(--zcanopy-card-brown)' }}>Dashboard</h2>
@@ -269,24 +306,32 @@ export default function CustomerPage() {
                 transactions, and account settings.
               </p>
 
-              <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-2">
                 <div className="rounded-xl border border-[var(--zcanopy-border)] bg-white p-4 text-center dark:bg-[var(--zcanopy-surface)]">
-                  <p className="text-2xl font-bold" style={{ color: 'var(--zcanopy-primary)' }}>{mockFavCount}</p>
-                  <p className="mt-1 text-xs" style={{ color: 'var(--zcanopy-muted)' }}>Saved Properties</p>
-                </div>
-                <div className="rounded-xl border border-[var(--zcanopy-border)] bg-white p-4 text-center dark:bg-[var(--zcanopy-surface)]">
-                  <p className="text-2xl font-bold" style={{ color: 'var(--zcanopy-primary)' }}>{mockBookingCount}</p>
+                  <p className="text-2xl font-bold" style={{ color: 'var(--zcanopy-primary)' }}>{bookingCount}</p>
                   <p className="mt-1 text-xs" style={{ color: 'var(--zcanopy-muted)' }}>Active Bookings</p>
                 </div>
                 <div className="rounded-xl border border-[var(--zcanopy-border)] bg-white p-4 text-center dark:bg-[var(--zcanopy-surface)]">
-                  <p className="text-2xl font-bold" style={{ color: 'var(--zcanopy-primary)' }}>0</p>
-                  <p className="mt-1 text-xs" style={{ color: 'var(--zcanopy-muted)' }}>Unread Messages</p>
-                </div>
-                <div className="rounded-xl border border-[var(--zcanopy-border)] bg-white p-4 text-center dark:bg-[var(--zcanopy-surface)]">
-                  <p className="text-2xl font-bold" style={{ color: 'var(--zcanopy-primary)' }}>0</p>
+                  <p className="text-2xl font-bold" style={{ color: 'var(--zcanopy-primary)' }}>{notificationCount}</p>
                   <p className="mt-1 text-xs" style={{ color: 'var(--zcanopy-muted)' }}>Notifications</p>
                 </div>
               </div>
+
+              {/* Full-width video */}
+<div className="mt-10 overflow-hidden rounded-2xl border border-[var(--zcanopy-border)] shadow-[var(--shadow-lift)]">
+                  <video
+                    className="aspect-video h-auto w-full object-cover"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  >
+                    <source
+                      src="https://zcanopy-properties-media.fra1.cdn.digitaloceanspaces.com/Color%20Blended%20Page%20Background%20(1).mp4"
+                      type="video/mp4"
+                    />
+                  </video>
+                </div>
             </div>
           );
         }
@@ -521,6 +566,7 @@ export default function CustomerPage() {
                     >
                       <Icon className="h-4 w-4" style={{ color: 'var(--zcanopy-card-brown)' }} />
                       <span className="font-medium">{link.name}</span>
+                      {renderBadge(link.badge, isActive)}
                     </button>
                   );
                 })}
@@ -565,25 +611,26 @@ export default function CustomerPage() {
 
                 <nav className="mt-5 flex flex-col gap-1">
                   {sidebarLinks.map((link) => {
-                    const Icon = link.icon;
-                    const isActive = activeView === link.view;
-                    return (
-                      <button
-                        key={link.name}
-                        onClick={() => {
-                          selectView(link.view);
-                          closeMobileMenu();
-                        }}
-                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${
-                          isActive
-                            ? 'bg-[var(--zcanopy-accent-gold)]/10 text-[var(--zcanopy-primary)]'
-                            : 'text-[var(--zcanopy-card-brown)] hover:bg-[var(--zcanopy-accent-gold)]/10 hover:text-[var(--zcanopy-primary)]'
-                        }`}
-                      >
-                        <Icon className="h-4 w-4" style={{ color: 'var(--zcanopy-card-brown)' }} />
-                        <span className="font-medium">{link.name}</span>
-                      </button>
-                    );
+const Icon = link.icon;
+                  const isActive = activeView === link.view;
+                  return (
+                    <button
+                      key={link.name}
+                      onClick={() => {
+                        selectView(link.view);
+                        closeMobileMenu();
+                      }}
+                      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${
+                        isActive
+                          ? 'bg-[var(--zcanopy-accent-gold)]/10 text-[var(--zcanopy-primary)]'
+                          : 'text-[var(--zcanopy-card-brown)] hover:bg-[var(--zcanopy-accent-gold)]/10 hover:text-[var(--zcanopy-primary)]'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" style={{ color: 'var(--zcanopy-card-brown)' }} />
+                      <span className="font-medium">{link.name}</span>
+                      {renderBadge(link.badge, isActive)}
+                    </button>
+                  );
                   })}
                 </nav>
 
@@ -604,9 +651,10 @@ export default function CustomerPage() {
               onClick={toggleMobileMenu}
               aria-label="Toggle navigation"
               aria-expanded={mobileMenuOpen}
-              className="rounded-full border border-[var(--zcanopy-border)] bg-[var(--zcanopy-surface)] p-3.5 shadow-[var(--zcanopy-shadow)]"
+              className="menu-btn-fire rounded-full p-3.5 shadow-[var(--zcanopy-shadow)]"
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              <span className="ripple-3" />
             </button>
           </div>
         </div>

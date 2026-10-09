@@ -586,7 +586,7 @@ customer: {
       apiFetch<{ transactions: any[]; total: number }>(`/web/customer/transactions?page=${page}&limit=${limit}`, { token }),
 
     getBookings: (token: string, page = 1, limit = 10) =>
-      apiFetch<{ bookings: any[]; total: number }>(`/web/customer/bookings?page=${page}&limit=${limit}`, { token }),
+      apiFetch<{ bookings: any[]; total: number; count?: number }>(`/web/customer/bookings?page=${page}&limit=${limit}`, { token }),
 
     getInvoices: (token: string, page = 1, limit = 10) =>
       apiFetch<{ invoices: any[]; total: number }>(`/web/customer/invoices?page=${page}&limit=${limit}`, { token }),

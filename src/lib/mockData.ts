@@ -258,6 +258,7 @@ export const mockData = {
     bookings: [
       { id: "wb1", propertyId: "p1", propertyTitle: "2BR Apartment in Kololo", customerName: "John Doe", customerPhone: "+256701234567", customerEmail: "john@example.com", date: "2026-08-20T10:00:00Z", status: "pending", amount: 850000, transactionCode: "TXN-BK-001", reason: "property_access", location: "Kololo, Kampala" },
     ],
+    count: 1,
   }),
   customerTransactions: () => ({
     transactions: [

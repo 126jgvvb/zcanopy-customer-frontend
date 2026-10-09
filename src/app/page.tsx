@@ -328,20 +328,20 @@ export default function Home() {
           <div className="grid gap-12 lg:grid-cols-12 lg:gap-12 xl:gap-14">
             {/* Media — sharp corners, no play control */}
             <div className="min-w-0 lg:col-span-7">
-              <div className="group relative overflow-hidden shadow-[var(--shadow-lift)]">
-                <video
-                  className="h-[340px] w-full object-cover sm:h-[460px] lg:h-full lg:min-h-[480px]"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                >
-                  <source
-                    src="https://zcanopy-properties-media.fra1.cdn.digitaloceanspaces.com/Color%20Blended%20Page%20Background%20(1).mp4"
-                    type="video/mp4"
-                  />
-                </video>
-              </div>
+<div className="group relative overflow-hidden shadow-[var(--shadow-lift)]">
+                  <video
+                    className="aspect-video h-auto w-full object-cover"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  >
+                    <source
+                      src="https://zcanopy-properties-media.fra1.cdn.digitaloceanspaces.com/Color%20Blended%20Page%20Background%20(1).mp4"
+                      type="video/mp4"
+                    />
+                  </video>
+                </div>
               <p className="mt-4 text-sm text-gray-500">
                 Discover homes across Uganda — tours, bookings, and verified brokers, all in one
                 place.

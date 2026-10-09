@@ -1,3 +1,7 @@
+/* Cormorant Garamond loaded directly from Google Fonts to avoid
+   next/font/google Turbopack resolution errors. */
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap");
+
 @import "tailwindcss";
 
 :root {
@@ -34,7 +38,7 @@
   --color-zcanopy-border: var(--zcanopy-border);
   --shadow-zcanopy: var(--zcanopy-shadow);
   --font-sans: var(--font-geist-sans);
-  --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --font-serif: "Cormorant Garamond", Georgia, serif;
   --font-mono: var(--font-geist-mono);
   --animate-letter-drop: letterDrop 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -159,7 +163,7 @@ body {
 h1,
 h2,
 h3 {
-  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  font-family: "Cormorant Garamond", Georgia, serif;
   font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1.15;
@@ -168,7 +172,7 @@ h3 {
 }
 
 .font-display {
-  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  font-family: "Cormorant Garamond", Georgia, serif;
   font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1.15;
@@ -289,6 +293,77 @@ html.dark textarea::placeholder {
 
 .btn-glow {
   animation: pulse-beat 2s ease-in-out infinite;
+}
+
+/* Mobile nav button: water ripples — concentric rings that expand and
+   shrink simultaneously, like rings on a pond. */
+.menu-btn-fire {
+  position: relative;
+  border: 2px solid transparent;
+  background: var(--zcanopy-surface);
+  isolation: isolate;
+}
+
+.menu-btn-fire::before,
+.menu-btn-fire::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+/* Outer ripple: a thin gold ring that swells and collapses. */
+.menu-btn-fire::before {
+  width: calc(100% + 8px);
+  height: calc(100% + 8px);
+  border: 2px solid var(--zcanopy-accent-gold);
+  opacity: 0;
+  animation: ripple 1.6s ease-out infinite;
+}
+
+/* Inner ripple: a tighter, brighter ring offset in phase. */
+.menu-btn-fire::after {
+  width: calc(100% + 16px);
+  height: calc(100% + 16px);
+  border: 2px solid color-mix(in srgb, var(--zcanopy-accent-gold) 70%, transparent);
+  opacity: 0;
+  animation: ripple 1.6s ease-out 0.8s infinite;
+}
+
+/* A third, fainter ring that lags behind to sell the wave train. */
+.menu-btn-fire .ripple-3 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% + 24px);
+  height: calc(100% + 24px);
+  border-radius: 9999px;
+  pointer-events: none;
+  border: 2px solid color-mix(in srgb, var(--zcanopy-primary) 55%, transparent);
+  opacity: 0;
+  animation: ripple 1.6s ease-out 0.4s infinite;
+}
+
+@keyframes ripple {
+  0% {
+    width: calc(100% + 0px);
+    height: calc(100% + 0px);
+    opacity: 0.85;
+    border-color: var(--zcanopy-accent-gold);
+  }
+  45% {
+    opacity: 0.55;
+  }
+  100% {
+    width: calc(100% + 56px);
+    height: calc(100% + 56px);
+    opacity: 0;
+    border-color: color-mix(in srgb, var(--zcanopy-accent-gold) 30%, transparent);
+  }
 }
 
 @keyframes pulse-beat {
