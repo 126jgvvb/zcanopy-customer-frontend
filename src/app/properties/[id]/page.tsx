@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
 import { SUPPORT_EMAIL } from "@/lib/navigation";
-import { MapPin, MapPinOff, Calendar, Video, ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, Heart, MessageSquare, Star } from "lucide-react";
+import { MapPin, MapPinOff, Calendar, Video, ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, Heart, MessageSquare, Star, X, ZoomIn, ZoomOut, Minimize2 } from "lucide-react";
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import AuthPromptModal from "@/components/AuthPromptModal";
@@ -84,6 +84,12 @@ export default function PropertyDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [galleryScale, setGalleryScale] = useState(1);
+  const [galleryTranslate, setGalleryTranslate] = useState({ x: 0, y: 0 });
+  const [galleryDragging, setGalleryDragging] = useState(false);
+  const [galleryDragStart, setGalleryDragStart] = useState({ x: 0, y: 0 });
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [form, setForm] = useState<BookingForm>(emptyForm);
   const [submitting, setSubmitting] = useState(false);
@@ -173,6 +179,80 @@ export default function PropertyDetailPage() {
       // ignore
     }
   };
+
+  const openGallery = (index: number) => {
+    setGalleryIndex(index);
+    setGalleryOpen(true);
+    setGalleryScale(1);
+    setGalleryTranslate({ x: 0, y: 0 });
+  };
+
+  const closeGallery = () => {
+    setGalleryOpen(false);
+    setGalleryIndex(0);
+    setGalleryScale(1);
+    setGalleryTranslate({ x: 0, y: 0 });
+  };
+
+  const nextImage = () => {
+    setGalleryIndex((prev) => (prev + 1) % images.length);
+    setGalleryScale(1);
+    setGalleryTranslate({ x: 0, y: 0 });
+  };
+
+  const prevImage = () => {
+    setGalleryIndex((prev) => (prev - 1 + images.length) % images.length);
+    setGalleryScale(1);
+    setGalleryTranslate({ x: 0, y: 0 });
+  };
+
+  const zoomIn = () => setGalleryScale((prev) => Math.min(prev * 1.2, 5));
+  const zoomOut = () => setGalleryScale((prev) => Math.max(prev / 1.2, 0.5));
+  const resetZoom = () => {
+    setGalleryScale(1);
+    setGalleryTranslate({ x: 0, y: 0 });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (galleryScale <= 1) return;
+    setGalleryDragging(true);
+    setGalleryDragStart({ x: e.clientX - galleryTranslate.x, y: e.clientY - galleryTranslate.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!galleryDragging || galleryScale <= 1) return;
+    setGalleryTranslate({
+      x: e.clientX - galleryDragStart.x,
+      y: e.clientY - galleryDragStart.y,
+    });
+  };
+
+  const handleMouseUp = () => {
+    setGalleryDragging(false);
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey) {
+      if (e.deltaY < 0) zoomIn();
+      else zoomOut();
+    }
+  };
+
+  useEffect(() => {
+    if (!galleryOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeGallery();
+      } else if (e.key === 'ArrowLeft') {
+        prevImage();
+      } else if (e.key === 'ArrowRight') {
+        nextImage();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [galleryOpen]);
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -341,8 +421,9 @@ export default function PropertyDetailPage() {
                 {images.map((img, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setSelectedImage(img)}
+                    onClick={() => openGallery(idx)}
                     className={`h-16 w-20 flex-shrink-0 overflow-hidden rounded-lg border-2 ${selectedImage === img ? "border-[var(--zcanopy-primary)]" : "border-transparent"}`}
+                    aria-label={`View image ${idx + 1} of ${images.length}`}
                   >
                     <img src={img} alt={`${property.title} ${idx + 1}`} className="h-full w-full object-cover" />
                   </button>
@@ -775,6 +856,98 @@ export default function PropertyDetailPage() {
         </div>
       )}
       <AuthPromptModal open={showAuthPrompt} onClose={() => setShowAuthPrompt(false)} />
+      {galleryOpen && images.length > 0 && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 backdrop-blur-sm"
+          onClick={closeGallery}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onMouseMove={handleMouseMove}
+          onMouseDown={handleMouseDown}
+          onWheel={handleWheel}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image gallery"
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); closeGallery(); }}
+            className="absolute top-4 right-4 z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
+            aria-label="Close gallery"
+          >
+            <X size={24} />
+          </button>
+
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                className="absolute left-4 z-10 h-12 w-12 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 transition-colors disabled:opacity-40 disabled:hover:bg-white/10"
+                aria-label="Previous image"
+                disabled={images.length <= 1}
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                className="absolute right-4 z-10 h-12 w-12 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 transition-colors disabled:opacity-40 disabled:hover:bg-white/10"
+                aria-label="Next image"
+                disabled={images.length <= 1}
+              >
+                <ChevronRight size={24} />
+              </button>
+            </>
+          )}
+
+          <div
+            className="relative max-w-[90vw] max-h-[90vh]"
+            style={{
+              transform: `scale(${galleryScale}) translate(${galleryTranslate.x / galleryScale}px, ${galleryTranslate.y / galleryScale}px)`,
+              transformOrigin: 'center center',
+              transition: galleryDragging ? 'none' : 'transform 0.1s ease-out',
+            }}
+          >
+            <img
+              src={images[galleryIndex]}
+              alt={`${property.title} ${galleryIndex + 1}`}
+              className="max-w-[90vw] max-h-[85vh] object-contain"
+              draggable="false"
+            />
+          </div>
+
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); zoomOut(); }}
+              className="p-1 text-white hover:text-gray-300"
+              aria-label="Zoom out"
+            >
+              <ZoomOut size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); resetZoom(); }}
+              className="p-1 text-white hover:text-gray-300"
+              aria-label="Reset zoom"
+            >
+              <Minimize2 size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); zoomIn(); }}
+              className="p-1 text-white hover:text-gray-300"
+              aria-label="Zoom in"
+            >
+              <ZoomIn size={20} />
+            </button>
+            <span className="text-white text-sm font-mono">
+              {galleryIndex + 1} / {images.length}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
