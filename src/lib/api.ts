@@ -247,17 +247,13 @@ export async function apiFetch<T = unknown>(
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  console.log('[apiFetch] Request:', method, path, 'token?', !!token, 'skipSessionHeader?', _skipSessionHeader);
-
   try {
     const res = await fetch(buildUrl(path, query), {
-      method,
-      headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-      cache: "no-store",
-    });
-
-    console.log('[apiFetch] Response status:', res.status, 'for', path);
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+    cache: "no-store",
+  });
 
     let data: Record<string, unknown> | string | null = null;
     const text = await res.text();

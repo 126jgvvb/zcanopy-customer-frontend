@@ -1,71 +1,65 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { webApi } from '@/lib/api';
+  import useSWR from 'swr';
+  import { webApi } from '@/lib/api';
 
-interface CustomerNotificationsContentProps {
-  token: string;
-}
+  interface CustomerNotificationsContentProps {
+    token: string;
+    onRead?: (count: number) => void;
+  }
 
-export default function CustomerNotificationsContent({ token }: CustomerNotificationsContentProps) {
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [total, setTotal] = useState(0);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  async function fetchNotifications(key: [string, string]) {
+    const t = key[1];
+    return webApi.customer.getNotifications(t, 1, 20);
+  }
 
-  useEffect(() => {
-    loadNotifications(token);
-  }, [token]);
+  export default function CustomerNotificationsContent({ token, onRead }: CustomerNotificationsContentProps) {
+    const key = token ? ['customer-notifications', token] : null;
 
-  const loadNotifications = async (token: string) => {
-    try {
-      const result = await webApi.customer.getNotifications(token, 1, 20);
-      setNotifications(result.notifications || []);
-      setTotal(result.total || 0);
-      setUnreadCount(result.unreadCount || 0);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load notifications');
-    } finally {
-      setLoading(false);
+    const { data, error, isLoading } = useSWR(key, fetchNotifications, {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      dedupingInterval: 5000,
+      fallbackData: { notifications: [], total: 0, unreadCount: 0 },
+    });
+
+    const notifications = data?.notifications || [];
+    const unreadCount = data?.unreadCount || 0;
+
+    if (onRead) onRead(unreadCount);
+
+    if (isLoading && !data) {
+      return (
+        <div className="flex min-h-[500px] items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-[var(--zcanopy-primary)]" />
+        </div>
+      );
     }
-  };
 
-  if (loading) {
     return (
-      <div className="flex min-h-[500px] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-[var(--zcanopy-primary)]" />
+      <div className="min-h-[500px]">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold" style={{ color: 'var(--zcanopy-card-brown)' }}>Notifications</h2>
+          {unreadCount > 0 && (
+            <span className="inline-flex items-center rounded-full bg-[var(--zcanopy-primary)] px-2.5 py-0.5 text-xs font-medium text-white">
+              {unreadCount} unread
+            </span>
+          )}
+        </div>
+        {error && <p className="mt-4 text-sm text-red-600">{error instanceof Error ? error.message : 'Failed to load notifications'}</p>}
+        {!notifications.length ? (
+          <p className="mt-4 text-sm" style={{ color: 'var(--zcanopy-muted)' }}>No notifications found.</p>
+        ) : (
+          <div className="mt-6 space-y-4">
+            {notifications.map((notification) => (
+              <div key={notification.id} className={`rounded-2xl border p-5 shadow-sm ${notification.isRead ? 'border-[var(--zcanopy-border)] bg-white dark:bg-[var(--zcanopy-surface)]' : 'border-[var(--zcanopy-primary)] bg-[var(--zcanopy-primary)]/5'}`}>
+                <p className="text-sm font-medium" style={{ color: 'var(--zcanopy-card-brown)' }}>{notification.title}</p>
+                <p className="mt-1 text-sm" style={{ color: 'var(--zcanopy-muted)' }}>{notification.body}</p>
+                <p className="mt-2 text-xs" style={{ color: 'var(--zcanopy-muted)' }}>{new Date(notification.createdAt).toLocaleString()}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
-
-  const displayNotifications = notifications;
-  const displayUnreadCount = unreadCount;
-
-  return (
-    <div className="min-h-[500px]">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold" style={{ color: 'var(--zcanopy-card-brown)' }}>Notifications</h2>
-        {displayUnreadCount > 0 && (
-          <span className="inline-flex items-center rounded-full bg-[var(--zcanopy-primary)] px-2.5 py-0.5 text-xs font-medium text-white">
-            {displayUnreadCount} unread
-          </span>
-        )}
-      </div>
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
-      {!displayNotifications.length ? (
-        <p className="mt-4 text-sm" style={{ color: 'var(--zcanopy-muted)' }}>No notifications found.</p>
-      ) : (
-        <div className="mt-6 space-y-4">
-          {displayNotifications.map((notification) => (
-            <div key={notification.id} className={`rounded-2xl border p-5 shadow-sm ${notification.isRead ? 'border-[var(--zcanopy-border)] bg-white dark:bg-[var(--zcanopy-surface)]' : 'border-[var(--zcanopy-primary)] bg-[var(--zcanopy-primary)]/5'}`}>
-              <p className="text-sm font-medium" style={{ color: 'var(--zcanopy-card-brown)' }}>{notification.title}</p>
-              <p className="mt-1 text-sm" style={{ color: 'var(--zcanopy-muted)' }}>{notification.body}</p>
-              <p className="mt-2 text-xs" style={{ color: 'var(--zcanopy-muted)' }}>{new Date(notification.createdAt).toLocaleString()}</p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}

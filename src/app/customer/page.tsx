@@ -1,21 +1,36 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { webApi, authErrorMessage, clearSession } from '@/lib/api';
-import { Heart, CalendarCheck, Search, Receipt, MessageCircle, Bell, User, LayoutDashboard, Eye, EyeOff, Menu, X } from 'lucide-react';
-import CustomerTransactionsContent from './transactions/page';
-import CustomerMessagesContent from './messages/page';
-import CustomerNotificationsContent from './notifications/page';
-import CustomerProfileContent from './profile/page';
-import CustomerFavoritesContent from './favorites/page';
-import CustomerBookingsContent from './bookings/page';
-import FindBookingContent from './find-booking/page';
+  import { useState, useEffect } from 'react';
+  import useSWR from 'swr';
+  import Link from 'next/link';
+  import { useSearchParams, useRouter } from 'next/navigation';
+  import { webApi, authErrorMessage, clearSession } from '@/lib/api';
+  import { Heart, CalendarCheck, Search, Receipt, MessageCircle, Bell, User, LayoutDashboard, Eye, EyeOff, Menu, X } from 'lucide-react';
+  import CustomerTransactionsContent from './transactions/page';
+  import CustomerMessagesContent from './messages/page';
+  import CustomerNotificationsContent from './notifications/page';
+  import CustomerProfileContent from './profile/page';
+  import CustomerFavoritesContent from './favorites/page';
+  import CustomerBookingsContent from './bookings/page';
+  import FindBookingContent from './find-booking/page';
 
 type ActiveView = 'dashboard' | 'favorites' | 'bookings' | 'find-booking' | 'transactions' | 'messages' | 'notifications' | 'profile';
 
 const VALID_VIEWS: ActiveView[] = ['dashboard', 'favorites', 'bookings', 'find-booking', 'transactions', 'messages', 'notifications', 'profile'];
+
+async function fetchSummary(key: [string, string]) {
+  const t = key[1];
+  const [notifRes, bookingRes, txnRes] = await Promise.all([
+    webApi.customer.getNotifications(t, 1, 20),
+    webApi.customer.getBookings(t, 1, 10),
+    webApi.customer.getTransactions(t, 1, 10),
+  ]);
+  return {
+    notifications: notifRes.unreadCount || 0,
+    bookings: bookingRes.count ?? bookingRes.total ?? 0,
+    transactions: txnRes.total || 0,
+  };
+}
 
 export default function CustomerPage() {
   const searchParams = useSearchParams();
@@ -46,6 +61,21 @@ export default function CustomerPage() {
   // Honours ?view=<tab> deep links, e.g. /customer?view=bookings right after a
   // successful booking.
   const requestedView = searchParams.get('view');
+
+  // SWR keeps the sidebar badge counts cached and shared across tabs.
+  const summaryKey = token ? ['customer-summary', token] : null;
+  const { data: summary } = useSWR(summaryKey, fetchSummary, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true,
+    dedupingInterval: 5000,
+    fallbackData: { notifications: 0, bookings: 0, transactions: 0 },
+  });
+  useEffect(() => {
+    if (!summary) return;
+    setNotificationCount(summary.notifications);
+    setBookingCount(summary.bookings);
+    setTransactionCount(summary.transactions);
+  }, [summary]);
 
   useEffect(() => {
     if (requestedView && VALID_VIEWS.includes(requestedView as ActiveView)) {
@@ -101,30 +131,6 @@ export default function CustomerPage() {
       setLoggedIn(true);
     }
   }, []);
-
-  useEffect(() => {
-    if (!token) return;
-    let cancelled = false;
-    const loadCounts = async () => {
-      try {
-        const [notifRes, bookingRes, txnRes] = await Promise.all([
-          webApi.customer.getNotifications(token, 1, 20),
-          webApi.customer.getBookings(token, 1, 10),
-          webApi.customer.getTransactions(token, 1, 10),
-        ]);
-        if (cancelled) return;
-        setNotificationCount(notifRes.unreadCount || 0);
-        setBookingCount(bookingRes.count ?? bookingRes.total ?? 0);
-        setTransactionCount(txnRes.total || 0);
-      } catch {
-        // Counts are best-effort; the sidebar still works without them.
-      }
-    };
-    loadCounts();
-    return () => {
-      cancelled = true;
-    };
-  }, [token]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
