@@ -2,7 +2,7 @@
 
 import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
-import BackButton from "@/components/BackButton";
+
 import { COLORS } from "@/lib/theme";
 import { CreditCard, Lock, PieChart, Banknote, RadioTower } from "lucide-react";
 
@@ -61,7 +61,6 @@ export default function PaymentsPage() {
         />
 
         <div className="mx-auto max-w-[1500px] px-5 py-14 sm:px-8 lg:py-20">
-          <BackButton />
 
           <div className="max-w-2xl">
             <span className="eyebrow">Payments</span>

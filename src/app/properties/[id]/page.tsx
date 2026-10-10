@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
 import { SUPPORT_EMAIL } from "@/lib/navigation";
 import { MapPin, MapPinOff, Calendar, Video, ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, Heart, MessageSquare, Star, X, ZoomIn, ZoomOut, Minimize2 } from "lucide-react";
 import Link from "next/link";
-import BackButton from "@/components/BackButton";
+
 import AuthPromptModal from "@/components/AuthPromptModal";
 import AspectRatioVideo from "@/components/AspectRatioVideo";
 import { useBookingRedirect } from "@/hooks/useBookingRedirect";
@@ -324,6 +324,17 @@ export default function PropertyDetailPage() {
     setPaymentStatus("");
   };
 
+  // Deep link from the reels "Book a viewing" button (?book=1): once the
+  // property has loaded, open the booking flow automatically.
+  const bookingAutoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (bookingAutoOpenedRef.current) return;
+    if (loading || !property) return;
+    if (searchParams.get("book") !== "1") return;
+    bookingAutoOpenedRef.current = true;
+    openBooking();
+  }, [loading, property, searchParams]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProperty) return;
@@ -400,7 +411,6 @@ export default function PropertyDetailPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 px-6 py-10 md:px-10">
-      <BackButton />
       <Link href="/properties" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[var(--zcanopy-primary)]">
         <ArrowLeft size={16} />
         Back to properties

@@ -99,6 +99,7 @@ export interface RequestOptions {
   query?: Record<string, string | number | boolean | undefined>;
   fallback?: unknown;
   skipSessionHeader?: boolean;
+  skipAuthRedirect?: boolean;
 }
 
 function buildUrl(path: string, query?: RequestOptions["query"]): string {
@@ -241,6 +242,7 @@ export async function apiFetch<T = unknown>(
     query,
     fallback,
     skipSessionHeader: _skipSessionHeader,
+    skipAuthRedirect,
   }: RequestOptions = {},
 ): Promise<T> {
   const headers: Record<string, string> = {};
@@ -271,9 +273,11 @@ export async function apiFetch<T = unknown>(
     }
 
     if (res.status === 401) {
-      clearSession();
-      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login") && !window.location.pathname.startsWith("/customer")) {
-        window.location.href = "/customer";
+      if (!skipAuthRedirect) {
+        clearSession();
+        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login") && !window.location.pathname.startsWith("/customer")) {
+          window.location.href = "/customer";
+        }
       }
       throw new ApiError("Session expired", 401);
     }
@@ -310,6 +314,7 @@ export async function validateSession(): Promise<{ valid: boolean; type?: string
     return await apiFetch<{ valid: boolean; type?: string }>("/web/session/validate", {
       method: "POST",
       token,
+      skipAuthRedirect: true,
     });
   } catch {
     return null;
@@ -471,8 +476,8 @@ export const webApi = {
   toggleFavorite: (token: string, body: { propertyId: string; propertyTitle: string; propertyLocation?: string; brokerCode?: string; imageUrl?: string; price?: number }) =>
     apiFetch<{ favorited: boolean }>("/web/customer/favorites/toggle", { method: "POST", token, body }),
 
-  getCustomerFavorites: (token: string, page = 1, limit = 10) =>
-    apiFetch<{ favorites: any[]; total: number }>(`/web/customer/favorites?page=${page}&limit=${limit}`, { token }),
+  getCustomerFavorites: (token: string, page = 1, limit = 10, opts?: { skipAuthRedirect?: boolean }) =>
+    apiFetch<{ favorites: any[]; total: number }>(`/web/customer/favorites?page=${page}&limit=${limit}`, { token, skipAuthRedirect: opts?.skipAuthRedirect }),
 
   addComment: (token: string, body: { propertyId: string; customerName: string; customerPhone: string; customerEmail?: string; comment: string; rating?: number }) =>
     apiFetch<{ success: boolean; commentId?: string }>("/web/customer/comments", { method: "POST", token, body }),
@@ -563,8 +568,8 @@ customer: {
     unsubscribe: (token: string) =>
       apiFetch<{ success: boolean; message: string }>("/web/customer/unsubscribe", { method: "POST", token }),
 
-    videoTours: (query?: Record<string, string | number | boolean | undefined>) =>
-      apiFetch<{ properties: any[]; total: number; videoCount: number }>("/web/customer/video-tours", { query, skipSessionHeader: true }),
+    videoTours: (query?: Record<string, string | number | boolean | undefined>, sessionId?: string | null) =>
+      apiFetch<{ properties: any[]; total: number; videoCount: number }>("/web/customer/video-tours", { query, token: sessionId || undefined, skipSessionHeader: true, skipAuthRedirect: true }),
 
     allProperties: (query?: Record<string, string | number | boolean | undefined>) =>
       apiFetch<{ properties: any[]; total: number }>("/web/customer/all-properties", { query, skipSessionHeader: true }),

@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef, useTransition, useDeferredValue, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useRef, useTransition, useDeferredValue, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import PropertyCard from "@/components/PropertyCard";
-import PropertyShowcaseRow from "@/components/PropertyShowcaseRow";
-import PropertyVideoReel from "@/components/PropertyVideoReel";
-import { LayoutGrid, Rows3, Video } from "lucide-react";
+import { SlidersHorizontal, X, Sparkles } from "lucide-react";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
 import { SUPPORT_EMAIL } from "@/lib/navigation";
 import Link from "next/link";
 import { usePlacePredictions } from "@/hooks/useGooglePlaces";
-import BackButton from "@/components/BackButton";
+
 import { useBookingRedirect } from "@/hooks/useBookingRedirect";
 import { invalidateBookedPropertyIds } from "@/hooks/useBookedPropertyIds";
+import { useSearchWizard } from "@/contexts/searchWizard";
 
 function formatUGX(n: number) {
   try {
@@ -53,42 +53,30 @@ const emptyForm: BookingForm = {
   customerEmail: "",
 };
 
-type LayoutMode = "grid" | "showcase" | "video";
-const LAYOUT_KEY = "zcanopy_properties_layout";
-const LAYOUT_EVENT = "zcanopy-layout-change";
+// Reads the URL's guided-search params and pushes them into the page's filter
+// state. Lives under a Suspense boundary so the page can stay statically
+// prerendered while still reacting to client-side navigations (e.g. the
+// wizard's router.push to /properties?guided=1&...).
+function GuidedQuerySync({ onApply }: { onApply: (p: { location: string; propertyType: string; minPrice: string; maxPrice: string }) => void }) {
+  const searchParams = useSearchParams();
+  const qs = searchParams.toString();
+  const seenRef = useRef<string | null>(null);
 
-/**
- * localStorage read through useSyncExternalStore so the preference survives
- * reloads without a setState-in-effect, and so SSR can send the default.
- */
-const layoutStore = {
-  subscribe(cb: () => void) {
-    window.addEventListener(LAYOUT_EVENT, cb);
-    window.addEventListener("storage", cb);
-    return () => {
-      window.removeEventListener(LAYOUT_EVENT, cb);
-      window.removeEventListener("storage", cb);
-    };
-  },
-  get(): LayoutMode {
-    const stored = window.localStorage.getItem(LAYOUT_KEY);
-    if (stored === "showcase" || stored === "video") return stored;
-    return "grid";
-  },
-  getServerSnapshot(): LayoutMode {
-    return "grid";
-  },
-  set(next: LayoutMode) {
-    window.localStorage.setItem(LAYOUT_KEY, next);
-    window.dispatchEvent(new Event(LAYOUT_EVENT));
-  },
-};
+  useEffect(() => {
+    const sp = new URLSearchParams(qs);
+    if (!sp.has("guided")) return;
+    if (qs === seenRef.current) return;
+    seenRef.current = qs;
+    onApply({
+      location: sp.get("location") || "",
+      propertyType: sp.get("propertyType") || "",
+      minPrice: sp.get("minPrice") || "",
+      maxPrice: sp.get("maxPrice") || "",
+    });
+  }, [qs, onApply]);
 
-const LAYOUT_OPTIONS: Array<{ value: LayoutMode; label: string; Icon: typeof LayoutGrid }> = [
-  { value: "grid", label: "Grid", Icon: LayoutGrid },
-  { value: "showcase", label: "Showcase", Icon: Rows3 },
-  { value: "video", label: "Reel", Icon: Video },
-];
+  return null;
+}
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -111,11 +99,6 @@ export default function PropertiesPage() {
   const [success, setSuccess] = useState("");
   const [bookedProperty, setBookedProperty] = useState<Property | null>(null);
 const [paymentStatus, setPaymentStatus] = useState<string>("");
-const layout = useSyncExternalStore(
-    layoutStore.subscribe,
-    layoutStore.get,
-    layoutStore.getServerSnapshot,
-  );
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [localSearch, setLocalSearch] = useState("");
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
@@ -140,6 +123,21 @@ const layout = useSyncExternalStore(
   const deferredDistrictFilter = useDeferredValue(districtFilter);
   const deferredDateFrom = useDeferredValue(dateFrom);
 const deferredDateTo = useDeferredValue(dateTo);
+
+  const { openWizard } = useSearchWizard();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sort, setSort] = useState<"newest" | "price-asc" | "price-desc">("newest");
+
+  // Applied when the guided-search wizard confirms (or a guided URL is loaded
+  // directly). Driven by useSearchParams so a client-side router.push to
+  // /properties?guided=1&... while already on this page still re-applies the
+  // filters and triggers a filtered fetch.
+  const applyGuidedQuery = useCallback((p: { location: string; propertyType: string; minPrice: string; maxPrice: string }) => {
+    setLocationFilter(p.location);
+    setPropertyTypeFilter(p.propertyType);
+    setMinPrice(p.minPrice);
+    setMaxPrice(p.maxPrice);
+  }, []);
 
   const isInitialMount = useRef(true);
 
@@ -425,11 +423,53 @@ const deferredDateTo = useDeferredValue(dateTo);
 
   const filteredProperties = properties;
 
+  // Client-side sort applied to whatever has been loaded so far (the API has
+  // no server-side sort param). Newest is the default, matching the explorer.
+  const sortedProperties = useMemo(() => {
+    const list = [...filteredProperties];
+    if (sort === "price-asc") list.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
+    else if (sort === "price-desc") list.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+    else list.sort((a, b) => Date.parse(b.createdAt || "0") - Date.parse(a.createdAt || "0"));
+    return list;
+  }, [filteredProperties, sort]);
+
+  useEffect(() => {
+    document.body.style.overflow = drawerOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [drawerOpen]);
+
+  const activeChips: { key: string; label: string; clear: () => void }[] = [];
+  if (search) activeChips.push({ key: "search", label: `“${search}”`, clear: () => { setSearch(""); setLocalSearch(""); } });
+  if (locationFilter) activeChips.push({ key: "location", label: locationFilter, clear: () => setLocationFilter("") });
+  if (brokerFilter) activeChips.push({ key: "broker", label: brokerFilter, clear: () => setBrokerFilter("") });
+  if (propertyTypeFilter) activeChips.push({ key: "type", label: propertyTypeFilter, clear: () => setPropertyTypeFilter("") });
+  if (minPrice) activeChips.push({ key: "minPrice", label: `From ${formatUGX(Number(minPrice))}`, clear: () => setMinPrice("") });
+  if (maxPrice) activeChips.push({ key: "maxPrice", label: `Up to ${formatUGX(Number(maxPrice))}`, clear: () => setMaxPrice("") });
+  if (subCountyFilter) activeChips.push({ key: "subCounty", label: subCountyFilter, clear: () => setSubCountyFilter("") });
+  if (districtFilter) activeChips.push({ key: "district", label: districtFilter, clear: () => setDistrictFilter("") });
+  if (dateFrom) activeChips.push({ key: "dateFrom", label: `From ${dateFrom}`, clear: () => setDateFrom("") });
+  if (dateTo) activeChips.push({ key: "dateTo", label: `To ${dateTo}`, clear: () => setDateTo("") });
+
+  const clearAllFilters = () => {
+    setSearch("");
+    setLocalSearch("");
+    setLocationFilter("");
+    setBrokerFilter("");
+    setPropertyTypeFilter("");
+    setMinPrice("");
+    setMaxPrice("");
+    setSubCountyFilter("");
+    setDistrictFilter("");
+    setDateFrom("");
+    setDateTo("");
+  };
+
   // Scroll reveal for property cards. `.slide-up` starts at opacity 0 until
   // `.visible` is added. Depend on `properties` (not a ref counter): changing
   // a filter re-renders before the new list arrives, which would consume a
   // ref-based dep and skip observing the replacement cards.
-  // `layout` is included because switching views swaps the rendered tree.
   useEffect(() => {
     let observer: IntersectionObserver | null = null;
     let cancelled = false;
@@ -472,7 +512,7 @@ const deferredDateTo = useDeferredValue(dateTo);
       cancelAnimationFrame(rafId);
       observer?.disconnect();
     };
-  }, [properties, layout]);
+  }, [properties]);
 
   const [needsAuth, setNeedsAuth] = useState(false);
 
@@ -548,6 +588,192 @@ const deferredDateTo = useDeferredValue(dateTo);
     }
   };
 
+  const filterFields = (
+    <>
+      <div className="relative">
+        <label className="block text-sm font-medium text-gray-700">Search</label>
+        <input
+          type="text"
+          value={localSearch}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          onFocus={() => localSearch.trim().length > 0 && setShowLocationSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 150)}
+          placeholder="Search by title, location, broker..."
+          className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+        />
+        {showLocationSuggestions && (locationPredictions.length > 0 || locationLoading || locationError) && (
+          <div className="absolute z-20 mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] shadow-lg">
+            {locationLoading && <div className="px-4 py-2 text-sm text-gray-500">Loading suggestions...</div>}
+            {locationError && <div className="px-4 py-2 text-sm text-red-600">Location suggestions unavailable</div>}
+            {!locationLoading &&
+              !locationError &&
+              locationPredictions.map((item) => (
+                <button
+                  key={item.placeId}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleLocationSuggestionSelect(item.description)}
+                  className="flex w-full items-center px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  {item.description}
+                </button>
+              ))}
+            {!locationLoading && !locationError && locationPredictions.length === 0 && (
+              <div className="px-4 py-2 text-sm text-gray-500">No suggestions</div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Location</label>
+          <select
+            value={locationFilter}
+            onChange={(e) => setLocationFilter(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+          >
+            <option value="">All locations</option>
+            {uniqueLocations.map((loc) => (
+              <option key={loc} value={loc}>
+                {loc}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Broker</label>
+          <select
+            value={brokerFilter}
+            onChange={(e) => setBrokerFilter(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+          >
+            <option value="">All brokers</option>
+            {uniqueBrokers.map((b) => (
+              <option key={b.code} value={b.name}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Property Type</label>
+          <select
+            value={propertyTypeFilter}
+            onChange={(e) => setPropertyTypeFilter(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+          >
+            <option value="">All types</option>
+            {uniquePropertyTypes.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Min Price (UGX)</label>
+          <input
+            type="number"
+            value={minPrice}
+            onChange={(e) => setMinPrice(e.target.value)}
+            placeholder="0"
+            className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Max Price (UGX)</label>
+          <input
+            type="number"
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(e.target.value)}
+            placeholder="No limit"
+            className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Sub-county</label>
+          <input
+            type="text"
+            value={subCountyFilter}
+            onChange={(e) => setSubCountyFilter(e.target.value)}
+            placeholder="e.g. Kampala Central"
+            className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">District</label>
+          <input
+            type="text"
+            value={districtFilter}
+            onChange={(e) => setDistrictFilter(e.target.value)}
+            placeholder="e.g. Kampala"
+            className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">From</label>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">To</label>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
+          />
+        </div>
+      </div>
+    </>
+  );
+
+  const filterDrawer = (
+    <div className="fixed inset-0 z-[60] block lg:hidden">
+      <button
+        type="button"
+        aria-label="Close filters"
+        onClick={() => setDrawerOpen(false)}
+        className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
+      />
+      <div className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-[var(--zcanopy-surface)] shadow-[var(--shadow-lift)]">
+        <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
+          <h3 className="text-lg font-semibold text-[var(--zcanopy-card-brown)]">Filters</h3>
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(false)}
+            aria-label="Close filters"
+            className="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4">{filterFields}</div>
+        {activeChips.length > 0 && (
+          <div className="border-t border-[var(--border)] px-5 py-4">
+            <button type="button" onClick={clearAllFilters} className="btn-ghost w-full px-4 py-2.5 text-sm">
+              Clear all filters
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDrawerOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [drawerOpen]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -566,188 +792,109 @@ const deferredDateTo = useDeferredValue(dateTo);
 
   return (
     <div className="w-full space-y-6 px-4 py-8 md:px-6">
-      <BackButton />
+      <Suspense fallback={null}>
+        <GuidedQuerySync onApply={applyGuidedQuery} />
+      </Suspense>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <span className="eyebrow">The catalogue</span>
           <h2 className="mt-3 text-4xl md:text-[2.75rem]">Browse Properties</h2>
-          <p className="mt-2 max-w-xl text-gray-500">Find your next home or investment and book directly.</p>
+          <p className="mt-2 max-w-xl text-gray-500">
+            {filteredProperties.length > 0 ? `${filteredProperties.length} properties found` : "Searching ZCanopy properties"} — book directly, no fees beyond the listed booking charge.
+          </p>
         </div>
 
-        {/* Layout switcher */}
-        <div
-          role="group"
-          aria-label="Property layout"
-          className="flex items-center gap-1 rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] p-1 shadow-sm"
-        >
-          {LAYOUT_OPTIONS.map(({ value, label, Icon }) => {
-            const active = layout === value;
-            return (
-              <button
-                key={value}
-                type="button"
-                onClick={() => layoutStore.set(value)}
-                aria-pressed={active}
-                title={`${label} view`}
-                className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors ${
-                  active ? "text-white" : "text-gray-600 hover:text-[var(--zcanopy-primary)]"
-                }`}
-                style={active ? { background: "var(--zcanopy-primary)" } : undefined}
-              >
-                <Icon size={16} />
-                <span className="hidden sm:inline">{label}</span>
-              </button>
-            );
-          })}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={openWizard}
+            className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-b from-[#bc8120] to-[var(--zcanopy-primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-150 hover:brightness-105"
+          >
+            <Sparkles size={16} />
+            Guided search
+          </button>
+
+          <select
+            aria-label="Sort properties"
+            value={sort}
+            onChange={(e) => setSort(e.target.value as "newest" | "price-asc" | "price-desc")}
+            className="rounded-xl border border-[var(--border)] bg-[var(--zcanopy-surface)] px-3 py-2 text-sm font-medium text-gray-700 shadow-sm focus:border-[var(--zcanopy-primary)] focus:outline-none"
+          >
+            <option value="newest">Newest first</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+          </select>
+
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="relative inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)] lg:hidden"
+          >
+            <SlidersHorizontal size={16} />
+            <span className="hidden sm:inline">Filters</span>
+            {activeChips.length > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--zcanopy-primary)] px-1.5 text-xs font-bold text-white">
+                {activeChips.length}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
-      <div className="filter-panel rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-5 shadow-[var(--shadow-soft)]">
-        <div className="relative">
-          <label className="block text-sm font-medium text-gray-700">Search</label>
-          <input
-            type="text"
-            value={localSearch}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            onFocus={() => localSearch.trim().length > 0 && setShowLocationSuggestions(true)}
-            onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 150)}
-            placeholder="Search by title, location, broker..."
-            className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-          />
-          {showLocationSuggestions && (locationPredictions.length > 0 || locationLoading || locationError) && (
-            <div className="absolute z-20 mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] shadow-lg">
-              {locationLoading && (
-                <div className="px-4 py-2 text-sm text-gray-500">Loading suggestions...</div>
-              )}
-              {locationError && (
-                <div className="px-4 py-2 text-sm text-red-600">Location suggestions unavailable</div>
-              )}
-              {!locationLoading &&
-                !locationError &&
-                locationPredictions.map((item) => (
-                  <button
-                    key={item.placeId}
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => handleLocationSuggestionSelect(item.description)}
-                    className="flex w-full items-center px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    {item.description}
-                  </button>
-                ))}
-              {!locationLoading && !locationError && locationPredictions.length === 0 && (
-                <div className="px-4 py-2 text-sm text-gray-500">No suggestions</div>
-              )}
-            </div>
+      {activeChips.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {activeChips.map((chip) => (
+            <span
+              key={chip.key}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] py-1 pl-3 pr-1.5 text-sm font-medium text-[var(--zcanopy-card-brown)] shadow-sm"
+            >
+              {chip.label}
+              <button
+                type="button"
+                onClick={chip.clear}
+                aria-label={`Remove ${chip.label}`}
+                className="rounded-full p-0.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+              >
+                <X size={14} />
+              </button>
+            </span>
+          ))}
+          {activeChips.length > 1 && (
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="text-sm font-medium text-[var(--zcanopy-primary)] transition-colors hover:underline"
+            >
+              Clear all
+            </button>
           )}
         </div>
+      )}
 
-        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Location</label>
-            <select
-              value={locationFilter}
-              onChange={(e) => setLocationFilter(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-            >
-              <option value="">All locations</option>
-              {uniqueLocations.map((loc) => (
-                <option key={loc} value={loc}>
-                  {loc}
-                </option>
-              ))}
-            </select>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[300px_minmax(0,1fr)]">
+        <aside className="hidden lg:block">
+          <div className="sticky top-24">
+            <div className="filter-panel rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-5 shadow-[var(--shadow-soft)]">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--zcanopy-card-brown)]">
+                  Filters
+                </h3>
+                {activeChips.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="text-sm font-medium text-[var(--zcanopy-primary)] hover:underline"
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+              {filterFields}
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Broker</label>
-            <select
-              value={brokerFilter}
-              onChange={(e) => setBrokerFilter(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-            >
-              <option value="">All brokers</option>
-              {uniqueBrokers.map((b) => (
-                <option key={b.code} value={b.name}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Property Type</label>
-            <select
-              value={propertyTypeFilter}
-              onChange={(e) => setPropertyTypeFilter(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-            >
-              <option value="">All types</option>
-              {uniquePropertyTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Min Price (UGX)</label>
-            <input
-              type="number"
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
-              placeholder="0"
-              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Max Price (UGX)</label>
-            <input
-              type="number"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-              placeholder="No limit"
-              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Sub-county</label>
-            <input
-              type="text"
-              value={subCountyFilter}
-              onChange={(e) => setSubCountyFilter(e.target.value)}
-              placeholder="e.g. Kampala Central"
-              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">District</label>
-            <input
-              type="text"
-              value={districtFilter}
-              onChange={(e) => setDistrictFilter(e.target.value)}
-              placeholder="e.g. Kampala"
-              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">From</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">To</label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-            />
-          </div>
-        </div>
-      </div>
+        </aside>
+
+        <div className="min-w-0">
 
       {/* Filter/query refetches keep the current results on screen and show an
           inline indicator, so changing a filter never blanks the grid. */}
@@ -758,7 +905,7 @@ const deferredDateTo = useDeferredValue(dateTo);
         </div>
       )}
 
-      {filteredProperties.length === 0 ? (
+      {sortedProperties.length === 0 ? (
         isFetching ? null : (
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-5 shadow-[var(--shadow-soft)]">
             <div className="py-12 text-center">
@@ -766,23 +913,9 @@ const deferredDateTo = useDeferredValue(dateTo);
             </div>
           </div>
         )
-      ) : layout === "showcase" ? (
-        <div className="flex flex-col gap-5">
-          {filteredProperties.map((property, idx) => (
-            <div
-              key={property.id || `${property.title}-${idx}`}
-              className="slide-up"
-              style={{ animationDelay: `${Math.min(idx, 8) * 60}ms` }}
-            >
-              <PropertyShowcaseRow property={property} />
-            </div>
-          ))}
-        </div>
-      ) : layout === "video" ? (
-        <PropertyVideoReel initialProperties={filteredProperties} onClose={() => layoutStore.set("grid")} />
       ) : (
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredProperties.map((property, idx) => (
+          {sortedProperties.map((property, idx) => (
             <div
               key={property.id || `${property.title}-${idx}`}
               className={`slide-up ${idx >= 12 ? "" : ""}`}
@@ -803,6 +936,10 @@ const deferredDateTo = useDeferredValue(dateTo);
           )}
         </div>
       )}
+        </div>
+      </div>
+
+      {drawerOpen && filterDrawer}
 
       {selectedProperty && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">

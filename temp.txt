@@ -1,0 +1,2372 @@
+```index.tsx
+import "./index.css";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { App } from "./App";
+
+const rootEl = document.getElementById("root");
+if (rootEl) {
+  ReactDOM.createRoot(rootEl).render(<App />);
+}
+
+```
+```App.tsx
+import React from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
+import { AppProvider } from './contexts/AppContext';
+import { Header } from './components/Header';
+import { ScrollToTop } from './components/ScrollToTop';
+import { SearchWizard } from './components/wizard/SearchWizard';
+import { Home } from './pages/Home';
+import { Browse } from './pages/Browse';
+import { Reels } from './pages/Reels';
+import { PropertyDetail } from './pages/PropertyDetail';
+import { Saved } from './pages/Saved';
+
+export function App() {
+  return (
+    <BrowserRouter>
+      <MotionConfig reducedMotion="user">
+        <AppProvider>
+          <div className="min-h-screen w-full bg-canvas font-sans text-ink">
+            <ScrollToTop />
+            <Header />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/browse" element={<Browse />} />
+              <Route path="/reels" element={<Reels />} />
+              <Route path="/property/:id" element={<PropertyDetail />} />
+              <Route path="/saved" element={<Saved />} />
+              <Route path="*" element={<Home />} />
+            </Routes>
+            <SearchWizard />
+          </div>
+        </AppProvider>
+      </MotionConfig>
+    </BrowserRouter>
+  );
+}
+
+```
+```package.json
+{
+  "name": "magic-patterns-project",
+  "private": true,
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.30.2",
+    "lucide-react": "0.577.0",
+    "framer-motion": "11.18.2",
+    "@radix-ui/react-icons": "1.3.2",
+    "date-fns": "4.1.0",
+    "tailwind-merge": "2.6.1"
+  }
+}
+
+```
+```index.css
+/* @import url() FONT IMPORTS MUST ALWAYS BE AT THE VERY TOP OF THIS FILE, ABOVE THE TAILWIND IMPORTS — DO NOT DELETE THIS COMMENT */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap');
+
+/* CRITICAL: THE FOLLOWING TAILWIND IMPORTS MUST NEVER BE DELETED OR REORDERED — DO NOT DELETE THIS COMMENT */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* END TAILWIND IMPORTS — ALL OTHER CSS MUST GO BELOW THIS LINE */
+
+body {
+  background-color: #fbf8f1;
+  color: #1c1912;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+@keyframes kenburns {
+  from {
+    transform: scale(1.02) translate(0, 0);
+  }
+  to {
+    transform: scale(1.14) translate(-1.5%, -1%);
+  }
+}
+.kenburns {
+  animation: kenburns 5s linear forwards;
+  transform-origin: center;
+}
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kenburns {
+    animation: none;
+  }
+}
+
+```
+```tailwind.config.js
+export default {
+  content: ['./*.{ts,tsx}', './{pages,components,contexts,hooks,utils,data,types}/**/*.{ts,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        canvas: '#FBF8F1',
+        ink: '#1C1912',
+        muted: '#6B6457',
+        line: '#E9E2D2',
+        gold: {
+          DEFAULT: '#C9A227',
+          dark: '#9A7A14',
+          soft: '#F6EDD2',
+          ink: '#2E2304',
+        },
+      },
+      fontFamily: {
+        display: ['Fraunces', 'Georgia', 'serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+    },
+  },
+};
+
+```
+```types/property.ts
+export type ListingType = 'buy' | 'rent';
+export type PropertyKind = 'House' | 'Apartment' | 'Villa' | 'Townhouse' | 'Cottage' | 'Loft';
+export type City = 'Austin' | 'Denver' | 'Portland' | 'San Diego';
+export type Lifestyle = 'family' | 'quiet' | 'urban' | 'nature' | 'waterfront' | 'pets';
+export type Amenity =
+  | 'Pool'
+  | 'Garden'
+  | 'Garage'
+  | 'Home office'
+  | 'Ocean view'
+  | 'Pet friendly'
+  | 'Gym'
+  | 'Balcony'
+  | 'Parking'
+  | 'Fireplace'
+  | 'Doorman';
+
+export interface TourChapter {
+  label: string;
+  caption: string;
+  image: string;
+}
+
+export interface Agent {
+  name: string;
+  role: string;
+  responseTime: string;
+}
+
+export interface Property {
+  id: string;
+  title: string;
+  kind: PropertyKind;
+  listingType: ListingType;
+  price: number;
+  city: City;
+  neighborhood: string;
+  beds: number;
+  baths: number;
+  sqft: number;
+  image: string;
+  description: string;
+  amenities: Amenity[];
+  lifestyle: Lifestyle[];
+  listedDaysAgo: number;
+  agent: Agent;
+  tour: TourChapter[];
+}
+
+export type SortOption = 'match' | 'newest' | 'price-asc' | 'price-desc';
+
+export interface Filters {
+  listingType: ListingType | 'any';
+  city: City | 'any';
+  maxPrice: number | null;
+  minBeds: number;
+  kinds: PropertyKind[];
+  lifestyle: Lifestyle[];
+  mustHaves: Amenity[];
+  sort: SortOption;
+}
+
+```
+```data/properties.ts
+import type { Property } from '../types/property';
+
+const IMG = {
+  villa: 'https://cdn.magicpatterns.com/patterns/generated-images/e6b21478-9caa-44c4-a2d1-2acf40a3b355.jpg',
+  townhouse: 'https://cdn.magicpatterns.com/patterns/generated-images/440300fd-f4dc-4cc3-92f0-adba9e02dd88.jpg',
+  apartment: 'https://cdn.magicpatterns.com/patterns/generated-images/da2d8688-3314-4870-bc7b-2b1a6426b7e2.jpg',
+  cottage: 'https://cdn.magicpatterns.com/patterns/generated-images/12bd9003-096f-493c-961f-0e0d063ea7d6.jpg',
+  loft: 'https://cdn.magicpatterns.com/patterns/generated-images/702a05d5-6e56-4fb4-bd42-7d91428117a1.jpg',
+  beach: 'https://cdn.magicpatterns.com/patterns/generated-images/ac03bbe2-bd37-44b1-9638-bce50334b832.jpg',
+  living: 'https://cdn.magicpatterns.com/patterns/generated-images/780e685d-1c82-4b49-b7df-8a4ca17c5234.jpg',
+  kitchen: 'https://cdn.magicpatterns.com/patterns/generated-images/57fc67f5-7406-4cee-ad55-28c9890a0eba.jpg',
+  bedroom: 'https://cdn.magicpatterns.com/patterns/generated-images/13d1802d-4c76-455a-9081-a58959a4a772.jpg',
+  bathroom: 'https://cdn.magicpatterns.com/patterns/generated-images/ffb41956-dcae-4267-ac46-365434a87ba6.jpg',
+};
+
+export const heroImage = IMG.villa;
+
+export const properties: Property[] = [
+  {
+    id: 'cliffside-villa',
+    title: 'Cliffside Limestone Villa',
+    kind: 'Villa',
+    listingType: 'buy',
+    price: 3250000,
+    city: 'San Diego',
+    neighborhood: 'La Jolla Heights',
+    beds: 5,
+    baths: 5,
+    sqft: 5200,
+    image: IMG.villa,
+    description:
+      'A limestone retreat set above the bay, with an infinity pool that lines up with the sunset. Every main room opens onto the terrace, so indoors and outdoors blur from May through October.',
+    amenities: ['Pool', 'Garden', 'Garage', 'Home office', 'Ocean view'],
+    lifestyle: ['waterfront', 'quiet'],
+    listedDaysAgo: 2,
+    agent: { name: 'Elena Marsh', role: 'Luxury specialist', responseTime: 'Replies within 1 hour' },
+    tour: [
+      { label: 'Arrival', caption: 'Pool terrace facing the bay at golden hour', image: IMG.villa },
+      { label: 'Living room', caption: 'Double-height windows and oak floors', image: IMG.living },
+      { label: 'Kitchen', caption: 'Marble island seats six', image: IMG.kitchen },
+      { label: 'Primary suite', caption: 'Wakes up to the garden', image: IMG.bedroom },
+      { label: 'Spa bath', caption: 'Travertine and a freestanding tub', image: IMG.bathroom },
+    ],
+  },
+  {
+    id: 'maple-row-townhouse',
+    title: 'Maple Row Townhouse',
+    kind: 'Townhouse',
+    listingType: 'buy',
+    price: 895000,
+    city: 'Portland',
+    neighborhood: 'Alder District',
+    beds: 3,
+    baths: 2.5,
+    sqft: 1850,
+    image: IMG.townhouse,
+    description:
+      'Classic brick on a tree-lined block, two minutes from the park and the neighborhood school. A quiet back garden and a sunny home office make it easy to settle in.',
+    amenities: ['Garden', 'Home office', 'Pet friendly', 'Fireplace'],
+    lifestyle: ['family', 'urban', 'pets'],
+    listedDaysAgo: 5,
+    agent: { name: 'Marcus Lee', role: 'Neighborhood expert', responseTime: 'Replies within 2 hours' },
+    tour: [
+      { label: 'Street view', caption: 'Leafy block with a private front garden', image: IMG.townhouse },
+      { label: 'Living room', caption: 'Original fireplace, restored', image: IMG.living },
+      { label: 'Kitchen', caption: 'Opens to the back garden', image: IMG.kitchen },
+      { label: 'Bedroom', caption: 'Three bedrooms upstairs', image: IMG.bedroom },
+    ],
+  },
+  {
+    id: 'skyline-24f',
+    title: 'Skyline Residence 24F',
+    kind: 'Apartment',
+    listingType: 'rent',
+    price: 4800,
+    city: 'Denver',
+    neighborhood: 'Union Station',
+    beds: 2,
+    baths: 2,
+    sqft: 1100,
+    image: IMG.apartment,
+    description:
+      'Twenty-fourth floor corner unit with mountain-to-skyline views. Doorman, rooftop gym and a five-minute walk to the train.',
+    amenities: ['Gym', 'Doorman', 'Balcony', 'Parking'],
+    lifestyle: ['urban'],
+    listedDaysAgo: 1,
+    agent: { name: 'Priya Natarajan', role: 'Rentals lead', responseTime: 'Replies within 30 min' },
+    tour: [
+      { label: 'Building', caption: 'Lit up at dusk above Union Station', image: IMG.apartment },
+      { label: 'Living room', caption: 'Corner windows on two sides', image: IMG.living },
+      { label: 'Kitchen', caption: 'Brass fixtures, gas range', image: IMG.kitchen },
+      { label: 'Bedroom', caption: 'Blackout blinds, skyline view', image: IMG.bedroom },
+      { label: 'Bathroom', caption: 'Soaking tub in the main bath', image: IMG.bathroom },
+    ],
+  },
+  {
+    id: 'willowbrook-cottage',
+    title: 'Willowbrook Stone Cottage',
+    kind: 'Cottage',
+    listingType: 'buy',
+    price: 585000,
+    city: 'Austin',
+    neighborhood: 'Hill Country',
+    beds: 2,
+    baths: 1,
+    sqft: 1200,
+    image: IMG.cottage,
+    description:
+      'A stone cottage on half an acre, with rolling hills on every side. Wood-burning fireplace, a fenced garden for dogs and twenty minutes to downtown.',
+    amenities: ['Garden', 'Fireplace', 'Pet friendly', 'Parking'],
+    lifestyle: ['nature', 'quiet', 'pets'],
+    listedDaysAgo: 9,
+    agent: { name: 'Marcus Lee', role: 'Neighborhood expert', responseTime: 'Replies within 2 hours' },
+    tour: [
+      { label: 'Garden', caption: 'Half an acre of fenced green', image: IMG.cottage },
+      { label: 'Living room', caption: 'Wood-burning fireplace', image: IMG.living },
+      { label: 'Bedroom', caption: 'Hill views from the bed', image: IMG.bedroom },
+      { label: 'Bathroom', caption: 'Recently renovated', image: IMG.bathroom },
+    ],
+  },
+  {
+    id: 'foundry-lane-loft',
+    title: 'Foundry Lane Loft',
+    kind: 'Loft',
+    listingType: 'rent',
+    price: 3600,
+    city: 'Portland',
+    neighborhood: 'Pearl Quarter',
+    beds: 1,
+    baths: 1,
+    sqft: 980,
+    image: IMG.loft,
+    description:
+      'Steel windows, exposed brick and fourteen-foot ceilings in a converted foundry. Cafés and galleries on the ground floor; pets welcome.',
+    amenities: ['Gym', 'Parking', 'Pet friendly'],
+    lifestyle: ['urban', 'pets'],
+    listedDaysAgo: 3,
+    agent: { name: 'Priya Natarajan', role: 'Rentals lead', responseTime: 'Replies within 30 min' },
+    tour: [
+      { label: 'Building', caption: 'Converted 1920s foundry', image: IMG.loft },
+      { label: 'Living space', caption: 'Fourteen-foot ceilings', image: IMG.living },
+      { label: 'Kitchen', caption: 'Chef-grade range', image: IMG.kitchen },
+      { label: 'Bedroom', caption: 'Lofted sleeping area', image: IMG.bedroom },
+    ],
+  },
+  {
+    id: 'dune-house',
+    title: 'The Dune House',
+    kind: 'House',
+    listingType: 'buy',
+    price: 1850000,
+    city: 'San Diego',
+    neighborhood: 'Coronado Shores',
+    beds: 4,
+    baths: 3,
+    sqft: 2900,
+    image: IMG.beach,
+    description:
+      'White timber, a wraparound deck and a path straight through the dunes to the sand. Built for long family summers and easy weekends.',
+    amenities: ['Ocean view', 'Garage', 'Garden', 'Pet friendly'],
+    lifestyle: ['waterfront', 'family', 'pets'],
+    listedDaysAgo: 4,
+    agent: { name: 'Elena Marsh', role: 'Luxury specialist', responseTime: 'Replies within 1 hour' },
+    tour: [
+      { label: 'Deck', caption: 'Steps from the dunes', image: IMG.beach },
+      { label: 'Living room', caption: 'Ocean breeze through the slider', image: IMG.living },
+      { label: 'Kitchen', caption: 'Island built for family dinners', image: IMG.kitchen },
+      { label: 'Primary suite', caption: 'Sea view at sunrise', image: IMG.bedroom },
+      { label: 'Bathroom', caption: 'Stone and brass', image: IMG.bathroom },
+    ],
+  },
+  {
+    id: 'garden-terrace-apt',
+    title: 'Garden Terrace Apartment',
+    kind: 'Apartment',
+    listingType: 'rent',
+    price: 2650,
+    city: 'Austin',
+    neighborhood: 'East Cesar Chavez',
+    beds: 1,
+    baths: 1,
+    sqft: 760,
+    image: IMG.living,
+    description:
+      'A bright one-bed with a planted terrace, steps from taco trucks and live music. In-building gym and a dog run on the roof.',
+    amenities: ['Balcony', 'Pet friendly', 'Gym'],
+    lifestyle: ['urban', 'pets'],
+    listedDaysAgo: 6,
+    agent: { name: 'Priya Natarajan', role: 'Rentals lead', responseTime: 'Replies within 30 min' },
+    tour: [
+      { label: 'Living room', caption: 'South-facing light all day', image: IMG.living },
+      { label: 'Kitchen', caption: 'Full-size appliances', image: IMG.kitchen },
+      { label: 'Bedroom', caption: 'Fits a king bed', image: IMG.bedroom },
+      { label: 'Bathroom', caption: 'Walk-in shower', image: IMG.bathroom },
+    ],
+  },
+  {
+    id: 'aspen-ridge-home',
+    title: 'Aspen Ridge Family Home',
+    kind: 'House',
+    listingType: 'buy',
+    price: 1125000,
+    city: 'Denver',
+    neighborhood: 'Cherry Creek',
+    beds: 4,
+    baths: 3,
+    sqft: 2600,
+    image: IMG.kitchen,
+    description:
+      'A calm cul-de-sac home near top-rated schools and trailheads. A real home office, a two-car garage and a fireplace for snowy evenings.',
+    amenities: ['Garden', 'Garage', 'Fireplace', 'Home office'],
+    lifestyle: ['family', 'quiet', 'nature'],
+    listedDaysAgo: 12,
+    agent: { name: 'Marcus Lee', role: 'Neighborhood expert', responseTime: 'Replies within 2 hours' },
+    tour: [
+      { label: 'Kitchen', caption: 'Heart of the home', image: IMG.kitchen },
+      { label: 'Living room', caption: 'Garden views, fireplace', image: IMG.living },
+      { label: 'Primary suite', caption: 'Quiet side of the house', image: IMG.bedroom },
+      { label: 'Bathroom', caption: 'Double vanity', image: IMG.bathroom },
+    ],
+  },
+];
+
+```
+```data/wizardOptions.ts
+import { HomeIcon, KeyRoundIcon, CompassIcon, UserIcon, HeartIcon, UsersIcon, UsersRoundIcon, SparklesIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import type { Amenity, City, Lifestyle, ListingType, PropertyKind } from '../types/property';
+
+export type WizardStepId = 'intent' | 'city' | 'budget' | 'space' | 'lifestyle' | 'musthaves' | 'review';
+
+export const wizardSteps: { id: WizardStepId; short: string; title: string; helper: string }[] = [
+  { id: 'intent', short: 'Goal', title: 'What brings you to Zcanopy?', helper: 'No commitment — you can switch any time.' },
+  { id: 'city', short: 'Where', title: 'Where would you like to live?', helper: 'Pick one city, or keep your options open.' },
+  { id: 'budget', short: 'Budget', title: 'What feels comfortable to spend?', helper: 'We only show homes at or under this — never above.' },
+  { id: 'space', short: 'Space', title: 'Who’s moving in?', helper: 'We’ll match bedrooms to your household.' },
+  { id: 'lifestyle', short: 'Lifestyle', title: 'What should life around home feel like?', helper: 'Pick as many as you like. These rank homes higher instead of hiding others.' },
+  { id: 'musthaves', short: 'Must-haves', title: 'Anything you can’t live without?', helper: 'Only homes with every item you pick will show.' },
+  { id: 'review', short: 'Review', title: 'Here’s what we heard', helper: 'Tweak anything before we show your homes.' },
+];
+
+export const intentOptions: { value: ListingType | 'any'; label: string; description: string; icon: LucideIcon }[] = [
+  { value: 'buy', label: 'Buy a home', description: 'Find a place to own and settle into.', icon: HomeIcon },
+  { value: 'rent', label: 'Rent a home', description: 'Flexible living, monthly payments.', icon: KeyRoundIcon },
+  { value: 'any', label: 'Not sure yet', description: 'Show me both and I’ll decide.', icon: CompassIcon },
+];
+
+export const cityOptions: { value: City | 'any'; label: string; description: string }[] = [
+  { value: 'Austin', label: 'Austin', description: 'Live music, hill country, sunshine' },
+  { value: 'Denver', label: 'Denver', description: 'Mountains on the doorstep' },
+  { value: 'Portland', label: 'Portland', description: 'Green, walkable, creative' },
+  { value: 'San Diego', label: 'San Diego', description: 'Beaches and year-round summer' },
+  { value: 'any', label: 'Open to anywhere', description: 'Surprise me' },
+];
+
+export const budgetOptions: Record<ListingType, { label: string; value: number | null }[]> = {
+  buy: [
+    { label: 'Under $600K', value: 600000 },
+    { label: 'Up to $1M', value: 1000000 },
+    { label: 'Up to $2M', value: 2000000 },
+    { label: 'No limit', value: null },
+  ],
+  rent: [
+    { label: 'Under $3,000/mo', value: 3000 },
+    { label: 'Up to $4,000/mo', value: 4000 },
+    { label: 'Up to $6,000/mo', value: 6000 },
+    { label: 'No limit', value: null },
+  ],
+};
+
+export const householdOptions: { minBeds: number; label: string; description: string; icon: LucideIcon }[] = [
+  { minBeds: 1, label: 'Just me', description: '1+ bedroom', icon: UserIcon },
+  { minBeds: 2, label: 'Me and a partner', description: '2+ bedrooms, room for guests', icon: HeartIcon },
+  { minBeds: 3, label: 'Small family', description: '3+ bedrooms', icon: UsersIcon },
+  { minBeds: 4, label: 'Big household', description: '4+ bedrooms', icon: UsersRoundIcon },
+  { minBeds: 0, label: 'Flexible', description: 'Any size works', icon: SparklesIcon },
+];
+
+export const kindOptions: PropertyKind[] = ['House', 'Apartment', 'Villa', 'Townhouse', 'Cottage', 'Loft'];
+
+export const lifestyleOptions: { value: Lifestyle; label: string; description: string }[] = [
+  { value: 'family', label: 'Family friendly', description: 'Good schools and parks nearby' },
+  { value: 'quiet', label: 'Peace & quiet', description: 'Low traffic, calm streets' },
+  { value: 'urban', label: 'City energy', description: 'Cafés, transit, nightlife' },
+  { value: 'nature', label: 'Close to nature', description: 'Trails and open space' },
+  { value: 'waterfront', label: 'Near the water', description: 'Ocean or lake views' },
+  { value: 'pets', label: 'Pet paradise', description: 'Yards, dog runs, pet-friendly' },
+];
+
+export const amenityOptions: Amenity[] = [
+  'Pet friendly',
+  'Home office',
+  'Garden',
+  'Garage',
+  'Parking',
+  'Balcony',
+  'Pool',
+  'Gym',
+  'Fireplace',
+  'Ocean view',
+  'Doorman',
+];
+
+```
+```data/quickSearches.ts
+import type { Filters } from '../types/property';
+
+export const quickSearches: { label: string; filters: Partial<Filters> }[] = [
+  { label: 'Buy in Austin', filters: { listingType: 'buy', city: 'Austin' } },
+  { label: 'Rent in Denver', filters: { listingType: 'rent', city: 'Denver' } },
+  { label: 'Ocean views', filters: { mustHaves: ['Ocean view'] } },
+  { label: 'Pet-friendly rentals', filters: { listingType: 'rent', mustHaves: ['Pet friendly'] } },
+];
+
+```
+```utils/format.ts
+import type { ListingType } from '../types/property';
+
+const compact = new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 });
+
+export function formatPrice(price: number, type: ListingType): string {
+  if (type === 'rent') return `$${price.toLocaleString('en-US')}/mo`;
+  if (price >= 1_000_000) return `$${compact.format(price / 1_000_000)}M`;
+  return `$${Math.round(price / 1000)}K`;
+}
+
+export function formatSqft(sqft: number): string {
+  return `${sqft.toLocaleString('en-US')} sq ft`;
+}
+
+```
+```utils/filters.ts
+import { budgetOptions, householdOptions, lifestyleOptions } from '../data/wizardOptions';
+import type { Filters, Property } from '../types/property';
+import { formatPrice } from './format';
+
+export const defaultFilters: Filters = {
+  listingType: 'any',
+  city: 'any',
+  maxPrice: null,
+  minBeds: 0,
+  kinds: [],
+  lifestyle: [],
+  mustHaves: [],
+  sort: 'match',
+};
+
+export function toggleInArray<T>(list: T[], item: T): T[] {
+  return list.includes(item) ? list.filter((i) => i !== item) : [...list, item];
+}
+
+export function filterProperties(list: Property[], f: Filters): Property[] {
+  return list.filter(
+    (p) =>
+      (f.listingType === 'any' || p.listingType === f.listingType) &&
+      (f.city === 'any' || p.city === f.city) &&
+      (f.listingType === 'any' || f.maxPrice === null || p.price <= f.maxPrice) &&
+      p.beds >= f.minBeds &&
+      (f.kinds.length === 0 || f.kinds.includes(p.kind)) &&
+      f.mustHaves.every((a) => p.amenities.includes(a)),
+  );
+}
+
+export function matchScore(p: Property, f: Filters): number {
+  let score = 64;
+  if (f.lifestyle.length > 0) {
+    const overlap = f.lifestyle.filter((l) => p.lifestyle.includes(l)).length;
+    score += Math.round((28 * overlap) / f.lifestyle.length);
+  } else {
+    score += 20;
+  }
+  if (f.kinds.length > 0 && f.kinds.includes(p.kind)) score += 4;
+  if (f.city !== 'any' && p.city === f.city) score += 3;
+  if (f.mustHaves.length > 0) score += 2;
+  return Math.min(score, 99);
+}
+
+export function matchReasons(p: Property, f: Filters): string[] {
+  const reasons: string[] = [];
+  const lifestyle = lifestyleOptions.filter((o) => f.lifestyle.includes(o.value) && p.lifestyle.includes(o.value));
+  if (lifestyle.length) reasons.push(`Matches your vibe: ${lifestyle.map((l) => l.label.toLowerCase()).join(', ')}`);
+  if (f.maxPrice !== null && f.listingType === p.listingType) {
+    const diff = f.maxPrice - p.price;
+    reasons.push(diff > 0 ? `${formatPrice(diff, p.listingType)} under your budget` : 'Right at your budget');
+  }
+  if (f.mustHaves.length) reasons.push(`Has all your must-haves: ${f.mustHaves.join(', ')}`);
+  if (f.minBeds > 0) reasons.push(`${p.beds} bedrooms for your household`);
+  if (f.city !== 'any') reasons.push(`In ${p.neighborhood}, ${p.city}`);
+  return reasons;
+}
+
+export function sortProperties(list: Property[], f: Filters): Property[] {
+  const sorted = [...list];
+  switch (f.sort) {
+    case 'price-asc':
+      return sorted.sort((a, b) => a.price - b.price);
+    case 'price-desc':
+      return sorted.sort((a, b) => b.price - a.price);
+    case 'newest':
+      return sorted.sort((a, b) => a.listedDaysAgo - b.listedDaysAgo);
+    default:
+      return sorted.sort((a, b) => matchScore(b, f) - matchScore(a, f) || a.listedDaysAgo - b.listedDaysAgo);
+  }
+}
+
+export function budgetLabel(f: Filters): string {
+  if (f.listingType === 'any' || f.maxPrice === null) return 'No limit';
+  return budgetOptions[f.listingType].find((o) => o.value === f.maxPrice)?.label ?? formatPrice(f.maxPrice, f.listingType);
+}
+
+export function householdLabel(minBeds: number): string {
+  return householdOptions.find((o) => o.minBeds === minBeds)?.label ?? `${minBeds}+ bedrooms`;
+}
+
+export interface ActiveChip {
+  key: string;
+  label: string;
+  clear: Partial<Filters>;
+}
+
+export function getActiveChips(f: Filters): ActiveChip[] {
+  const chips: ActiveChip[] = [];
+  if (f.listingType !== 'any')
+    chips.push({ key: 'type', label: f.listingType === 'buy' ? 'For sale' : 'For rent', clear: { listingType: 'any', maxPrice: null } });
+  if (f.city !== 'any') chips.push({ key: 'city', label: f.city, clear: { city: 'any' } });
+  if (f.listingType !== 'any' && f.maxPrice !== null) chips.push({ key: 'budget', label: budgetLabel(f), clear: { maxPrice: null } });
+  if (f.minBeds > 0) chips.push({ key: 'beds', label: `${f.minBeds}+ beds`, clear: { minBeds: 0 } });
+  f.kinds.forEach((k) => chips.push({ key: `kind-${k}`, label: k, clear: { kinds: f.kinds.filter((x) => x !== k) } }));
+  f.mustHaves.forEach((a) => chips.push({ key: `amenity-${a}`, label: a, clear: { mustHaves: f.mustHaves.filter((x) => x !== a) } }));
+  return chips;
+}
+
+```
+```contexts/AppContext.tsx
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { defaultFilters } from '../utils/filters';
+import type { Filters } from '../types/property';
+
+interface AppContextValue {
+  saved: string[];
+  isSaved: (id: string) => boolean;
+  toggleSave: (id: string) => void;
+  filters: Filters;
+  setFilters: (f: Filters) => void;
+  updateFilters: (patch: Partial<Filters>) => void;
+  resetFilters: () => void;
+  hasPreferences: boolean;
+  setHasPreferences: (v: boolean) => void;
+  wizardOpen: boolean;
+  openWizard: () => void;
+  closeWizard: () => void;
+}
+
+const STORAGE_KEY = 'zcanopy:saved';
+const AppContext = createContext<AppContextValue | null>(null);
+
+export function AppProvider({ children }: { children: React.ReactNode }) {
+  const [saved, setSaved] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as string[]) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [filters, setFilters] = useState<Filters>(defaultFilters);
+  const [hasPreferences, setHasPreferences] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    } catch {
+      /* storage unavailable */
+    }
+  }, [saved]);
+
+  const toggleSave = useCallback((id: string) => {
+    setSaved((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  }, []);
+
+  const value = useMemo<AppContextValue>(
+    () => ({
+      saved,
+      isSaved: (id) => saved.includes(id),
+      toggleSave,
+      filters,
+      setFilters,
+      updateFilters: (patch) => setFilters((f) => ({ ...f, ...patch })),
+      resetFilters: () => {
+        setFilters(defaultFilters);
+        setHasPreferences(false);
+      },
+      hasPreferences,
+      setHasPreferences,
+      wizardOpen,
+      openWizard: () => setWizardOpen(true),
+      closeWizard: () => setWizardOpen(false),
+    }),
+    [saved, toggleSave, filters, hasPreferences, wizardOpen],
+  );
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+}
+
+export function useApp(): AppContextValue {
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error('useApp must be used inside AppProvider');
+  return ctx;
+}
+
+```
+```hooks/useTourPlayback.ts
+import { useCallback, useEffect, useState } from 'react';
+
+interface Options {
+  duration?: number;
+  active?: boolean;
+}
+
+export function useTourPlayback(count: number, { duration = 5000, active = true }: Options = {}) {
+  const [index, setIndex] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const [playing, setPlaying] = useState(true);
+
+  useEffect(() => {
+    if (!active || !playing) return;
+    const id = window.setInterval(() => setElapsed((e) => e + 100), 100);
+    return () => window.clearInterval(id);
+  }, [active, playing]);
+
+  useEffect(() => {
+    if (elapsed >= duration) {
+      setIndex((i) => (i + 1) % count);
+      setElapsed(0);
+    }
+  }, [elapsed, duration, count]);
+
+  useEffect(() => {
+    if (!active) {
+      setIndex(0);
+      setElapsed(0);
+      setPlaying(true);
+    }
+  }, [active]);
+
+  const goTo = useCallback(
+    (i: number) => {
+      setIndex(((i % count) + count) % count);
+      setElapsed(0);
+    },
+    [count],
+  );
+
+  const toggle = useCallback(() => setPlaying((p) => !p), []);
+
+  return {
+    index,
+    progress: Math.min(elapsed / duration, 1),
+    playing,
+    toggle,
+    goTo,
+    next: () => goTo(index + 1),
+    prev: () => goTo(index - 1),
+  };
+}
+
+```
+```components/Logo.tsx
+import React from 'react';
+
+export function Logo({ tone = 'dark' }: { tone?: 'dark' | 'light' }) {
+  return (
+    <span className="flex items-center gap-2">
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold" aria-hidden="true">
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="#2E2304" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 12c2.5-5 15.5-5 18 0" />
+          <path d="M12 7.5V20" />
+          <path d="M8 20h8" />
+        </svg>
+      </span>
+      <span className={`font-display text-xl font-semibold tracking-tight ${tone === 'dark' ? 'text-ink' : 'text-white'}`}>Zcanopy</span>
+    </span>
+  );
+}
+
+```
+```components/Header.tsx
+import React from 'react';
+import { Link, NavLink } from 'react-router-dom';
+import { CompassIcon, PlayCircleIcon, HeartIcon, SparklesIcon } from 'lucide-react';
+import { Logo } from './Logo';
+import { useApp } from '../contexts/AppContext';
+
+const links = [
+  { to: '/browse', label: 'Explore', icon: CompassIcon },
+  { to: '/reels', label: 'Reels', icon: PlayCircleIcon },
+  { to: '/saved', label: 'Saved', icon: HeartIcon },
+];
+
+export function Header() {
+  const { saved, openWizard } = useApp();
+
+  return (
+    <header className="sticky top-0 z-40 h-16 border-b border-line bg-canvas/90 backdrop-blur">
+      <div className="mx-auto flex h-full max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+        <Link to="/" aria-label="Zcanopy home" className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold">
+          <Logo />
+        </Link>
+        <nav aria-label="Main" className="ml-auto flex items-center gap-1">
+          {links.map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `relative flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium transition-colors duration-150 ${
+                  isActive ? 'bg-gold-soft text-gold-ink' : 'text-muted hover:text-ink'
+                }`
+              }
+            >
+              <Icon className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">{label}</span>
+              {to === '/saved' && saved.length > 0 && (
+                <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-ink px-1.5 text-[11px] font-semibold text-white">
+                  {saved.length}
+                </span>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+        <button
+          type="button"
+          onClick={openWizard}
+          className="flex items-center gap-2 whitespace-nowrap rounded-full bg-gold px-4 py-2 text-sm font-semibold text-gold-ink transition-colors duration-150 hover:bg-[#D8B23A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-dark focus-visible:ring-offset-2"
+        >
+          <SparklesIcon className="h-4 w-4" aria-hidden="true" />
+          <span className="hidden md:inline">Guided search</span>
+        </button>
+      </div>
+    </header>
+  );
+}
+
+```
+```components/Footer.tsx
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Logo } from './Logo';
+
+export function Footer() {
+  return (
+    <footer className="mt-24 border-t border-line">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+        <div>
+          <Logo />
+          <p className="mt-2 max-w-sm text-sm text-muted">Tour every home before you visit. Search around your life, not a wall of filters.</p>
+        </div>
+        <nav aria-label="Footer" className="flex flex-wrap gap-6 text-sm text-muted">
+          <Link to="/browse" className="hover:text-ink">Explore</Link>
+          <Link to="/reels" className="hover:text-ink">Reels</Link>
+          <Link to="/saved" className="hover:text-ink">Saved homes</Link>
+          <span>© 2026 Zcanopy</span>
+        </nav>
+      </div>
+    </footer>
+  );
+}
+
+```
+```components/Chip.tsx
+import React from 'react';
+import { CheckIcon } from 'lucide-react';
+
+interface ChipProps {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+}
+
+export function Chip({ label, selected, onClick }: ChipProps) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold ${
+        selected ? 'border-gold-dark bg-gold-soft text-gold-ink' : 'border-line bg-white text-ink hover:border-ink/30'
+      }`}
+    >
+      {selected && <CheckIcon className="h-3.5 w-3.5" aria-hidden="true" />}
+      {label}
+    </button>
+  );
+}
+
+```
+```components/SegmentedControl.tsx
+import React from 'react';
+
+interface SegmentedControlProps<T extends string | number> {
+  label: string;
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+}
+
+export function SegmentedControl<T extends string | number>({ label, options, value, onChange }: SegmentedControlProps<T>) {
+  return (
+    <div role="radiogroup" aria-label={label} className="flex rounded-full border border-line bg-white p-1">
+      {options.map((o) => {
+        const active = o.value === value;
+        return (
+          <button
+            key={String(o.value)}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(o.value)}
+            className={`flex-1 whitespace-nowrap rounded-full px-2 py-1.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold ${
+              active ? 'bg-ink text-white' : 'text-muted hover:text-ink'
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+```
+```components/PropertyCard.tsx
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { HeartIcon, PlayIcon } from 'lucide-react';
+import { useApp } from '../contexts/AppContext';
+import { formatPrice, formatSqft } from '../utils/format';
+import type { Property } from '../types/property';
+
+interface PropertyCardProps {
+  property: Property;
+  score?: number | null;
+}
+
+export function PropertyCard({ property, score }: PropertyCardProps) {
+  const { isSaved, toggleSave } = useApp();
+  const saved = isSaved(property.id);
+
+  return (
+    <article className="group relative flex flex-col">
+      <Link
+        to={`/property/${property.id}`}
+        className="flex flex-1 flex-col rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-4 focus-visible:ring-offset-canvas"
+      >
+        <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-line">
+          <img
+            src={property.image}
+            alt={property.title}
+            className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+          />
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-ink/75 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
+            <PlayIcon className="h-3 w-3 fill-white" aria-hidden="true" />
+            Video tour · {property.tour.length} rooms
+          </span>
+          {score != null && (
+            <span className="absolute bottom-3 left-3 rounded-full bg-gold px-2.5 py-1 text-xs font-semibold text-gold-ink">
+              {score}% match
+            </span>
+          )}
+        </div>
+        <div className="mt-3 flex flex-1 flex-col">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-lg font-semibold text-ink">{formatPrice(property.price, property.listingType)}</p>
+            <span className="text-xs font-medium text-muted">{property.listingType === 'rent' ? 'For rent' : 'For sale'}</span>
+          </div>
+          <h3 className="font-display text-lg leading-snug text-ink">{property.title}</h3>
+          <p className="text-sm text-muted">
+            {property.neighborhood}, {property.city}
+          </p>
+          <p className="mt-auto pt-2 text-sm text-ink/80">
+            {property.beds} bd · {property.baths} ba · {formatSqft(property.sqft)}
+          </p>
+        </div>
+      </Link>
+      <button
+        type="button"
+        onClick={() => toggleSave(property.id)}
+        aria-pressed={saved}
+        aria-label={saved ? `Remove ${property.title} from saved` : `Save ${property.title}`}
+        className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-ink shadow-sm transition-transform duration-150 ease-out active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+      >
+        <HeartIcon className={`h-4 w-4 ${saved ? 'fill-gold text-gold-dark' : ''}`} aria-hidden="true" />
+      </button>
+    </article>
+  );
+}
+
+```
+```components/TourPlayer.tsx
+import React from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { PauseIcon, PlayIcon, SkipBackIcon, SkipForwardIcon, VideoIcon } from 'lucide-react';
+import { useTourPlayback } from '../hooks/useTourPlayback';
+import type { TourChapter } from '../types/property';
+
+interface TourPlayerProps {
+  chapters: TourChapter[];
+  title: string;
+}
+
+const DURATION = 5000;
+
+export function TourPlayer({ chapters, title }: TourPlayerProps) {
+  const { index, progress, playing, toggle, goTo, next, prev } = useTourPlayback(chapters.length, { duration: DURATION });
+  const chapter = chapters[index];
+  const totalSeconds = Math.round((chapters.length * DURATION) / 1000);
+
+  return (
+    <div>
+      <div role="region" aria-label={`Video tour of ${title}`} className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-ink sm:aspect-[16/9]">
+        <AnimatePresence initial={false}>
+          <motion.img
+            key={index}
+            src={chapter.image}
+            alt={`${chapter.label} — ${title}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="kenburns absolute inset-0 h-full w-full object-cover"
+            style={{ animationDuration: `${DURATION}ms`, animationPlayState: playing ? 'running' : 'paused' }}
+          />
+        </AnimatePresence>
+
+        <button type="button" onClick={toggle} className="absolute inset-0 focus-visible:outline-none" aria-label={playing ? 'Pause tour' : 'Play tour'} />
+
+        <span className="pointer-events-none absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-ink/75 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+          <VideoIcon className="h-3.5 w-3.5" aria-hidden="true" />
+          Video tour · 0:{totalSeconds.toString().padStart(2, '0')}
+        </span>
+
+        {!playing && (
+          <span className="pointer-events-none absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-gold text-gold-ink">
+            <PlayIcon className="ml-1 h-7 w-7 fill-gold-ink" aria-hidden="true" />
+          </span>
+        )}
+
+        <div className="absolute inset-x-0 bottom-0 bg-ink/70 px-4 py-3 backdrop-blur-sm sm:px-5">
+          <div className="flex gap-1" aria-hidden="true">
+            {chapters.map((c, i) => (
+              <div key={c.label} className="h-1 flex-1 overflow-hidden rounded-full bg-white/25">
+                <div
+                  className="h-full bg-gold"
+                  style={{
+                    width: `${i < index ? 100 : i === index ? progress * 100 : 0}%`,
+                    transition: i === index ? 'width 100ms linear' : 'none',
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="mt-2.5 flex items-center justify-between gap-4">
+            <div className="min-w-0" aria-live="polite">
+              <p className="text-sm font-semibold text-white">{chapter.label}</p>
+              <p className="truncate text-sm text-white/75">{chapter.caption}</p>
+            </div>
+            <div className="relative flex shrink-0 items-center gap-1">
+              <button type="button" onClick={prev} aria-label="Previous room" className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-colors duration-150 hover:bg-white/15">
+                <SkipBackIcon className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <button type="button" onClick={toggle} aria-label={playing ? 'Pause tour' : 'Play tour'} className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-ink transition-transform duration-150 ease-out active:scale-95">
+                {playing ? <PauseIcon className="h-4 w-4 fill-ink" aria-hidden="true" /> : <PlayIcon className="ml-0.5 h-4 w-4 fill-ink" aria-hidden="true" />}
+              </button>
+              <button type="button" onClick={next} aria-label="Next room" className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-colors duration-150 hover:bg-white/15">
+                <SkipForwardIcon className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label="Tour rooms">
+        {chapters.map((c, i) => (
+          <button
+            key={c.label}
+            type="button"
+            role="tab"
+            aria-selected={i === index}
+            onClick={() => goTo(i)}
+            className="w-28 shrink-0 text-left focus-visible:outline-none"
+          >
+            <span className={`block aspect-[4/3] overflow-hidden rounded-lg ring-2 ring-offset-2 ring-offset-canvas transition-colors duration-150 ${i === index ? 'ring-gold' : 'ring-transparent'}`}>
+              <img src={c.image} alt="" className="h-full w-full object-cover" />
+            </span>
+            <span className={`mt-1.5 block truncate text-xs font-medium ${i === index ? 'text-ink' : 'text-muted'}`}>{c.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+```
+```components/ScrollToTop.tsx
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+
+export function ScrollToTop() {
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (hash) {
+      const el = document.getElementById(hash.slice(1));
+      if (el) {
+        el.scrollIntoView();
+        return;
+      }
+    }
+    window.scrollTo(0, 0);
+  }, [pathname, hash]);
+  return null;
+}
+
+```
+```components/wizard/OptionCard.tsx
+import React from "react";
+import { CheckIcon, BoxIcon } from "lucide-react";
+interface OptionCardProps {
+  label: string;
+  description?: string;
+  icon?: BoxIcon;
+  selected: boolean;
+  multi?: boolean;
+  onClick: () => void;
+}
+export function OptionCard({
+  label,
+  description,
+  icon: Icon,
+  selected,
+  multi = false,
+  onClick
+}: OptionCardProps) {
+  return <button type="button" role={multi ? 'checkbox' : 'radio'} aria-checked={selected} onClick={onClick} className={`relative flex h-full w-full items-start gap-3 rounded-2xl border p-4 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold ${selected ? 'border-gold-dark bg-gold-soft' : 'border-line bg-white hover:border-ink/25'}`}>
+      {Icon && <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${selected ? 'bg-gold text-gold-ink' : 'bg-canvas text-ink'}`}>
+          <Icon className="h-5 w-5" aria-hidden="true" />
+        </span>}
+      <span className="min-w-0 flex-1 pr-6">
+        <span className="block font-semibold text-ink">{label}</span>
+        {description && <span className="mt-0.5 block text-sm text-muted">{description}</span>}
+      </span>
+      <span className={`absolute right-4 top-4 flex h-5 w-5 items-center justify-center border ${multi ? 'rounded-md' : 'rounded-full'} ${selected ? 'border-gold-dark bg-gold-dark text-white' : 'border-line bg-white'}`} aria-hidden="true">
+        {selected && <CheckIcon className="h-3 w-3" strokeWidth={3} />}
+      </span>
+    </button>;
+}
+```
+```components/wizard/WizardStep.tsx
+import React from 'react';
+import { OptionCard } from './OptionCard';
+import { WizardReview } from './WizardReview';
+import { Chip } from '../Chip';
+import {
+  amenityOptions,
+  budgetOptions,
+  cityOptions,
+  householdOptions,
+  intentOptions,
+  kindOptions,
+  lifestyleOptions,
+} from '../../data/wizardOptions';
+import type { WizardStepId } from '../../data/wizardOptions';
+import { toggleInArray } from '../../utils/filters';
+import type { Filters } from '../../types/property';
+
+interface WizardStepProps {
+  stepId: WizardStepId;
+  draft: Filters;
+  update: (patch: Partial<Filters>) => void;
+  pickAndAdvance: (patch: Partial<Filters>) => void;
+  onEdit: (step: WizardStepId) => void;
+}
+
+export function WizardStep({ stepId, draft, update, pickAndAdvance, onEdit }: WizardStepProps) {
+  switch (stepId) {
+    case 'intent':
+      return (
+        <div role="radiogroup" aria-label="Goal" className="grid gap-3 sm:grid-cols-3">
+          {intentOptions.map((o) => (
+            <OptionCard
+              key={o.value}
+              label={o.label}
+              description={o.description}
+              icon={o.icon}
+              selected={draft.listingType === o.value}
+              onClick={() => pickAndAdvance({ listingType: o.value, maxPrice: o.value === draft.listingType ? draft.maxPrice : null })}
+            />
+          ))}
+        </div>
+      );
+
+    case 'city':
+      return (
+        <div role="radiogroup" aria-label="City" className="grid gap-3 sm:grid-cols-2">
+          {cityOptions.map((o) => (
+            <OptionCard key={o.value} label={o.label} description={o.description} selected={draft.city === o.value} onClick={() => pickAndAdvance({ city: o.value })} />
+          ))}
+        </div>
+      );
+
+    case 'budget':
+      if (draft.listingType === 'any') {
+        return (
+          <div className="rounded-2xl border border-dashed border-line bg-white p-6">
+            <p className="font-semibold text-ink">Budgets differ for buying and renting.</p>
+            <p className="mt-1 text-sm text-muted">Tell us which one to set a budget, or skip and we’ll show every price.</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Chip label="I’m buying" selected={false} onClick={() => update({ listingType: 'buy' })} />
+              <Chip label="I’m renting" selected={false} onClick={() => update({ listingType: 'rent' })} />
+            </div>
+          </div>
+        );
+      }
+      return (
+        <div role="radiogroup" aria-label="Budget" className="grid gap-3 sm:grid-cols-2">
+          {budgetOptions[draft.listingType].map((o) => (
+            <OptionCard key={o.label} label={o.label} selected={draft.maxPrice === o.value} onClick={() => pickAndAdvance({ maxPrice: o.value })} />
+          ))}
+        </div>
+      );
+
+    case 'space':
+      return (
+        <div className="space-y-8">
+          <div role="radiogroup" aria-label="Household" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {householdOptions.map((o) => (
+              <OptionCard key={o.label} label={o.label} description={o.description} icon={o.icon} selected={draft.minBeds === o.minBeds} onClick={() => update({ minBeds: o.minBeds })} />
+            ))}
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-ink">
+              Any home types you love? <span className="font-normal text-muted">Optional</span>
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {kindOptions.map((k) => (
+                <Chip key={k} label={k} selected={draft.kinds.includes(k)} onClick={() => update({ kinds: toggleInArray(draft.kinds, k) })} />
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'lifestyle':
+      return (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {lifestyleOptions.map((o) => (
+            <OptionCard
+              key={o.value}
+              multi
+              label={o.label}
+              description={o.description}
+              selected={draft.lifestyle.includes(o.value)}
+              onClick={() => update({ lifestyle: toggleInArray(draft.lifestyle, o.value) })}
+            />
+          ))}
+        </div>
+      );
+
+    case 'musthaves':
+      return (
+        <div className="flex flex-wrap gap-2">
+          {amenityOptions.map((a) => (
+            <Chip key={a} label={a} selected={draft.mustHaves.includes(a)} onClick={() => update({ mustHaves: toggleInArray(draft.mustHaves, a) })} />
+          ))}
+        </div>
+      );
+
+    case 'review':
+      return <WizardReview draft={draft} onEdit={onEdit} />;
+  }
+}
+
+```
+```components/wizard/WizardReview.tsx
+import React from 'react';
+import { lifestyleOptions } from '../../data/wizardOptions';
+import type { WizardStepId } from '../../data/wizardOptions';
+import { budgetLabel, householdLabel } from '../../utils/filters';
+import type { Filters } from '../../types/property';
+
+interface WizardReviewProps {
+  draft: Filters;
+  onEdit: (step: WizardStepId) => void;
+}
+
+export function WizardReview({ draft, onEdit }: WizardReviewProps) {
+  const rows: { step: WizardStepId; label: string; value: string }[] = [
+    { step: 'intent', label: 'Looking to', value: draft.listingType === 'any' ? 'Buy or rent' : draft.listingType === 'buy' ? 'Buy' : 'Rent' },
+    { step: 'city', label: 'Where', value: draft.city === 'any' ? 'Anywhere' : draft.city },
+    { step: 'budget', label: 'Budget', value: budgetLabel(draft) },
+    {
+      step: 'space',
+      label: 'Household',
+      value: `${householdLabel(draft.minBeds)}${draft.kinds.length ? ` · ${draft.kinds.join(', ')}` : ''}`,
+    },
+    {
+      step: 'lifestyle',
+      label: 'Lifestyle',
+      value: draft.lifestyle.length ? lifestyleOptions.filter((o) => draft.lifestyle.includes(o.value)).map((o) => o.label).join(', ') : 'No preference',
+    },
+    { step: 'musthaves', label: 'Must-haves', value: draft.mustHaves.length ? draft.mustHaves.join(', ') : 'None' },
+  ];
+
+  return (
+    <dl className="divide-y divide-line rounded-2xl border border-line bg-white">
+      {rows.map((r) => (
+        <div key={r.step} className="flex items-center gap-4 px-5 py-4">
+          <dt className="w-28 shrink-0 text-sm text-muted">{r.label}</dt>
+          <dd className="min-w-0 flex-1 font-medium text-ink">{r.value}</dd>
+          <button
+            type="button"
+            onClick={() => onEdit(r.step)}
+            className="rounded-full px-3 py-1 text-sm font-medium text-gold-dark transition-colors duration-150 hover:bg-gold-soft"
+            aria-label={`Edit ${r.label}`}
+          >
+            Edit
+          </button>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+```
+```components/wizard/SearchWizard.tsx
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowLeftIcon, ArrowRightIcon, XIcon } from 'lucide-react';
+import { WizardStep } from './WizardStep';
+import { useApp } from '../../contexts/AppContext';
+import { properties } from '../../data/properties';
+import { wizardSteps } from '../../data/wizardOptions';
+import type { WizardStepId } from '../../data/wizardOptions';
+import { filterProperties } from '../../utils/filters';
+import type { Filters } from '../../types/property';
+
+const EASE = [0.23, 1, 0.32, 1] as const;
+
+export function SearchWizard() {
+  const { wizardOpen, closeWizard, filters, setFilters, setHasPreferences } = useApp();
+  const navigate = useNavigate();
+  const [draft, setDraft] = useState<Filters>(filters);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
+
+  useEffect(() => {
+    if (!wizardOpen) return;
+    setDraft(filters);
+    setStepIndex(0);
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeWizard();
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wizardOpen]);
+
+  const matchCount = useMemo(() => filterProperties(properties, draft).length, [draft]);
+  const step = wizardSteps[stepIndex];
+  const isLast = stepIndex === wizardSteps.length - 1;
+
+  const go = (i: number) => {
+    setDirection(i > stepIndex ? 1 : -1);
+    setStepIndex(Math.max(0, Math.min(i, wizardSteps.length - 1)));
+  };
+  const update = (patch: Partial<Filters>) => setDraft((d) => ({ ...d, ...patch }));
+  const pickAndAdvance = (patch: Partial<Filters>) => {
+    update(patch);
+    window.setTimeout(() => {
+      setDirection(1);
+      setStepIndex((i) => Math.min(i + 1, wizardSteps.length - 1));
+    }, 200);
+  };
+  const editStep = (id: WizardStepId) => go(wizardSteps.findIndex((s) => s.id === id));
+  const finish = () => {
+    setFilters({ ...draft, sort: 'match' });
+    setHasPreferences(true);
+    closeWizard();
+    navigate('/browse');
+  };
+
+  return (
+    <AnimatePresence>
+      {wizardOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
+          <motion.div
+            className="absolute inset-0 bg-ink/50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            onClick={closeWizard}
+            aria-hidden="true"
+          />
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="wizard-title"
+            initial={{ opacity: 0, scale: 0.96, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 12 }}
+            transition={{ duration: 0.24, ease: EASE }}
+            className="relative flex h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl bg-canvas shadow-2xl sm:h-auto sm:max-h-[88vh] sm:rounded-3xl"
+          >
+            <div className="flex items-center gap-4 border-b border-line px-5 py-4 sm:px-8">
+              <ol className="flex flex-1 items-center gap-1.5" aria-label="Progress">
+                {wizardSteps.map((s, i) => (
+                  <li key={s.id} className="flex-1">
+                    <button
+                      type="button"
+                      onClick={() => i < stepIndex && go(i)}
+                      disabled={i >= stepIndex}
+                      aria-label={`${s.short}${i === stepIndex ? ' (current)' : ''}`}
+                      aria-current={i === stepIndex ? 'step' : undefined}
+                      className={`block h-1.5 w-full rounded-full transition-colors duration-200 ${i <= stepIndex ? 'bg-gold' : 'bg-line'} ${i < stepIndex ? 'cursor-pointer' : 'cursor-default'}`}
+                    />
+                  </li>
+                ))}
+              </ol>
+              <span className="whitespace-nowrap text-sm font-medium text-muted">{step.short}</span>
+              <button type="button" onClick={closeWizard} aria-label="Close guided search" className="flex h-9 w-9 items-center justify-center rounded-full text-ink transition-colors duration-150 hover:bg-line">
+                <XIcon className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="relative flex-1 overflow-y-auto px-5 py-8 sm:px-8">
+              <AnimatePresence mode="wait" initial={false} custom={direction}>
+                <motion.div
+                  key={step.id}
+                  custom={direction}
+                  initial={{ opacity: 0, x: 24 * direction }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -24 * direction }}
+                  transition={{ duration: 0.2, ease: EASE }}
+                >
+                  <h2 id="wizard-title" className="font-display text-3xl leading-tight text-ink sm:text-4xl">
+                    {step.title}
+                  </h2>
+                  <p className="mt-2 text-muted">{step.helper}</p>
+                  <div className="mt-8">
+                    <WizardStep stepId={step.id} draft={draft} update={update} pickAndAdvance={pickAndAdvance} onEdit={editStep} />
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 border-t border-line bg-white px-5 py-4 sm:px-8">
+              <p className="mr-auto flex items-center gap-2 text-sm" aria-live="polite">
+                <span className={`h-2 w-2 rounded-full ${matchCount > 0 ? 'bg-gold' : 'bg-red-500'}`} aria-hidden="true" />
+                {matchCount > 0 ? (
+                  <span>
+                    <strong className="font-semibold text-ink">{matchCount} homes</strong> <span className="text-muted">match so far</span>
+                  </span>
+                ) : (
+                  <span className="text-red-700">No exact matches — try loosening this step</span>
+                )}
+              </p>
+              {stepIndex > 0 && (
+                <button type="button" onClick={() => go(stepIndex - 1)} className="flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium text-ink transition-colors duration-150 hover:bg-line">
+                  <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
+                  Back
+                </button>
+              )}
+              {isLast ? (
+                <button
+                  type="button"
+                  onClick={finish}
+                  disabled={matchCount === 0}
+                  className="rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-gold-ink transition-colors duration-150 hover:bg-[#D8B23A] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Show my {matchCount} homes
+                </button>
+              ) : (
+                <button type="button" onClick={() => go(stepIndex + 1)} className="flex items-center gap-1.5 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-ink/85">
+                  {stepIndex === 0 ? 'Next' : 'Continue'}
+                  <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+```
+```components/FilterPanel.tsx
+import React from 'react';
+import { Chip } from './Chip';
+import { SegmentedControl } from './SegmentedControl';
+import { useApp } from '../contexts/AppContext';
+import { amenityOptions, budgetOptions, cityOptions, kindOptions, lifestyleOptions } from '../data/wizardOptions';
+import { toggleInArray } from '../utils/filters';
+import type { City, ListingType } from '../types/property';
+
+export function FilterPanel() {
+  const { filters, updateFilters, resetFilters } = useApp();
+
+  return (
+    <div className="space-y-7">
+      <fieldset>
+        <legend className="mb-2.5 text-sm font-semibold text-ink">Looking to</legend>
+        <SegmentedControl<ListingType | 'any'>
+          label="Looking to"
+          value={filters.listingType}
+          onChange={(v) => updateFilters({ listingType: v, maxPrice: null })}
+          options={[
+            { value: 'any', label: 'Any' },
+            { value: 'buy', label: 'Buy' },
+            { value: 'rent', label: 'Rent' },
+          ]}
+        />
+      </fieldset>
+
+      <div>
+        <label htmlFor="filter-city" className="mb-2.5 block text-sm font-semibold text-ink">
+          City
+        </label>
+        <select
+          id="filter-city"
+          value={filters.city}
+          onChange={(e) => updateFilters({ city: e.target.value as City | 'any' })}
+          className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-gold-dark focus:outline-none focus:ring-2 focus:ring-gold/40"
+        >
+          {cityOptions.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.value === 'any' ? 'Any city' : c.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {filters.listingType !== 'any' && (
+        <fieldset>
+          <legend className="mb-2.5 text-sm font-semibold text-ink">Budget</legend>
+          <div className="flex flex-wrap gap-2">
+            {budgetOptions[filters.listingType].map((o) => (
+              <Chip key={o.label} label={o.label} selected={filters.maxPrice === o.value} onClick={() => updateFilters({ maxPrice: o.value })} />
+            ))}
+          </div>
+        </fieldset>
+      )}
+
+      <fieldset>
+        <legend className="mb-2.5 text-sm font-semibold text-ink">Bedrooms</legend>
+        <SegmentedControl<number>
+          label="Bedrooms"
+          value={filters.minBeds}
+          onChange={(v) => updateFilters({ minBeds: v })}
+          options={[0, 1, 2, 3, 4].map((n) => ({ value: n, label: n === 0 ? 'Any' : `${n}+` }))}
+        />
+      </fieldset>
+
+      <fieldset>
+        <legend className="mb-2.5 text-sm font-semibold text-ink">Home type</legend>
+        <div className="flex flex-wrap gap-2">
+          {kindOptions.map((k) => (
+            <Chip key={k} label={k} selected={filters.kinds.includes(k)} onClick={() => updateFilters({ kinds: toggleInArray(filters.kinds, k) })} />
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend className="mb-2.5 text-sm font-semibold text-ink">Must-haves</legend>
+        <div className="flex flex-wrap gap-2">
+          {amenityOptions.map((a) => (
+            <Chip key={a} label={a} selected={filters.mustHaves.includes(a)} onClick={() => updateFilters({ mustHaves: toggleInArray(filters.mustHaves, a) })} />
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend className="text-sm font-semibold text-ink">Lifestyle</legend>
+        <p className="mb-2.5 mt-0.5 text-xs text-muted">Ranks homes higher — never hides any.</p>
+        <div className="flex flex-wrap gap-2">
+          {lifestyleOptions.map((l) => (
+            <Chip key={l.value} label={l.label} selected={filters.lifestyle.includes(l.value)} onClick={() => updateFilters({ lifestyle: toggleInArray(filters.lifestyle, l.value) })} />
+          ))}
+        </div>
+      </fieldset>
+
+      <button type="button" onClick={resetFilters} className="text-sm font-medium text-muted underline underline-offset-4 hover:text-ink">
+        Clear everything
+      </button>
+    </div>
+  );
+}
+
+```
+```components/ReelItem.tsx
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CheckIcon, HeartIcon, InfoIcon, PauseIcon, Share2Icon, SparklesIcon } from 'lucide-react';
+import { useApp } from '../contexts/AppContext';
+import { useTourPlayback } from '../hooks/useTourPlayback';
+import { formatPrice, formatSqft } from '../utils/format';
+import type { Property } from '../types/property';
+
+interface ReelItemProps {
+  property: Property;
+  active: boolean;
+  reasons: string[];
+  score: number | null;
+}
+
+const DURATION = 4500;
+
+export function ReelItem({ property, active, reasons, score }: ReelItemProps) {
+  const { isSaved, toggleSave } = useApp();
+  const { index, progress, playing, toggle } = useTourPlayback(property.tour.length, { duration: DURATION, active });
+  const [copied, setCopied] = useState(false);
+  const chapter = property.tour[index];
+  const saved = isSaved(property.id);
+  const price = formatPrice(property.price, property.listingType);
+
+  const share = async () => {
+    const url = `${window.location.origin}/property/${property.id}`;
+    try {
+      if (navigator.share) await navigator.share({ title: property.title, url });
+      else {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1800);
+      }
+    } catch {
+      /* user cancelled */
+    }
+  };
+
+  return (
+    <section data-id={property.id} aria-label={property.title} className="reel relative flex h-full snap-start snap-always items-center justify-center gap-10 sm:py-5">
+      <div className="relative h-full w-full overflow-hidden bg-black sm:aspect-[9/16] sm:w-auto sm:rounded-3xl">
+        <AnimatePresence initial={false}>
+          <motion.img
+            key={index}
+            src={chapter.image}
+            alt={`${chapter.label} — ${property.title}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="kenburns absolute inset-0 h-full w-full object-cover"
+            style={{ animationDuration: `${DURATION}ms`, animationPlayState: playing && active ? 'running' : 'paused' }}
+          />
+        </AnimatePresence>
+
+        <button type="button" onClick={toggle} className="absolute inset-0 focus-visible:outline-none" aria-label={playing ? 'Pause tour' : 'Play tour'} />
+
+        <div className="pointer-events-none absolute inset-x-0 top-0 flex gap-1 p-3" aria-hidden="true">
+          {property.tour.map((c, i) => (
+            <div key={c.label} className="h-1 flex-1 overflow-hidden rounded-full bg-white/30">
+              <div
+                className="h-full bg-white"
+                style={{ width: `${i < index ? 100 : i === index ? progress * 100 : 0}%`, transition: i === index ? 'width 100ms linear' : 'none' }}
+              />
+            </div>
+          ))}
+        </div>
+        <span className="pointer-events-none absolute left-3 top-6 rounded-full bg-ink/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">{chapter.label}</span>
+
+        <AnimatePresence>
+          {!playing && (
+            <motion.span
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              className="pointer-events-none absolute left-1/2 top-1/2 -ml-8 -mt-8 flex h-16 w-16 items-center justify-center rounded-full bg-ink/60 text-white backdrop-blur"
+            >
+              <PauseIcon className="h-7 w-7 fill-white" aria-hidden="true" />
+            </motion.span>
+          )}
+        </AnimatePresence>
+
+        <div className="absolute bottom-40 right-3 flex flex-col items-center gap-4">
+          <button type="button" onClick={() => toggleSave(property.id)} aria-pressed={saved} aria-label={saved ? 'Remove from saved' : 'Save home'} className="flex flex-col items-center gap-1 text-xs font-medium text-white">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-ink/60 backdrop-blur transition-transform duration-150 ease-out active:scale-90">
+              <HeartIcon className={`h-5 w-5 ${saved ? 'fill-gold text-gold' : ''}`} aria-hidden="true" />
+            </span>
+            {saved ? 'Saved' : 'Save'}
+          </button>
+          <button type="button" onClick={share} aria-label="Share home" className="flex flex-col items-center gap-1 text-xs font-medium text-white">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-ink/60 backdrop-blur transition-transform duration-150 ease-out active:scale-90">
+              {copied ? <CheckIcon className="h-5 w-5" aria-hidden="true" /> : <Share2Icon className="h-5 w-5" aria-hidden="true" />}
+            </span>
+            {copied ? 'Copied' : 'Share'}
+          </button>
+          <Link to={`/property/${property.id}`} aria-label="View details" className="flex flex-col items-center gap-1 text-xs font-medium text-white">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-ink/60 backdrop-blur">
+              <InfoIcon className="h-5 w-5" aria-hidden="true" />
+            </span>
+            Details
+          </Link>
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 bg-ink/70 p-4 backdrop-blur-sm">
+          <div className="flex items-baseline gap-2">
+            <p className="text-2xl font-semibold text-white">{price}</p>
+            {score != null && <span className="rounded-full bg-gold px-2 py-0.5 text-xs font-semibold text-gold-ink">{score}% match</span>}
+          </div>
+          <h2 className="font-display text-lg text-white">{property.title}</h2>
+          <p className="text-sm text-white/75">
+            {property.neighborhood}, {property.city} · {property.beds} bd · {property.baths} ba
+          </p>
+          <Link
+            to={`/property/${property.id}`}
+            className="relative mt-3 flex w-full items-center justify-center rounded-full bg-gold py-2.5 text-sm font-semibold text-gold-ink transition-colors duration-150 hover:bg-[#D8B23A] lg:hidden"
+          >
+            View home
+          </Link>
+        </div>
+      </div>
+
+      <aside className="hidden w-80 shrink-0 text-white lg:block">
+        <p className="text-sm text-white/60">
+          {property.listingType === 'rent' ? 'For rent' : 'For sale'} · {property.kind} · listed {property.listedDaysAgo}d ago
+        </p>
+        <p className="mt-2 text-3xl font-semibold">{price}</p>
+        <h3 className="mt-1 font-display text-2xl leading-snug">{property.title}</h3>
+        <p className="mt-1 text-white/70">
+          {property.beds} bd · {property.baths} ba · {formatSqft(property.sqft)}
+        </p>
+        <p className="mt-4 text-sm leading-relaxed text-white/80">{property.description}</p>
+
+        {reasons.length > 0 && (
+          <div className="mt-5 border-t border-white/10 pt-5">
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-gold">
+              <SparklesIcon className="h-4 w-4" aria-hidden="true" />
+              Why it fits you
+            </p>
+            <ul className="mt-2 space-y-1.5 text-sm text-white/80">
+              {reasons.slice(0, 3).map((r) => (
+                <li key={r}>{r}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="mt-6 flex gap-2">
+          <Link to={`/property/${property.id}#book`} className="flex-1 rounded-full bg-gold py-2.5 text-center text-sm font-semibold text-gold-ink transition-colors duration-150 hover:bg-[#D8B23A]">
+            Book a viewing
+          </Link>
+          <Link to={`/property/${property.id}`} className="flex-1 rounded-full border border-white/20 py-2.5 text-center text-sm font-semibold text-white transition-colors duration-150 hover:bg-white/10">
+            Full listing
+          </Link>
+        </div>
+      </aside>
+    </section>
+  );
+}
+
+```
+```components/ViewingRequest.tsx
+import React, { useMemo, useState } from 'react';
+import { addDays, format } from 'date-fns';
+import { CheckCircle2Icon, Loader2Icon } from 'lucide-react';
+import { SegmentedControl } from './SegmentedControl';
+import { formatPrice } from '../utils/format';
+import type { Property } from '../types/property';
+
+type Status = 'idle' | 'submitting' | 'success';
+type Mode = 'in-person' | 'video';
+const slots = ['Morning', 'Afternoon', 'Evening'] as const;
+
+export function ViewingRequest({ property }: { property: Property }) {
+  const days = useMemo(() => Array.from({ length: 5 }, (_, i) => addDays(new Date(), i + 1)), []);
+  const [mode, setMode] = useState<Mode>('in-person');
+  const [day, setDay] = useState(0);
+  const [slot, setSlot] = useState<(typeof slots)[number]>('Afternoon');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  const [status, setStatus] = useState<Status>('idle');
+  const initials = property.agent.name.split(' ').map((n) => n[0]).join('');
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return setError('Please add your name so the agent knows who to expect.');
+    if (!/^\S+@\S+\.\S+$/.test(email)) return setError('Please enter a valid email for your confirmation.');
+    setError('');
+    setStatus('submitting');
+    window.setTimeout(() => setStatus('success'), 900);
+  };
+
+  return (
+    <div id="book" className="scroll-mt-24 rounded-2xl border border-line bg-white p-6 shadow-sm">
+      <p className="text-3xl font-semibold text-ink">{formatPrice(property.price, property.listingType)}</p>
+      <p className="mt-1 text-sm text-muted">
+        {property.listingType === 'rent' ? 'For rent' : 'For sale'} · listed {property.listedDaysAgo} days ago
+      </p>
+
+      <div className="mt-5 flex items-center gap-3 border-t border-line pt-5">
+        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gold-soft font-semibold text-gold-ink" aria-hidden="true">
+          {initials}
+        </span>
+        <div>
+          <p className="font-semibold text-ink">{property.agent.name}</p>
+          <p className="text-sm text-muted">
+            {property.agent.role} · {property.agent.responseTime}
+          </p>
+        </div>
+      </div>
+
+      {status === 'success' ? (
+        <div className="mt-6 rounded-xl bg-gold-soft p-5" role="status">
+          <CheckCircle2Icon className="h-6 w-6 text-gold-dark" aria-hidden="true" />
+          <p className="mt-2 font-semibold text-gold-ink">Request sent, {name.split(' ')[0]}</p>
+          <p className="mt-1 text-sm text-gold-ink/80">
+            {mode === 'video' ? 'Live video tour' : 'In-person viewing'} on {format(days[day], 'EEEE, MMM d')} ({slot.toLowerCase()}). {property.agent.name.split(' ')[0]} will confirm by email.
+          </p>
+          <button type="button" onClick={() => setStatus('idle')} className="mt-3 text-sm font-medium text-gold-ink underline underline-offset-4">
+            Change request
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={submit} className="mt-6 space-y-5" noValidate>
+          <SegmentedControl<Mode>
+            label="Viewing type"
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: 'in-person', label: 'In person' },
+              { value: 'video', label: 'Live video' },
+            ]}
+          />
+          <fieldset>
+            <legend className="mb-2 text-sm font-semibold text-ink">Pick a day</legend>
+            <div className="grid grid-cols-5 gap-1.5">
+              {days.map((d, i) => (
+                <button
+                  key={d.toISOString()}
+                  type="button"
+                  aria-pressed={day === i}
+                  onClick={() => setDay(i)}
+                  className={`rounded-xl border py-2 text-center transition-colors duration-150 ${day === i ? 'border-gold-dark bg-gold-soft text-gold-ink' : 'border-line text-ink hover:border-ink/30'}`}
+                >
+                  <span className="block text-[11px] font-medium uppercase text-muted">{format(d, 'EEE')}</span>
+                  <span className="block font-semibold">{format(d, 'd')}</span>
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <SegmentedControl label="Time of day" value={slot} onChange={setSlot} options={slots.map((s) => ({ value: s, label: s }))} />
+          <div className="space-y-3">
+            <label className="block">
+              <span className="sr-only">Your name</span>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className="w-full rounded-xl border border-line px-3.5 py-2.5 text-sm focus:border-gold-dark focus:outline-none focus:ring-2 focus:ring-gold/40" />
+            </label>
+            <label className="block">
+              <span className="sr-only">Email</span>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full rounded-xl border border-line px-3.5 py-2.5 text-sm focus:border-gold-dark focus:outline-none focus:ring-2 focus:ring-gold/40" />
+            </label>
+          </div>
+          {error && (
+            <p className="text-sm text-red-700" role="alert">
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={status === 'submitting'}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-gold py-3 text-sm font-semibold text-gold-ink transition-colors duration-150 hover:bg-[#D8B23A] disabled:opacity-70"
+          >
+            {status === 'submitting' && <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden="true" />}
+            {status === 'submitting' ? 'Sending…' : 'Request viewing'}
+          </button>
+          <p className="text-center text-xs text-muted">Free and no obligation.</p>
+        </form>
+      )}
+    </div>
+  );
+}
+
+```
+```components/ActiveFilterChips.tsx
+import React from 'react';
+import { XIcon } from 'lucide-react';
+import { useApp } from '../contexts/AppContext';
+import { getActiveChips } from '../utils/filters';
+
+export function ActiveFilterChips() {
+  const { filters, updateFilters, resetFilters } = useApp();
+  const chips = getActiveChips(filters);
+  if (chips.length === 0) return null;
+
+  return (
+    <div className="mt-5 flex flex-wrap items-center gap-2">
+      {chips.map((c) => (
+        <button
+          key={c.key}
+          type="button"
+          onClick={() => updateFilters(c.clear)}
+          aria-label={`Remove ${c.label}`}
+          className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-ink/80"
+        >
+          {c.label}
+          <XIcon className="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+      ))}
+      <button type="button" onClick={resetFilters} className="px-2 text-sm font-medium text-muted underline underline-offset-4 hover:text-ink">
+        Clear all
+      </button>
+    </div>
+  );
+}
+
+```
+```pages/Home.tsx
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRightIcon, PlayIcon, SparklesIcon } from 'lucide-react';
+import { PropertyCard } from '../components/PropertyCard';
+import { Footer } from '../components/Footer';
+import { useApp } from '../contexts/AppContext';
+import { heroImage, properties } from '../data/properties';
+import { quickSearches } from '../data/quickSearches';
+import { defaultFilters, filterProperties, matchScore, sortProperties } from '../utils/filters';
+import { formatPrice } from '../utils/format';
+
+export function Home() {
+  const { openWizard, setFilters, filters, hasPreferences } = useApp();
+  const navigate = useNavigate();
+
+  const picks = hasPreferences
+    ? sortProperties(filterProperties(properties, filters), { ...filters, sort: 'match' }).slice(0, 6)
+    : sortProperties(properties, { ...defaultFilters, sort: 'newest' }).slice(0, 6);
+
+  return (
+    <>
+      <main>
+        <section className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:px-8 lg:pt-20">
+          <div>
+            <h1 className="font-display text-5xl leading-[1.05] tracking-tight text-ink sm:text-6xl">
+              Find a home that fits the way you <span className="text-gold-dark">live</span>.
+            </h1>
+            <p className="mt-6 max-w-xl text-lg text-muted">
+              Tell us what matters and we’ll do the searching. Watch every home as a video tour before you ever book a visit.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={openWizard}
+                className="flex items-center gap-2 rounded-full bg-gold px-6 py-3.5 font-semibold text-gold-ink transition-colors duration-150 hover:bg-[#D8B23A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-dark focus-visible:ring-offset-2"
+              >
+                <SparklesIcon className="h-5 w-5" aria-hidden="true" />
+                Start guided search
+              </button>
+              <Link to="/reels" className="flex items-center gap-2 rounded-full border border-ink/15 bg-white px-6 py-3.5 font-semibold text-ink transition-colors duration-150 hover:border-ink/40">
+                <PlayIcon className="h-4 w-4 fill-ink" aria-hidden="true" />
+                Browse as reels
+              </Link>
+            </div>
+            <div className="mt-10">
+              <p className="text-sm text-muted">Or jump straight in</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {quickSearches.map((q) => (
+                  <button
+                    key={q.label}
+                    type="button"
+                    onClick={() => {
+                      setFilters({ ...defaultFilters, ...q.filters });
+                      navigate('/browse');
+                    }}
+                    className="rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink transition-colors duration-150 hover:border-gold-dark hover:bg-gold-soft"
+                  >
+                    {q.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <Link to={`/property/${properties[0].id}`} className="group relative block overflow-hidden rounded-3xl">
+            <img src={heroImage} alt={properties[0].title} className="aspect-[4/3] w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02] lg:aspect-[5/4]" />
+            <div className="absolute bottom-4 left-4 right-4 flex items-center gap-4 rounded-2xl bg-white/95 p-4 shadow-lg backdrop-blur sm:right-auto">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gold text-gold-ink">
+                <PlayIcon className="ml-0.5 h-5 w-5 fill-gold-ink" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-muted">Now touring · {properties[0].tour.length} rooms</p>
+                <p className="truncate font-display text-lg text-ink">{properties[0].title}</p>
+                <p className="text-sm text-ink/80">
+                  {formatPrice(properties[0].price, properties[0].listingType)} · {properties[0].city}
+                </p>
+              </div>
+            </div>
+          </Link>
+        </section>
+
+        <section className="border-y border-line bg-white py-14">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <h2 className="font-display text-3xl text-ink">Tour before you travel</h2>
+                <p className="mt-1 text-muted">Swipe through homes room by room, like stories.</p>
+              </div>
+              <Link to="/reels" className="flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-ink hover:text-gold-dark">
+                Open reels <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+            <div className="-mx-4 mt-8 flex snap-x gap-4 overflow-x-auto px-4 pb-2 scrollbar-none sm:mx-0 sm:px-0">
+              {properties.map((p) => (
+                <Link key={p.id} to={`/reels?start=${p.id}`} className="group relative aspect-[9/16] w-44 shrink-0 snap-start overflow-hidden rounded-2xl bg-ink sm:w-52">
+                  <img src={p.tour[1]?.image ?? p.image} alt={p.title} className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.04]" />
+                  <span className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-ink/60 text-white backdrop-blur">
+                    <PlayIcon className="ml-0.5 h-3.5 w-3.5 fill-white" aria-hidden="true" />
+                  </span>
+                  <div className="absolute inset-x-0 bottom-0 bg-ink/70 p-3 backdrop-blur-sm">
+                    <p className="text-sm font-semibold text-white">{formatPrice(p.price, p.listingType)}</p>
+                    <p className="truncate text-xs text-white/75">{p.title}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-4 pt-16 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 className="font-display text-3xl text-ink">{hasPreferences ? 'Picked for you' : 'Newly listed'}</h2>
+              <p className="mt-1 text-muted">{hasPreferences ? 'Ranked by how well they fit what you told us.' : 'Fresh on Zcanopy this week.'}</p>
+            </div>
+            <Link to="/browse" className="flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-ink hover:text-gold-dark">
+              See all <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+
+          {!hasPreferences && (
+            <div className="mt-8 flex flex-col gap-4 rounded-2xl bg-gold-soft p-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold text-gold-ink">Not sure where to start?</p>
+                <p className="text-sm text-gold-ink/80">Answer six quick questions and we’ll rank every home by how well it fits you.</p>
+              </div>
+              <button type="button" onClick={openWizard} className="whitespace-nowrap rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-ink/85">
+                Get my matches
+              </button>
+            </div>
+          )}
+
+          <div className="mt-8 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            {picks.map((p) => (
+              <PropertyCard key={p.id} property={p} score={hasPreferences ? matchScore(p, filters) : null} />
+            ))}
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </>
+  );
+}
+
+```
+```pages/Browse.tsx
+import React, { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { SlidersHorizontalIcon, SparklesIcon, XIcon } from 'lucide-react';
+import { ActiveFilterChips } from '../components/ActiveFilterChips';
+import { FilterPanel } from '../components/FilterPanel';
+import { Footer } from '../components/Footer';
+import { PropertyCard } from '../components/PropertyCard';
+import { useApp } from '../contexts/AppContext';
+import { properties } from '../data/properties';
+import { filterProperties, getActiveChips, matchScore, sortProperties } from '../utils/filters';
+import type { SortOption } from '../types/property';
+
+export function Browse() {
+  const { filters, updateFilters, resetFilters, hasPreferences, openWizard } = useApp();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const personalized = hasPreferences || filters.lifestyle.length > 0;
+  const results = useMemo(() => sortProperties(filterProperties(properties, filters), filters), [filters]);
+  const activeCount = getActiveChips(filters).length;
+
+  useEffect(() => {
+    document.body.style.overflow = drawerOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [drawerOpen]);
+
+  const suggestions = [
+    filters.maxPrice !== null && { label: 'Remove budget limit', patch: { maxPrice: null } },
+    filters.city !== 'any' && { label: 'Any city', patch: { city: 'any' as const } },
+    filters.mustHaves.length > 0 && { label: 'Drop must-haves', patch: { mustHaves: [] } },
+    filters.minBeds > 0 && { label: 'Any bedrooms', patch: { minBeds: 0 } },
+  ].filter(Boolean) as { label: string; patch: Parameters<typeof updateFilters>[0] }[];
+
+  return (
+    <>
+      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="font-display text-4xl text-ink">{hasPreferences ? 'Homes matched to you' : 'Explore homes'}</h1>
+            <p className="mt-1 text-muted" aria-live="polite">
+              {results.length} {results.length === 1 ? 'home' : 'homes'} · every one with a video tour
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              className="flex items-center gap-2 rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink lg:hidden"
+            >
+              <SlidersHorizontalIcon className="h-4 w-4" aria-hidden="true" />
+              Filters{activeCount > 0 && ` (${activeCount})`}
+            </button>
+            <label className="sr-only" htmlFor="sort">
+              Sort by
+            </label>
+            <select
+              id="sort"
+              value={filters.sort}
+              onChange={(e) => updateFilters({ sort: e.target.value as SortOption })}
+              className="rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink focus:outline-none focus:ring-2 focus:ring-gold/40"
+            >
+              <option value="match">{personalized ? 'Best match' : 'Recommended'}</option>
+              <option value="newest">Newest</option>
+              <option value="price-asc">Price: low to high</option>
+              <option value="price-desc">Price: high to low</option>
+            </select>
+            <button
+              type="button"
+              onClick={openWizard}
+              className="hidden items-center gap-2 whitespace-nowrap rounded-full bg-gold-soft px-4 py-2 text-sm font-semibold text-gold-ink transition-colors duration-150 hover:bg-[#EFE1B8] sm:flex"
+            >
+              <SparklesIcon className="h-4 w-4" aria-hidden="true" />
+              {hasPreferences ? 'Refine with guide' : 'Help me choose'}
+            </button>
+          </div>
+        </div>
+
+        <ActiveFilterChips />
+
+        <div className="mt-8 grid gap-10 lg:grid-cols-[260px_1fr]">
+          <aside className="hidden lg:block" aria-label="Filters">
+            <div className="sticky top-24">
+              <FilterPanel />
+            </div>
+          </aside>
+
+          <section aria-label="Results">
+            {results.length > 0 ? (
+              <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">
+                {results.map((p) => (
+                  <PropertyCard key={p.id} property={p} score={personalized ? matchScore(p, filters) : null} />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-line bg-white px-6 py-16 text-center">
+                <h2 className="font-display text-2xl text-ink">No homes tick every box yet</h2>
+                <p className="mx-auto mt-2 max-w-md text-muted">Loosen one thing and you’ll see more. These usually help most:</p>
+                <div className="mt-6 flex flex-wrap justify-center gap-2">
+                  {suggestions.map((s) => (
+                    <button key={s.label} type="button" onClick={() => updateFilters(s.patch)} className="rounded-full border border-line px-4 py-2 text-sm font-medium text-ink transition-colors duration-150 hover:border-gold-dark hover:bg-gold-soft">
+                      {s.label}
+                    </button>
+                  ))}
+                  <button type="button" onClick={resetFilters} className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-white">
+                    Start over
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
+      <Footer />
+
+      <AnimatePresence>
+        {drawerOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <motion.div className="absolute inset-0 bg-ink/50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} onClick={() => setDrawerOpen(false)} />
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Filters"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.26, ease: [0.23, 1, 0.32, 1] }}
+              className="absolute inset-y-0 right-0 flex w-full max-w-sm flex-col bg-canvas"
+            >
+              <div className="flex items-center justify-between border-b border-line px-5 py-4">
+                <p className="font-display text-xl text-ink">Filters</p>
+                <button type="button" onClick={() => setDrawerOpen(false)} aria-label="Close filters" className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-line">
+                  <XIcon className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-5 py-6">
+                <FilterPanel />
+              </div>
+              <div className="border-t border-line p-4">
+                <button type="button" onClick={() => setDrawerOpen(false)} className="w-full rounded-full bg-gold py-3 text-sm font-semibold text-gold-ink">
+                  Show {results.length} homes
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+```
+```pages/Reels.tsx
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
+import { ReelItem } from '../components/ReelItem';
+import { useApp } from '../contexts/AppContext';
+import { properties } from '../data/properties';
+import { filterProperties, matchReasons, matchScore, sortProperties } from '../utils/filters';
+
+export function Reels() {
+  const { filters, hasPreferences } = useApp();
+  const [params] = useSearchParams();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const list = useMemo(() => {
+    if (!hasPreferences) return properties;
+    const matched = sortProperties(filterProperties(properties, filters), { ...filters, sort: 'match' });
+    const rest = properties.filter((p) => !matched.includes(p));
+    return [...matched, ...rest];
+  }, [filters, hasPreferences]);
+
+  const [activeId, setActiveId] = useState(params.get('start') ?? list[0]?.id);
+  const activeIndex = list.findIndex((p) => p.id === activeId);
+
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) setActiveId((e.target as HTMLElement).dataset.id);
+        });
+      },
+      { root, threshold: 0.6 },
+    );
+    root.querySelectorAll('.reel').forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [list]);
+
+  useEffect(() => {
+    const start = params.get('start');
+    if (!start) return;
+    containerRef.current?.querySelector(`[data-id="${start}"]`)?.scrollIntoView({ block: 'start' });
+  }, [params]);
+
+  const step = (dir: 1 | -1) => {
+    const root = containerRef.current;
+    if (root) root.scrollBy({ top: dir * root.clientHeight, behavior: 'smooth' });
+  };
+
+  return (
+    <main className="relative bg-ink" style={{ height: 'calc(100dvh - 4rem)' }}>
+      <h1 className="sr-only">Property reels</h1>
+      <div ref={containerRef} className="h-full snap-y snap-mandatory overflow-y-scroll scrollbar-none">
+        {list.map((p) => {
+          const matched = hasPreferences && filterProperties([p], filters).length > 0;
+          return (
+            <ReelItem
+              key={p.id}
+              property={p}
+              active={p.id === activeId}
+              score={matched ? matchScore(p, filters) : null}
+              reasons={matched ? matchReasons(p, filters) : []}
+            />
+          );
+        })}
+      </div>
+
+      <div className="absolute right-6 top-1/2 hidden -translate-y-1/2 flex-col items-center gap-2 lg:flex">
+        <button
+          type="button"
+          onClick={() => step(-1)}
+          disabled={activeIndex <= 0}
+          aria-label="Previous home"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors duration-150 hover:bg-white/20 disabled:opacity-30"
+        >
+          <ChevronUpIcon className="h-5 w-5" aria-hidden="true" />
+        </button>
+        <span className="text-xs font-medium tabular-nums text-white/60">
+          {activeIndex + 1}/{list.length}
+        </span>
+        <button
+          type="button"
+          onClick={() => step(1)}
+          disabled={activeIndex >= list.length - 1}
+          aria-label="Next home"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors duration-150 hover:bg-white/20 disabled:opacity-30"
+        >
+          <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
+        </button>
+      </div>
+    </main>
+  );
+}
+
+```
+```pages/PropertyDetail.tsx
+import React from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { ArrowLeftIcon, BathIcon, BedDoubleIcon, CheckIcon, HeartIcon, RulerIcon, SparklesIcon } from 'lucide-react';
+import { Footer } from '../components/Footer';
+import { PropertyCard } from '../components/PropertyCard';
+import { TourPlayer } from '../components/TourPlayer';
+import { ViewingRequest } from '../components/ViewingRequest';
+import { useApp } from '../contexts/AppContext';
+import { properties } from '../data/properties';
+import { filterProperties, matchReasons } from '../utils/filters';
+import { formatSqft } from '../utils/format';
+
+export function PropertyDetail() {
+  const { id } = useParams();
+  const { isSaved, toggleSave, filters, hasPreferences } = useApp();
+  const property = properties.find((p) => p.id === id);
+
+  if (!property) {
+    return (
+      <main className="mx-auto max-w-xl px-4 py-24 text-center">
+        <h1 className="font-display text-3xl text-ink">This home isn’t available</h1>
+        <p className="mt-2 text-muted">It may have been sold or taken off the market.</p>
+        <Link to="/browse" className="mt-6 inline-block rounded-full bg-gold px-5 py-2.5 font-semibold text-gold-ink">
+          Explore other homes
+        </Link>
+      </main>
+    );
+  }
+
+  const saved = isSaved(property.id);
+  const reasons = hasPreferences && filterProperties([property], filters).length > 0 ? matchReasons(property, filters) : [];
+  const similar = properties
+    .filter((p) => p.id !== property.id && (p.city === property.city || p.listingType === property.listingType))
+    .slice(0, 3);
+
+  return (
+    <>
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <Link to="/browse" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-ink">
+          <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
+          Back to explore
+        </Link>
+
+        <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="font-display text-4xl leading-tight text-ink sm:text-5xl">{property.title}</h1>
+            <p className="mt-1 text-muted">
+              {property.kind} in {property.neighborhood}, {property.city}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => toggleSave(property.id)}
+            aria-pressed={saved}
+            className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors duration-150 $

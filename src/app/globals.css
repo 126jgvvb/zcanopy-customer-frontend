@@ -37,6 +37,14 @@
   --color-zcanopy-surface: var(--zcanopy-surface);
   --color-zcanopy-muted: var(--zcanopy-muted);
   --color-zcanopy-border: var(--zcanopy-border);
+  --color-canvas: #fbf8f1;
+  --color-ink: #1c1912;
+  --color-muted: #6b6457;
+  --color-line: #e9e2d2;
+  --color-gold: #c9a227;
+  --color-gold-dark: #9a7a14;
+  --color-gold-soft: #f6edd2;
+  --color-gold-ink: #2e2304;
   --shadow-zcanopy: var(--zcanopy-shadow);
   --font-sans: var(--font-geist-sans);
   --font-serif: "Cormorant Garamond", Georgia, serif;
@@ -606,6 +614,14 @@ html.dark .btn-primary {
   overflow: hidden;
 }
 
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -678,6 +694,39 @@ html.dark .btn-primary {
 .slide-up-4 { animation-delay: 0.24s; }
 .slide-up-5 { animation-delay: 0.30s; }
 .slide-up-6 { animation-delay: 0.36s; }
+
+/* Guided-search wizard modal */
+@keyframes wizardFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes wizardPop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes wizardStepFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes wizardCountSwap {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes wizardCountPulse {
+  0% { opacity: 0.3; transform: scale(0.9); }
+  45% { opacity: 1; transform: scale(1.1); }
+  70% { transform: scale(0.97); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes starBurst {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--sx, 24px), var(--sy, -28px)) scale(0); opacity: 0; }
+}
 
 @keyframes marqueeScroll {
   from {

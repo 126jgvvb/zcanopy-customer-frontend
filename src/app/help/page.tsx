@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import { Phone, Mail, MapPin } from "lucide-react";
 import { COLORS } from "@/lib/theme";
 import { SUPPORT_EMAIL } from "@/lib/navigation";
-import BackButton from "@/components/BackButton";
+
 
 const CONTACT = {
   phone: "+256741882818",
@@ -36,7 +36,6 @@ export default function HelpPage() {
   return (
     <main className="min-h-screen bg-[var(--background)]">
       <section className="mx-auto max-w-3xl px-6 py-12">
-        <BackButton />
         <h1 className="text-4xl">
           Help &amp; Support
         </h1>
