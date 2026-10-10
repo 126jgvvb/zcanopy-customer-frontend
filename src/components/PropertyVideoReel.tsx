@@ -434,7 +434,7 @@ export default function PropertyVideoReel({ initialProperties = [], onClose }: {
                     href={`/properties/${property.id}`}
                     className="pointer-events-auto relative mt-3 flex w-full items-center justify-center rounded-full bg-gold py-2.5 text-sm font-semibold text-gold-ink transition-colors duration-150 hover:bg-[#D8B23A] lg:hidden"
                   >
-                    View home
+                    View property
                   </a>
                 </div>
               </div>
