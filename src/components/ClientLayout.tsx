@@ -48,8 +48,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             <img
               src="/logo.svg"
               alt="ZCanopy"
-              className="h-9 w-9 object-contain"
-              style={{ mixBlendMode: "multiply" }}
+              className="site-logo h-9 w-9 object-contain"
             />
             <span
               className="font-display text-xl tracking-tight"

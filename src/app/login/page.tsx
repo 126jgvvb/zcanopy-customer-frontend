@@ -55,8 +55,7 @@ export default function LoginPage() {
               <img
                 src="/logo.svg"
                 alt="ZCanopy"
-                className="h-10 w-10 object-contain"
-                style={{ mixBlendMode: 'multiply' }}
+                className="site-logo h-10 w-10 object-contain"
               />
             </Link>
     <h1 className="mt-5 text-4xl" style={{ color: 'var(--zcanopy-card-brown)' }}>

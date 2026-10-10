@@ -425,38 +425,54 @@ const deferredDateTo = useDeferredValue(dateTo);
 
   const filteredProperties = properties;
 
-  // Scroll reveal for property cards.
-  // `layout` is a dependency because switching views swaps the rendered tree:
-  // the newly mounted .slide-up nodes start at opacity 0 and would never be
-  // observed if this only re-ran when the result count changed.
+  // Scroll reveal for property cards. `.slide-up` starts at opacity 0 until
+  // `.visible` is added. Depend on `properties` (not a ref counter): changing
+  // a filter re-renders before the new list arrives, which would consume a
+  // ref-based dep and skip observing the replacement cards.
+  // `layout` is included because switching views swaps the rendered tree.
   useEffect(() => {
-    const elements = document.querySelectorAll(".slide-up");
-    if (!elements.length) return;
+    let observer: IntersectionObserver | null = null;
+    let cancelled = false;
+    let rafId = 0;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" },
-    );
+    const observeElements = () => {
+      if (cancelled) return;
+      const elements = document.querySelectorAll(".slide-up");
+      if (!elements.length) return;
 
-    elements.forEach((el) => {
-      // Check if already in viewport
-      const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight && rect.bottom > 0) {
-        el.classList.add("visible");
-      } else {
-        observer.observe(el);
-      }
+      observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("visible");
+              observer?.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.15, rootMargin: "0px 0px -40px 0px" },
+      );
+
+      elements.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+          el.classList.add("visible");
+        } else {
+          observer?.observe(el);
+        }
+      });
+    };
+
+    // After paint so newly mounted .slide-up nodes have layout.
+    rafId = requestAnimationFrame(() => {
+      observeElements();
     });
 
-    return () => observer.disconnect();
-  }, [filteredProperties.length, layout]);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+      observer?.disconnect();
+    };
+  }, [properties, layout]);
 
   const [needsAuth, setNeedsAuth] = useState(false);
 
@@ -553,8 +569,9 @@ const deferredDateTo = useDeferredValue(dateTo);
       <BackButton />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-3xl">Browse Properties</h2>
-          <p className="mt-2 text-gray-500">Find your next home or investment and book directly.</p>
+          <span className="eyebrow">The catalogue</span>
+          <h2 className="mt-3 text-4xl md:text-[2.75rem]">Browse Properties</h2>
+          <p className="mt-2 max-w-xl text-gray-500">Find your next home or investment and book directly.</p>
         </div>
 
         {/* Layout switcher */}
@@ -585,7 +602,7 @@ const deferredDateTo = useDeferredValue(dateTo);
         </div>
       </div>
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-5 shadow-[var(--shadow-soft)]">
+      <div className="filter-panel rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-5 shadow-[var(--shadow-soft)]">
         <div className="relative">
           <label className="block text-sm font-medium text-gray-700">Search</label>
           <input

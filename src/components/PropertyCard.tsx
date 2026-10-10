@@ -146,13 +146,13 @@ export default function PropertyCard({
 
   return (
     <Link href={`/properties/${id}${brokersUniqueCode ? `?brokerCode=${encodeURIComponent(brokersUniqueCode)}` : ''}`} className="group surface-card block overflow-hidden">
-      <div className="aspect-video w-full overflow-hidden bg-gray-100 relative">
+      <div className="property-media aspect-video w-full overflow-hidden bg-gray-100 relative">
         <img src={mainImage} alt={title} className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-80" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
         <button
           type="button"
           onClick={toggleFavorite}
-          className="absolute top-3 right-3 rounded-full bg-white/80 p-2 text-gray-700 backdrop-blur-sm transition hover:bg-white"
+          className="absolute top-3 right-3 rounded-full bg-white/80 p-2 text-gray-700 shadow-sm backdrop-blur-sm transition hover:bg-white"
           disabled={isToggling}
         >
           <Heart
@@ -182,23 +182,23 @@ export default function PropertyCard({
             {videos.length}
           </span>
         )}
-        <span className={`absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-semibold backdrop-blur-sm ${isAvailable ? "bg-emerald-50/90 text-emerald-800" : "bg-red-50/90 text-red-700"}`}>
+        <span className={`absolute bottom-3 left-3 rounded-full px-3 py-1 text-[11px] font-semibold tracking-wide backdrop-blur-sm ${isAvailable ? "bg-emerald-50/90 text-emerald-800" : "bg-red-50/90 text-red-700"}`}>
           {isAvailable ? "Available" : "Booked"}
         </span>
       </div>
 
       <div className="p-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">{propertyType}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--zcanopy-primary)]">{propertyType}</p>
         <h3 className="mt-1.5 text-xl">{title}</h3>
         <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-gray-500">{description}</p>
 
-        <div className="mt-4 flex items-center justify-between">
-          <span className="flex items-center gap-1 text-sm text-gray-500">
-            <MapPin size={14} />
-            {location}
+        <div className="mt-4 flex items-end justify-between gap-3">
+          <span className="flex min-w-0 items-center gap-1 text-sm text-gray-500">
+            <MapPin size={14} className="shrink-0" />
+            <span className="truncate">{location}</span>
           </span>
           {price !== undefined && (
-            <span className="font-display text-xl" style={{ color: COLORS.primary }}>
+            <span className="font-display shrink-0 text-xl leading-none" style={{ color: COLORS.primary }}>
               {formatUGX(price)}
             </span>
           )}

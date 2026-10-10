@@ -87,7 +87,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-4">
             <Link href="/" className="flex items-center gap-2.5">
-              <img src="/logo.svg" alt="ZCanopy" className="h-9 w-9 object-contain" />
+              <img src="/logo.svg" alt="ZCanopy" className="site-logo h-9 w-9 object-contain" />
               <span className="font-display text-xl tracking-tight" style={{ color: "#f6d98e" }}>
                 ZCanopy
               </span>

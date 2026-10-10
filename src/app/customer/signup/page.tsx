@@ -79,8 +79,7 @@ export default function CustomerSignupPage() {
               <img
                 src="/logo.svg"
                 alt="ZCanopy"
-                className="h-8 w-8 object-contain"
-                style={{ mixBlendMode: 'multiply' }}
+                className="site-logo h-8 w-8 object-contain"
               />
             </Link>
             <h1 className="mt-4 text-3xl" style={{ color: 'var(--zcanopy-card-brown)' }}>

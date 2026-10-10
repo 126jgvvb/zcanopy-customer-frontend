@@ -46,8 +46,7 @@ export function BrandMark() {
       <img
         src="/logo.svg"
         alt="ZCanopy"
-        className="h-12 w-12 object-contain"
-        style={{ mixBlendMode: "multiply" }}
+        className="site-logo h-12 w-12 object-contain"
       />
       <span className="font-display text-2xl tracking-tight" style={{ color: COLORS.cardBrown }}>
         ZCanopy

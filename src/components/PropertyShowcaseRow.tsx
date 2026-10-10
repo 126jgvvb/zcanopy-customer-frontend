@@ -47,13 +47,9 @@ export default function PropertyShowcaseRow({ property }: { property: ShowcasePr
       : FALLBACK_IMAGE;
 
   const price = formatUGX(property.price);
-  const badge = isNewListing(property.createdAt)
-    ? "New Listing"
-    : property.isAvailable
-      ? "Available"
-      : "Booked";
+  const isNew = isNewListing(property.createdAt);
+  const badge = isNew ? "New Listing" : property.isAvailable ? "Available" : "Booked";
 
-  // Real fields only — the listing payload carries no bed/bath/size data.
   const chips = [
     property.propertyType ? { icon: Building2, label: property.propertyType } : null,
     {
@@ -66,56 +62,67 @@ export default function PropertyShowcaseRow({ property }: { property: ShowcasePr
   return (
     <Link
       href={`/properties/${property.id}`}
-      className="group relative block overflow-hidden shadow-[var(--shadow-soft)] transition-shadow duration-300 hover:shadow-[var(--shadow-lift)]"
+      className="showcase-row group relative block overflow-hidden"
     >
-      {/* Blurred backdrop fills the letterbox left by object-contain, so the row
-          still reads as full-bleed without cropping the photo. */}
+      {/* Blurred backdrop fills the letterbox left by object-contain. */}
       <img
         src={image}
         alt=""
         aria-hidden="true"
-        className="absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-2xl"
+        className="absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-2xl"
       />
       <img
         src={image}
         alt={property.title}
         loading="lazy"
-        className="absolute inset-0 h-full w-full object-contain"
+        className="showcase-photo absolute inset-0 h-full w-full object-contain"
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-black/10" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/25" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/35 to-black/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/20" />
 
-      <div className="relative flex min-h-[340px] flex-col justify-between p-6 sm:min-h-[400px] sm:p-8">
-        {/* Top: location + badge */}
+      <div className="relative flex min-h-[340px] flex-col justify-between p-6 sm:min-h-[420px] sm:p-10">
         <div className="flex items-start justify-between gap-4">
           {property.location && (
-            <span className="flex items-center gap-1.5 text-sm text-white/85">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/25 px-3 py-1.5 text-sm text-white/90 backdrop-blur-md">
               <MapPin size={14} className="shrink-0" />
               {property.location}
             </span>
           )}
-          <span className="shrink-0 rounded-sm bg-white px-3.5 py-2 text-xs font-semibold text-gray-800 shadow-sm">
+          <span
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] backdrop-blur-md ${
+              isNew
+                ? "bg-[var(--zcanopy-accent-gold)] text-[#2a221c]"
+                : property.isAvailable
+                  ? "bg-white/90 text-emerald-800"
+                  : "bg-red-50/90 text-red-700"
+            }`}
+          >
             {badge}
           </span>
         </div>
 
-        {/* Middle: title, description, chips */}
-        <div className="max-w-xl">
-          <h3 className="font-sans text-3xl font-bold uppercase leading-none tracking-tight text-white sm:text-4xl">
+        <div className="max-w-2xl">
+          {property.propertyType && (
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--zcanopy-accent-gold)]">
+              {property.propertyType}
+            </p>
+          )}
+          <h3 className="font-display mt-2 text-4xl leading-[1.05] text-[#d1a054] sm:text-5xl">
             {property.title}
           </h3>
+          <span className="mt-4 block h-px w-16 bg-[var(--zcanopy-accent-gold)]" />
           {property.description && (
-            <p className="mt-3 line-clamp-2 max-w-md text-sm leading-relaxed text-white/80">
+            <p className="mt-4 line-clamp-2 max-w-md text-sm leading-relaxed text-white/80">
               {property.description}
             </p>
           )}
 
           {chips.length > 0 && (
-            <ul className="mt-4 flex flex-wrap items-center gap-2">
+            <ul className="mt-5 flex flex-wrap items-center gap-2">
               {chips.map(({ icon: Icon, label }) => (
                 <li
                   key={label}
-                  className="flex items-center gap-1.5 rounded-sm bg-white/92 px-2.5 py-1.5 text-xs font-medium text-gray-700"
+                  className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/90 backdrop-blur-md"
                 >
                   <Icon size={13} />
                   <span className="max-w-[10rem] truncate">{label}</span>
@@ -125,19 +132,23 @@ export default function PropertyShowcaseRow({ property }: { property: ShowcasePr
           )}
         </div>
 
-        {/* Bottom: price + CTA */}
         <div className="flex items-end justify-between gap-4">
           {price && (
-            <p className="font-display text-2xl italic text-white sm:text-3xl">from {price}</p>
+            <p className="font-display text-2xl text-white sm:text-3xl">
+              <span className="mr-2 text-sm font-sans font-medium uppercase tracking-[0.16em] text-white/55">
+                from
+              </span>
+              {price}
+            </p>
           )}
           <span
-            className="group/btn inline-flex shrink-0 items-center gap-2 rounded-sm bg-white px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em] transition-colors"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-5 py-3 text-xs font-semibold uppercase tracking-[0.14em] shadow-sm transition-transform duration-300 group-hover:-translate-y-0.5"
             style={{ color: COLORS.primary }}
           >
             View Property
             <ArrowUpRight
               size={14}
-              className="transition-transform duration-300 group-hover/btn:translate-x-0.5"
+              className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
             />
           </span>
         </div>

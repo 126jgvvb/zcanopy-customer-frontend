@@ -136,7 +136,7 @@ export default function Home() {
       {/* ---------------------------------------------------------------- Hero */}
       <HeroShowcase>
         <div className="max-w-2xl">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/75">
+          <span className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/85 backdrop-blur-md">
             Real estate, reimagined
           </span>
 
@@ -167,17 +167,10 @@ export default function Home() {
             one place.
           </p>
 
-          <div className="mt-9 flex flex-wrap items-center gap-5">
-            <div className="flex items-center gap-4 text-white">
-              <CircleArrow href="/properties" label="Browse Properties" className="border-white/50" />
-              <Link
-                href="/properties"
-                className="font-display text-xl tracking-tight transition-opacity hover:opacity-80"
-              >
-                Browse Properties
-              </Link>
-            </div>
-
+          <div className="mt-9 flex flex-wrap items-center gap-4">
+            <Link href="/properties" className="btn-primary px-6 py-3.5 text-sm">
+              Browse Properties
+            </Link>
             <a
               href={BROKER_LOGIN_URL}
               target="_blank"
@@ -224,7 +217,7 @@ export default function Home() {
                   <v.icon size={19} />
                 </span>
                 <div>
-                  <h3 className="font-sans text-[15px] font-semibold" style={{ color: COLORS.cardBrown }}>
+                  <h3 className="font-sans text-[15px] font-semibold text-[var(--zcanopy-card-brown)]">
                     {v.title}
                   </h3>
                   <p className="mt-1 text-[13px] leading-relaxed text-gray-500">{v.text}</p>
