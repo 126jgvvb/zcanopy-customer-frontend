@@ -452,14 +452,14 @@ export const webApi = {
 
   propertyDetails: async (id: string, brokerCode?: string) => {
     try {
-      const data = await apiFetch<{ property: any }>(`/web/public/property-info?id=${encodeURIComponent(id)}${brokerCode ? `&brokerCode=${encodeURIComponent(brokerCode)}` : ''}`, { skipSessionHeader: true });
+      const data = await apiFetch<{ property: any }>(`/web/public/property-info?id=${encodeURIComponent(id)}${brokerCode ? `&brokerCode=${encodeURIComponent(brokerCode)}` : ''}`, { skipSessionHeader: true, skipAuthRedirect: true });
       const prop = (data as any)?.property || (data as any) || null;
       if (prop) return prop;
     } catch {
       // ignore and fall back
     }
 
-    const fallbackData = await apiFetch<{ properties: any[]; total: number }>(`/web/public/explorer?id=${encodeURIComponent(id)}`, { skipSessionHeader: true });
+    const fallbackData = await apiFetch<{ properties: any[]; total: number }>(`/web/public/explorer?id=${encodeURIComponent(id)}`, { skipSessionHeader: true, skipAuthRedirect: true });
     const properties = (fallbackData as any)?.properties || [];
     return properties.find((item: any) => String(item.id) === String(id)) || null;
   },
@@ -483,7 +483,7 @@ export const webApi = {
     apiFetch<{ success: boolean; commentId?: string }>("/web/customer/comments", { method: "POST", token, body }),
 
   getPropertyComments: (propertyId: string, page = 1, limit = 10) =>
-    apiFetch<{ comments: any[]; total: number; averageRating: number }>(`/web/customer/properties/${propertyId}/comments?page=${page}&limit=${limit}`, { skipSessionHeader: true }),
+    apiFetch<{ comments: any[]; total: number; averageRating: number }>(`/web/customer/properties/${propertyId}/comments?page=${page}&limit=${limit}`, { skipSessionHeader: true, skipAuthRedirect: true }),
 
   brokerPropertiesByCode: (brokerCode: string, query?: Record<string, string | number | boolean | undefined>) =>
     apiFetch<{ properties: any[]; total: number }>(`/web/customer/broker/${brokerCode}/properties`, { query }),
@@ -575,7 +575,7 @@ customer: {
       apiFetch<{ properties: any[]; total: number }>("/web/customer/all-properties", { query, skipSessionHeader: true }),
 
     explorer: (query?: Record<string, string | number | boolean | undefined>) =>
-      apiFetch<{ properties: any[]; total: number; videoCount: number }>("/web/public/explorer", { query, skipSessionHeader: true }),
+      apiFetch<{ properties: any[]; total: number; videoCount: number }>("/web/public/explorer", { query, skipSessionHeader: true, skipAuthRedirect: true }),
 
     getPropertyDetails: (propertyId: string) =>
       apiFetch<any>(`/web/customer/properties?propertyId=${encodeURIComponent(propertyId)}`, { skipSessionHeader: true }),
@@ -586,8 +586,8 @@ customer: {
     getTransactions: (token: string, page = 1, limit = 10) =>
       apiFetch<{ transactions: any[]; total: number }>(`/web/customer/transactions?page=${page}&limit=${limit}`, { token }),
 
-    getBookings: (token: string, page = 1, limit = 10) =>
-      apiFetch<{ bookings: any[]; total: number; count?: number }>(`/web/customer/bookings?page=${page}&limit=${limit}`, { token }),
+    getBookings: (token: string, page = 1, limit = 10, opts?: { skipAuthRedirect?: boolean }) =>
+      apiFetch<{ bookings: any[]; total: number; count?: number }>(`/web/customer/bookings?page=${page}&limit=${limit}`, { token, skipAuthRedirect: opts?.skipAuthRedirect }),
 
     getInvoices: (token: string, page = 1, limit = 10) =>
       apiFetch<{ invoices: any[]; total: number }>(`/web/customer/invoices?page=${page}&limit=${limit}`, { token }),

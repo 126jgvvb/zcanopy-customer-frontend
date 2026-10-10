@@ -106,14 +106,53 @@ export default function PropertyDetailPage() {
   const [videoIndex, setVideoIndex] = useState(0);
   const { ids: bookedPropertyIds } = useBookedPropertyIds();
   const canViewMap = bookedPropertyIds.has(id);
+  const [related, setRelated] = useState<Property[]>([]);
 
-  // After a successful booking the customer is sent to their dashboard's
-  // "My Bookings" tab.
-  const {
-    schedule: scheduleBookingsRedirect,
-    cancel: cancelBookingsRedirect,
-    goToBookings,
-  } = useBookingRedirect();
+  useEffect(() => {
+    if (!property) return;
+    let cancelled = false;
+    const loadRelated = async () => {
+      const currentId = String(property.id);
+      const dedupe = new Set<string>([currentId]);
+      const out: any[] = [];
+      const push = (list: any[]) => {
+        for (const p of list ?? []) {
+          if (!p) continue;
+          const key = String(p.id);
+          if (dedupe.has(key)) continue;
+          dedupe.add(key);
+          out.push(p);
+        }
+      };
+
+      const sameType = (p: any) => property.propertyType && String(p.propertyType).toLowerCase() === String(property.propertyType).toLowerCase();
+
+      // Related listings are sourced purely from the public explorer endpoint,
+      // never from the current listing's detail payload. The type filter uses
+      // the current property's own type so only matching listings appear.
+      // If no same-type match is returned, show nothing at all.
+      try {
+        const matching = (await webApi.customer.explorer({
+          page: 1,
+          limit: 50,
+          propertyType: property.propertyType || undefined,
+        })) as { properties?: any[] };
+        push((matching?.properties || []).filter(sameType));
+      } catch {
+        /* ignore */
+      }
+
+      if (!cancelled) setRelated(out.slice(0, 8));
+    };
+    loadRelated();
+    return () => {
+      cancelled = true;
+    };
+  }, [property?.id]);
+
+  // After a successful booking the customer may review their bookings from
+  // the confirmation; no forced navigation away from the property page.
+  const { goToBookings } = useBookingRedirect();
 
    useEffect(() => {
     const load = async () => {
@@ -314,7 +353,6 @@ export default function PropertyDetailPage() {
   };
 
   const closeBooking = () => {
-    cancelBookingsRedirect();
     setSelectedProperty(null);
     setNeedsAuth(false);
     setBookedProperty(null);
@@ -367,7 +405,6 @@ export default function PropertyDetailPage() {
         setForm(emptyForm);
         setBookedProperty({ ...selectedProperty, brokerPhone: paymentResult.brokerPhone });
         invalidateBookedPropertyIds();
-        scheduleBookingsRedirect();
       } else {
         setPaymentStatus("");
         setSubmitError(paymentResult.message || "Payment failed. Please try again.");
@@ -717,6 +754,56 @@ export default function PropertyDetailPage() {
         </div>
       </div>
 
+      <section aria-labelledby="related-searches-heading" className="pt-4">
+        <h2 id="related-searches-heading" className="text-2xl font-semibold text-[var(--zcanopy-card-brown)]">
+          Related searches
+        </h2>
+        <p className="mt-1 text-sm text-gray-500">
+          Other listings you might like, matched by property type.
+        </p>
+        {related.length > 0 ? (
+          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {related.map((r) => (
+              <Link
+                key={String(r.id)}
+                href={`/properties/${r.id}`}
+                className="group overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:border-[var(--zcanopy-primary)]"
+              >
+                <div className="aspect-video w-full overflow-hidden bg-gray-100">
+                  <img
+                    src={
+                      Array.isArray(r.imageUrl) && r.imageUrl.length
+                        ? r.imageUrl[0]
+                        : "https://via.placeholder.com/400x200?text=No+Image"
+                    }
+                    alt={r.title}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                </div>
+                <div className="p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--zcanopy-primary)]">
+                    {r.propertyType}
+                  </p>
+                  <h3 className="mt-1 truncate font-semibold text-[var(--zcanopy-card-brown)]">{r.title}</h3>
+                  <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-gray-500">
+                    <MapPin size={13} className="shrink-0" />
+                    {r.location}
+                  </p>
+                  {r.price !== undefined && r.price !== null && (
+                    <p className="mt-2 font-semibold text-[var(--zcanopy-primary)]">{formatUGX(r.price)}</p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-6 rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-8 text-center text-sm text-gray-500">
+            No items matched your selection
+          </p>
+        )}
+      </section>
+
       {selectedProperty && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">
           <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-lift)]">
@@ -752,7 +839,7 @@ export default function PropertyDetailPage() {
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-[var(--zcanopy-card-brown)]">Booking Confirmed</h3>
                 <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-                  Your booking request has been submitted successfully. Taking you to your bookings…
+                  Your booking request has been submitted successfully.
                 </div>
                 <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
                   <p className="font-semibold text-[var(--zcanopy-card-brown)]">Broker contact: {bookedProperty.brokerPhone || "Not provided"}</p>

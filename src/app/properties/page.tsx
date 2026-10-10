@@ -516,12 +516,9 @@ const deferredDateTo = useDeferredValue(dateTo);
 
   const [needsAuth, setNeedsAuth] = useState(false);
 
-  // After a successful booking the customer is sent to their dashboard.
-  const {
-    schedule: scheduleBookingRedirect,
-    cancel: cancelBookingRedirect,
-    goToBookings,
-  } = useBookingRedirect();
+  // Confirmation lets the customer decide where to go next; no forced
+  // navigation away from the property page.
+  const { goToBookings } = useBookingRedirect();
 
   const isAuthenticated = () => {
     const getCookie = (name: string) => {
@@ -536,7 +533,6 @@ const deferredDateTo = useDeferredValue(dateTo);
   };
 
   const closeBooking = () => {
-    cancelBookingRedirect();
     setSelectedProperty(null);
     setNeedsAuth(false);
     setBookedProperty(null);
@@ -575,7 +571,6 @@ const deferredDateTo = useDeferredValue(dateTo);
         setForm(emptyForm);
         setBookedProperty({ ...selectedProperty, brokerPhone: paymentResult.brokerPhone });
         invalidateBookedPropertyIds();
-        scheduleBookingRedirect();
       } else {
         setPaymentStatus("");
         setSubmitError(paymentResult.message || "Payment failed. Please try again.");

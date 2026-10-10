@@ -21,7 +21,7 @@ function loadBookedPropertyIds(): Promise<ReadonlySet<string>> {
     if (!token) return EMPTY;
 
     try {
-      const res = await webApi.customer.getBookings(token, 1, BOOKINGS_LIMIT);
+      const res = await webApi.customer.getBookings(token, 1, BOOKINGS_LIMIT, { skipAuthRedirect: true });
       const bookings = res?.bookings ?? [];
       return new Set(
         bookings
