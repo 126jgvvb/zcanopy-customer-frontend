@@ -64,6 +64,7 @@ const NAV_LINKS: { label: string; href: string }[] = [
 const LEGAL_LINKS: { label: string; href: string }[] = [
   { label: "Privacy Policy", href: "/terms#privacy" },
   { label: "Terms of Agreement", href: "/terms" },
+  { label: "Refund Policy", href: "/refund-policy" },
   { label: "Sitemap", href: "/sitemap.xml" },
 ];
 
