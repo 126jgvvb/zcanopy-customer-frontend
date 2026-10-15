@@ -152,7 +152,7 @@ export default function SearchWizard({ open, onClose }: SearchWizardProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="guided-search-title"
-        className="fixed inset-x-0 bottom-0 z-[70] flex flex-col overflow-hidden rounded-t-3xl border border-[var(--border)] bg-[var(--zcanopy-surface)] shadow-[var(--shadow-lift)] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:max-h-[86vh] sm:w-full sm:max-w-3xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl"
+        className="fixed inset-x-0 bottom-0 z-[70] flex max-h-[92dvh] flex-col overflow-hidden rounded-t-3xl border border-[var(--border)] bg-[var(--zcanopy-surface)] shadow-[var(--shadow-lift)] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:max-h-[86vh] sm:w-full sm:max-w-3xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl"
         style={{ animation: "wizardPop 0.26s cubic-bezier(0.22, 1, 0.36, 1)" }}
       >
         <div className="flex items-center gap-4 border-b border-[var(--border)] px-5 py-4 sm:px-8">

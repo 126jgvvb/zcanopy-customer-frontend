@@ -35,9 +35,9 @@ export default function PropertyVideoReel({ initialProperties = [], onClose }: {
   const [videoIndexMap, setVideoIndexMap] = useState<Record<string, number>>({});
   const [timeMap, setTimeMap] = useState<Record<string, { current: number; duration: number }>>({});
   const containerRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<(HTMLElement | null)[]>([]);
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
   const prevIndexRef = useRef(0);
+  const lastTimeUpdateRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -104,37 +104,28 @@ export default function PropertyVideoReel({ initialProperties = [], onClose }: {
     const container = containerRef.current;
     if (!container) return;
 
+    let frame = 0;
+    const updateIndex = () => {
+      frame = 0;
+      const height = container.clientHeight;
+      if (!height) return;
+      const closest = Math.min(
+        Math.max(Math.round(container.scrollTop / height), 0),
+        Math.max(properties.length - 1, 0)
+      );
+      setIndex((prev) => (prev === closest ? prev : closest));
+    };
     const onScroll = () => {
-      const items = itemRefs.current.filter(Boolean);
-      if (!items.length) return;
-
-      const containerRect = container.getBoundingClientRect();
-      const containerCenter = containerRect.top + containerRect.height / 2;
-
-      let closest = 0;
-      let closestDistance = Infinity;
-      items.forEach((el, idx) => {
-        const rect = el!.getBoundingClientRect();
-        const itemCenter = rect.top + rect.height / 2;
-        const distance = Math.abs(itemCenter - containerCenter);
-        if (distance < closestDistance) {
-          closestDistance = distance;
-          closest = idx;
-        }
-      });
-
-      setIndex(closest);
+      if (frame) return;
+      frame = requestAnimationFrame(updateIndex);
     };
 
     container.addEventListener("scroll", onScroll, { passive: true });
-    return () => container.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || !itemRefs.current[index]) return;
-    itemRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [index]);
+    return () => {
+      container.removeEventListener("scroll", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [properties.length]);
 
   useEffect(() => {
     const activeId = properties[index]?.id;
@@ -152,8 +143,9 @@ export default function PropertyVideoReel({ initialProperties = [], onClose }: {
 
     Object.entries(videoRefs.current).forEach(([id, video]) => {
       if (!video) return;
+      video.muted = muted;
       if (id === String(activeId)) {
-        if (playingMap[id]) {
+        if (playingMap[id] !== false) {
           video.play().catch(() => {});
         } else {
           video.pause();
@@ -162,11 +154,28 @@ export default function PropertyVideoReel({ initialProperties = [], onClose }: {
         video.pause();
       }
     });
-  }, [index, properties, playingMap, videoIndexMap]);
+  }, [index, properties, playingMap, muted, videoIndexMap]);
+
+  useEffect(() => {
+    const active = properties[index];
+    if (!active) return;
+    [index - 1, index + 1].forEach((i) => {
+      const property = properties[i];
+      if (!property) return;
+      const video = videoRefs.current[String(property.id)];
+      if (video && property.videoUrl?.[0]) {
+        video.preload = "auto";
+        video.load();
+      }
+    });
+  }, [index, properties]);
 
   const handleTimeUpdate = (property: Property) => (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
     const id = String(property.id);
+    const now = performance.now();
+    if (now - (lastTimeUpdateRef.current[id] ?? 0) < 200) return;
+    lastTimeUpdateRef.current[id] = now;
     setTimeMap((prev) => ({
       ...prev,
       [id]: { current: video.currentTime || 0, duration: video.duration || 0 },
@@ -261,19 +270,6 @@ export default function PropertyVideoReel({ initialProperties = [], onClose }: {
     }
   };
 
-  const preloadAdjacent = (currentIdx: number) => {
-    const indices = [currentIdx - 1, currentIdx + 1];
-    indices.forEach((idx) => {
-      if (idx < 0 || idx >= properties.length) return;
-      const property = properties[idx];
-      const video = videoRefs.current[String(property.id)];
-      if (video && property.videoUrl?.[0]) {
-        video.preload = "auto";
-        video.load();
-      }
-    });
-  };
-
   const step = (dir: 1 | -1) => {
     const root = containerRef.current;
     if (root) root.scrollBy({ top: dir * root.clientHeight, behavior: "smooth" });
@@ -286,7 +282,10 @@ export default function PropertyVideoReel({ initialProperties = [], onClose }: {
     <main className="relative overflow-hidden bg-ink" style={{ height: "100dvh" }}>
       <h1 className="sr-only">Property reels</h1>
 
-      <div ref={containerRef} className="h-full snap-y snap-mandatory overflow-y-scroll scrollbar-none">
+      <div
+        ref={containerRef}
+        className="h-full snap-y snap-mandatory overflow-y-scroll overscroll-contain scrollbar-none touch-pan-y"
+      >
         {properties.map((property, idx) => {
           const id = String(property.id);
           const isPlaying = playingMap[id] !== false;
@@ -301,10 +300,7 @@ export default function PropertyVideoReel({ initialProperties = [], onClose }: {
             <section
               key={property.id || `${property.title}-${idx}`}
               data-id={id}
-              ref={(el) => {
-                itemRefs.current[idx] = el;
-              }}
-              className="relative flex h-full items-center justify-center"
+              className="relative flex h-full snap-start snap-always items-center justify-center"
             >
               <div className="relative h-full w-full overflow-hidden bg-black sm:aspect-[9/16] sm:w-auto sm:rounded-3xl">
                 {image && (
@@ -318,15 +314,6 @@ export default function PropertyVideoReel({ initialProperties = [], onClose }: {
                 <video
                   ref={(el) => {
                     videoRefs.current[id] = el;
-                    if (el) {
-                      if (isPlaying) {
-                        el.play().catch(() => {});
-                      }
-                      el.muted = muted;
-                      if (idx === index) {
-                        preloadAdjacent(idx);
-                      }
-                    }
                   }}
                   src={videos[currentVideoIndex]}
                   className="absolute left-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 object-cover"
