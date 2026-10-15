@@ -21,6 +21,11 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "ZCanopy - Browse & Book Properties",
   description: "Browse verified properties from trusted brokers across Uganda and book directly.",
+  icons: {
+    icon: [{ url: "/logo.svg", type: "image/svg+xml" }],
+    shortcut: "/logo.svg",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export const viewport = {
