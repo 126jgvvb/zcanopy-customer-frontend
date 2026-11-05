@@ -13,6 +13,7 @@
   import CustomerFavoritesContent from './favorites/page';
   import CustomerBookingsContent from './bookings/page';
   import FindBookingContent from './find-booking/page';
+  import { safeRedirectPath, withRedirect } from '@/lib/authRedirect';
 
 type ActiveView = 'dashboard' | 'favorites' | 'bookings' | 'find-booking' | 'transactions' | 'messages' | 'notifications' | 'profile';
 
@@ -61,6 +62,10 @@ export default function CustomerPage() {
   // Honours ?view=<tab> deep links, e.g. /customer?view=bookings right after a
   // successful booking.
   const requestedView = searchParams.get('view');
+
+  // A booking attempt from a property page passes ?redirect=<property path> so
+  // the customer can continue where they left off after signing in.
+  const redirectTarget = safeRedirectPath(searchParams.get('redirect') || searchParams.get('from'));
 
   // SWR keeps the sidebar badge counts cached and shared across tabs.
   const summaryKey = token ? ['customer-summary', token] : null;
@@ -132,6 +137,12 @@ export default function CustomerPage() {
     }
   }, []);
 
+  useEffect(() => {
+    if (loggedIn && redirectTarget) {
+      router.replace(redirectTarget);
+    }
+  }, [loggedIn, redirectTarget, router]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -168,8 +179,8 @@ export default function CustomerPage() {
   };
 
   const handleGoogleLogin = () => {
-    const redirectUri = encodeURIComponent(window.location.pathname + window.location.search);
-    window.location.href = `/api/auth/google?redirect_uri=${redirectUri}`;
+    const returnTo = redirectTarget || window.location.pathname + window.location.search;
+    window.location.href = `/api/auth/google?redirect_uri=${encodeURIComponent(returnTo)}`;
   };
 
   async function handleForgotPasswordSendOtp(e: React.FormEvent) {
@@ -432,7 +443,7 @@ export default function CustomerPage() {
 
                   <p className="text-center text-sm" style={{ color: 'var(--zcanopy-muted)' }}>
                     Not a customer?{' '}
-                    <Link href="/customer/signup" className="font-semibold underline-offset-4 hover:underline" style={{ color: 'var(--zcanopy-primary)' }}>
+                    <Link href={withRedirect('/customer/signup', redirectTarget)} className="font-semibold underline-offset-4 hover:underline" style={{ color: 'var(--zcanopy-primary)' }}>
                       Register
                     </Link>
                   </p>

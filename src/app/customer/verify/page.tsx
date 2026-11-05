@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { webApi, ApiError } from '@/lib/api';
+import { safeRedirectPath, withRedirect } from '@/lib/authRedirect';
 
 export default function VerifyOtpPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || '';
+  const redirectTarget = safeRedirectPath(searchParams.get('redirect') || searchParams.get('from'));
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,9 +18,9 @@ export default function VerifyOtpPage() {
 
   useEffect(() => {
     if (!email) {
-      router.push('/customer/signup');
+      router.push(withRedirect('/customer/signup', redirectTarget));
     }
-  }, [email, router]);
+  }, [email, redirectTarget, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +37,7 @@ export default function VerifyOtpPage() {
         if (sessionToken && typeof window !== 'undefined') {
           window.localStorage.setItem('zcanopy_token', sessionToken);
         }
-        router.push('/customer');
+        router.push(redirectTarget || '/customer');
       } else {
         // Backend returned success: false with a specific message
         const msg = (result.message || '').toLowerCase();
@@ -144,7 +146,7 @@ export default function VerifyOtpPage() {
 
           <p className="mt-5 text-center text-sm" style={{ color: 'var(--zcanopy-muted)' }}>
             Already verified?{' '}
-            <Link href="/customer" className="font-semibold underline-offset-4 hover:underline" style={{ color: 'var(--zcanopy-primary)' }}>
+            <Link href={withRedirect('/customer', redirectTarget)} className="font-semibold underline-offset-4 hover:underline" style={{ color: 'var(--zcanopy-primary)' }}>
               Sign in
             </Link>
           </p>

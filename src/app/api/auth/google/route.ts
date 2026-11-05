@@ -4,12 +4,13 @@ export async function GET(request: NextRequest) {
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google/callback`;
   const scope = 'openid email profile';
+  const returnTo = request.nextUrl.searchParams.get('redirect_uri') || '/customer';
 
   if (!googleClientId) {
     return NextResponse.json({ error: 'Google OAuth is not configured' }, { status: 500 });
   }
 
-  const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
+  const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${encodeURIComponent(returnTo)}`;
 
   return NextResponse.redirect(googleAuthUrl);
 }

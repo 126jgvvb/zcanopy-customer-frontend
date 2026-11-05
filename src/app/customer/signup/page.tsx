@@ -1,13 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import { webApi, ApiError } from '@/lib/api';
+import { safeRedirectPath, withRedirect } from '@/lib/authRedirect';
 
 export default function CustomerSignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTarget = safeRedirectPath(searchParams.get('redirect') || searchParams.get('from'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -37,7 +40,8 @@ export default function CustomerSignupPage() {
         phoneNumber: phone.trim(),
       });
       if (result.success) {
-        router.push(`/customer/verify?email=${encodeURIComponent(email.trim())}`);
+        const verifyUrl = `/customer/verify?email=${encodeURIComponent(email.trim())}`;
+        router.push(redirectTarget ? `${verifyUrl}&redirect=${encodeURIComponent(redirectTarget)}` : verifyUrl);
       } else {
         const msg = (result.message || '').toLowerCase();
         if (msg.includes('already') || msg.includes('exists') || msg.includes('duplicate')) {
@@ -65,8 +69,8 @@ export default function CustomerSignupPage() {
   };
 
   const handleGoogleSignup = () => {
-    const redirectUri = encodeURIComponent(window.location.pathname + window.location.search);
-    window.location.href = `/api/auth/google?redirect_uri=${redirectUri}`;
+    const returnTo = redirectTarget || '/customer';
+    window.location.href = `/api/auth/google?redirect_uri=${encodeURIComponent(returnTo)}`;
   };
 
   return (
@@ -206,7 +210,7 @@ export default function CustomerSignupPage() {
 
           <p className="mt-5 text-center text-sm" style={{ color: 'var(--zcanopy-muted)' }}>
             Already have an account?{' '}
-            <Link href="/customer" className="font-semibold underline-offset-4 hover:underline" style={{ color: 'var(--zcanopy-primary)' }}>
+            <Link href={withRedirect('/customer', redirectTarget)} className="font-semibold underline-offset-4 hover:underline" style={{ color: 'var(--zcanopy-primary)' }}>
               Sign in
             </Link>
           </p>

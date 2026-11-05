@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { safeRedirectPath } from '@/lib/authRedirect';
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code');
-  const returnTo = request.nextUrl.searchParams.get('redirect_uri') || '/customer';
+  const returnTo =
+    safeRedirectPath(
+      request.nextUrl.searchParams.get('state') ||
+        request.nextUrl.searchParams.get('redirect_uri')
+    ) || '/customer';
 
   if (!code) {
     return NextResponse.redirect(new URL('/customer?error=google_auth_failed', request.url));
