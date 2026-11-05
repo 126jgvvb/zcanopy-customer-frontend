@@ -931,7 +931,15 @@ html.dark .btn-primary {
 @media (prefers-reduced-motion: reduce) {
   .booking-resume-toast, .booking-resume-toast.is-leaving, .booking-resume-toast__halo, .booking-resume-toast__sweep, .booking-resume-toast__progress { animation: none !important; }
 }
-\n\n
+
+
+
+
+
+@keyframes guidedSearchPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+
+
+@media (prefers-reduced-motion: reduce){}
 
 
 @keyframes guidedSearchPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
@@ -940,12 +948,21 @@ html.dark .btn-primary {
 @media (prefers-reduced-motion: reduce){}
 
 
-@keyframes guidedSearchPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
 
 
-@media (prefers-reduced-motion: reduce){}
+@keyframes guidedSearchRainbow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes guidedSearchPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+@media (prefers-reduced-motion: reduce) {
+  
+}
 
-\n\n\n@keyframes guidedSearchRainbow {\n  0% { background-position: 0% 50%; }\n  50% { background-position: 100% 50%; }\n  100% { background-position: 0% 50%; }\n}\n@keyframes guidedSearchPulse {\n  0%, 100% { transform: scale(1); }\n  50% { transform: scale(1.045); }\n}\n@media (prefers-reduced-motion: reduce) {\n  \n}\n
 /* Guided search attention CTA */
 .guided-search-cta {
   background: linear-gradient(90deg, #f6d365, #fda085, #a18cd1, #5ee7df, #f6d365) !important;
