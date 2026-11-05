@@ -25,6 +25,7 @@ function loadBookedPropertyIds(): Promise<ReadonlySet<string>> {
       const bookings = res?.bookings ?? [];
       return new Set(
         bookings
+          .filter((b: { status?: string }) => String(b?.status || "").toLowerCase() !== "released")
           .map((b: { propertyId?: string }) => String(b?.propertyId ?? ""))
           .filter(Boolean),
       );

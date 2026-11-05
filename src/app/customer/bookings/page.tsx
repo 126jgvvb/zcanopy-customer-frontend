@@ -32,12 +32,16 @@
   }
 
   function BookingCard({ booking }: { booking: Booking }) {
+    const isReleased = normalizeStatus(booking.status) === 'released';
     return (
       <div className="rounded-2xl border border-[var(--zcanopy-border)] bg-white p-5 shadow-sm dark:bg-[var(--zcanopy-surface)]">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <p className="text-sm font-medium" style={{ color: 'var(--zcanopy-card-brown)' }}>{booking.propertyTitle}</p>
             <p className="mt-0.5 text-xs" style={{ color: 'var(--zcanopy-muted)' }}>{new Date(booking.date).toLocaleDateString()}</p>
+            {!isReleased && booking.location ? (
+              <p className="mt-1 text-xs" style={{ color: 'var(--zcanopy-muted)' }}>{booking.location}</p>
+            ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-3 sm:justify-end">
             <div className="text-left sm:text-right">

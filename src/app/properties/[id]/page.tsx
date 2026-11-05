@@ -525,7 +525,7 @@ export default function PropertyDetailPage() {
             <div className="mt-4 grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <MapPin size={16} />
-                {property.location}
+                {canViewMap ? property.location : "Location available after booking confirmation"}
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Calendar size={16} />
@@ -642,7 +642,7 @@ export default function PropertyDetailPage() {
               </h3>
               <div className="py-8 text-center text-sm text-gray-500">
                 <p>This property was not lively captured on site,please refer to the location text</p>
-                <p className="mt-1 text-xs text-gray-400">Location: {property.location}</p>
+                <p className="mt-1 text-xs text-gray-400">Location: {canViewMap ? property.location : "Location available after booking confirmation"}</p>
               </div>
             </div>
           )}
