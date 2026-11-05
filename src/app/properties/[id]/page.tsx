@@ -996,7 +996,7 @@ export default function PropertyDetailPage() {
           </div>
         </div>
       )}
-      <<BookingResumeToast
+      <BookingResumeToast
         open={showResumeToast}
         onClose={() => setShowResumeToast(false)}
         onRestart={() => {
