@@ -281,7 +281,7 @@ html.dark textarea::placeholder {
 
 html.dark .site-logo {
   mix-blend-mode: normal;
-  filter: invert(1) hue-rotate(180deg) brightness(1.12) contrast(0.96);
+  filter: invert(1)  brightness(1.12) contrast(0.96);
 }
 
 .nav-link {
@@ -950,11 +950,7 @@ html.dark .btn-primary {
 
 
 
-@keyframes guidedSearchRainbow {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
+
 @keyframes guidedSearchPulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.045); }
@@ -963,23 +959,19 @@ html.dark .btn-primary {
   
 }
 
-/* Guided search attention CTA */
-.guided-search-cta {
-  background: linear-gradient(90deg, #f6d365, #fda085, #a18cd1, #5ee7df, #f6d365) !important;
-  background-size: 300% 300% !important;
-  animation: guidedSearchRainbow 4s ease-in-out infinite, guidedSearchPulse 2.6s ease-in-out infinite;
-  color: #fff !important;
-  border: none !important;
-}
-@keyframes guidedSearchRainbow {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
+
+
+
+
 @keyframes guidedSearchPulse {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.045); }
+  50% { transform: scale(1.04); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .guided-search-cta { animation: none !important; }
+  
 }
+
+/* Guided search CTA - subtle pulse */
+.guided-search-cta { animation: guidedSearchPulse 2.2s ease-in-out infinite; will-change: transform; }
+@keyframes guidedSearchPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@media (prefers-reduced-motion: reduce) { .guided-search-cta { animation: none !important; } }
