@@ -996,7 +996,15 @@ export default function PropertyDetailPage() {
           </div>
         </div>
       )}
-      <BookingResumeToast\n        open={showResumeToast}\n        onClose={() => setShowResumeToast(false)}\n        onRestart={() => {\n          setShowResumeToast(false);\n          setNeedsAuth(false);\n          openBooking();\n        }}\n      />\n      <AuthPromptModal open={showAuthPrompt} onClose={() => setShowAuthPrompt(false)} />
+      <<BookingResumeToast
+        open={showResumeToast}
+        onClose={() => setShowResumeToast(false)}
+        onRestart={() => {
+          setShowResumeToast(false);
+          setNeedsAuth(false);
+          openBooking();
+        }}
+      />\n      <AuthPromptModal open={showAuthPrompt} onClose={() => setShowAuthPrompt(false)} />
       {galleryOpen && images.length > 0 && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 backdrop-blur-sm"
