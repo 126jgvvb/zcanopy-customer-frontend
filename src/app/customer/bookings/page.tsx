@@ -1,6 +1,8 @@
 'use client';
 
   import useSWR from 'swr';
+  import Link from 'next/link';
+  import { Eye } from 'lucide-react';
   import { webApi, getSessionId } from '@/lib/api';
 
   interface CustomerBookingsContentProps {
@@ -9,6 +11,7 @@
 
   interface Booking {
     id: string;
+    propertyId?: string;
     propertyTitle: string;
     customerName: string;
     date: string;
@@ -31,16 +34,27 @@
   function BookingCard({ booking }: { booking: Booking }) {
     return (
       <div className="rounded-2xl border border-[var(--zcanopy-border)] bg-white p-5 shadow-sm dark:bg-[var(--zcanopy-surface)]">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <p className="text-sm font-medium" style={{ color: 'var(--zcanopy-card-brown)' }}>{booking.propertyTitle}</p>
-            <p className="text-xs" style={{ color: 'var(--zcanopy-muted)' }}>{new Date(booking.date).toLocaleDateString()}</p>
+            <p className="mt-0.5 text-xs" style={{ color: 'var(--zcanopy-muted)' }}>{new Date(booking.date).toLocaleDateString()}</p>
           </div>
-          <div className="text-right">
-            <p className="text-sm font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>UGX {Number(booking.amount).toLocaleString()}</p>
-            <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(booking.status)}`}>
-              {normalizeStatus(booking.status)}
-            </span>
+          <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+            <div className="text-left sm:text-right">
+              <p className="text-sm font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>UGX {Number(booking.amount).toLocaleString()}</p>
+              <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(booking.status)}`}>
+                {normalizeStatus(booking.status)}
+              </span>
+            </div>
+            {booking.propertyId ? (
+              <Link
+                href={`/properties/${booking.propertyId}`}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-3 py-2 text-xs font-semibold text-[var(--zcanopy-card-brown)] transition-colors hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)]"
+              >
+                <Eye size={14} />
+                View property
+              </Link>
+            ) : null}
           </div>
         </div>
       </div>
