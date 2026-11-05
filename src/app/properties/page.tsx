@@ -802,7 +802,7 @@ const deferredDateTo = useDeferredValue(dateTo);
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
-            onClick={() => setShowSearchWizard(true)}
+            onClick={() => openWizard()}
             className="guided-search-cta inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-[#bc8120] to-[var(--zcanopy-primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-150 hover:brightness-105"
           >
             <Sparkles size={16} />
