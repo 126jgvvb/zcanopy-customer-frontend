@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
+import { webApi, getSessionId, getAuthToken, getCustomerName, ensureAnonymousSession, ApiError } from "@/lib/api";
 import { SUPPORT_EMAIL } from "@/lib/navigation";
 import { MapPin, MapPinOff, Calendar, Video, ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, Heart, MessageSquare, Star, X, ZoomIn, ZoomOut, Minimize2 } from "lucide-react";
 import Link from "next/link";
@@ -178,17 +178,9 @@ export default function PropertyDetailPage() {
     if (id) load();
   }, [id]);
 
-  const isAuthenticated = () => {
-    const getCookie = (name: string) => {
-      if (typeof document === 'undefined') return null;
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
-      return null;
-    };
-
-    return !!localStorage.getItem("zcanopy_token") || !!getCookie("zcanopy_token");
-  };
+  // Reads the customer token from localStorage first, then the cookie set by
+  // the Google OAuth callback. Both are valid customer sessions.
+  const isAuthenticated = () => !!getAuthToken();
 
   const toggleFavorite = async () => {
     if (!isAuthenticated()) {
@@ -329,14 +321,22 @@ export default function PropertyDetailPage() {
 
   const openBooking = () => {
     if (!property) return;
+
+    setSelectedProperty(property);
+    setBookedProperty(null);
+    setSubmitError("");
+    setSuccess("");
+    setPaymentStatus("");
+
     if (!isAuthenticated()) {
+      setForm(emptyForm);
       setNeedsAuth(true);
-      setSelectedProperty(property);
       return;
     }
-    // Pre-fill form with stored customer data
+
+    // Pre-fill form with stored customer data (localStorage or cookie)
     if (typeof window !== 'undefined') {
-      const storedName = localStorage.getItem('zcanopy_customer_name') || '';
+      const storedName = getCustomerName() || '';
       const storedEmail = localStorage.getItem('zcanopy_customer_email') || '';
       const storedPhone = localStorage.getItem('zcanopy_customer_phone') || '';
       setForm({
@@ -345,11 +345,7 @@ export default function PropertyDetailPage() {
         customerPhone: storedPhone,
       });
     }
-    setSelectedProperty(property);
     setNeedsAuth(false);
-    setSubmitError("");
-    setSuccess("");
-    setBookedProperty(null);
   };
 
   const closeBooking = () => {
@@ -382,20 +378,31 @@ export default function PropertyDetailPage() {
     setSuccess("");
     setPaymentStatus("");
 
+    const token = getAuthToken();
+    if (!token) {
+      setSubmitting(false);
+      setNeedsAuth(true);
+      setSubmitError("Please sign in to complete your booking.");
+      return;
+    }
+
     try {
-      const token = localStorage.getItem("zcanopy_token") || "";
       setPaymentStatus("Initiating payment...");
       
-      const result = await webApi.createBooking(token, {
-        propertyId: selectedProperty.id,
-        customerName: form.customerName,
-        customerPhone: form.customerPhone,
-        customerEmail: form.customerEmail,
-        date: new Date().toISOString(),
-        amount: selectedProperty.brokerBookingFee || 0,
-        reason: "property_access",
-        status: "pending",
-      });
+      const result = await webApi.createBooking(
+        token,
+        {
+          propertyId: selectedProperty.id,
+          customerName: form.customerName,
+          customerPhone: form.customerPhone,
+          customerEmail: form.customerEmail,
+          date: new Date().toISOString(),
+          amount: selectedProperty.brokerBookingFee || 0,
+          reason: "property_access",
+          status: "pending",
+        },
+        { skipAuthRedirect: true },
+      );
 
       const paymentResult = result as { success?: boolean; message?: string; bookingId?: string; bookingCode?: string; brokerPhone?: string };
 
@@ -409,9 +416,14 @@ export default function PropertyDetailPage() {
         setPaymentStatus("");
         setSubmitError(paymentResult.message || "Payment failed. Please try again.");
       }
-    } catch {
+    } catch (err) {
       setPaymentStatus("");
-      setSubmitError("Failed to process payment. Please try again.");
+      if (err instanceof ApiError && err.status === 401) {
+        setNeedsAuth(true);
+        setSubmitError("Your session has expired. Please sign in again to complete your booking.");
+      } else {
+        setSubmitError("Failed to process payment. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -813,6 +825,11 @@ export default function PropertyDetailPage() {
                 <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
                   <p>You need to be signed in to book a property. Please sign in or create an account to continue.</p>
                 </div>
+                {submitError && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                    {submitError}
+                  </div>
+                )}
                 <div className="flex flex-col gap-3">
                   <Link
                     href={`/customer/signup?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`}

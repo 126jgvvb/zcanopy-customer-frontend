@@ -42,9 +42,19 @@ function getCookie(name: string): string | null {
   return null;
 }
 
+export function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem('zcanopy_token') || getCookie('zcanopy_token');
+}
+
+export function getCustomerName(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem('zcanopy_customer_name') || getCookie('zcanopy_customer_name');
+}
+
 export function getSessionId(): string | null {
   if (typeof window === "undefined") return null;
-  const token = window.localStorage.getItem('zcanopy_token');
+  const token = getAuthToken();
   if (token) return token;
   const cookieSession = getCookie(SESSION_STORAGE_KEY);
   if (cookieSession) return cookieSession;
@@ -275,8 +285,18 @@ export async function apiFetch<T = unknown>(
     if (res.status === 401) {
       if (!skipAuthRedirect) {
         clearSession();
-        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login") && !window.location.pathname.startsWith("/customer")) {
-          window.location.href = "/customer";
+        if (typeof window !== "undefined") {
+          const pathname = window.location.pathname;
+          const isPublicBrowse =
+            pathname === "/" ||
+            pathname.startsWith("/properties") ||
+            pathname.startsWith("/reels");
+          // Never bounce visitors off public browsing pages (e.g. clicking
+          // "Book Now" on a property) just because one request was unauthorised.
+          // Those pages handle the failure inline and prompt for sign-in.
+          if (!isPublicBrowse && !pathname.startsWith("/login") && !pathname.startsWith("/customer")) {
+            window.location.href = "/customer";
+          }
         }
       }
       throw new ApiError("Session expired", 401);
@@ -496,8 +516,8 @@ export const webApi = {
   getLocations: () =>
     apiFetch<{ locations: Array<{ propertyId: string; title: string; location: string; postgisSpatialField: string | null; brokerCode: string; propertyType?: string }> }>("/web/public/locations", { skipSessionHeader: true }),
 
-  createBooking: (token: string, body: unknown) =>
-    apiFetch("/web/customer/bookings", { method: "POST", token, body }),
+  createBooking: (token: string, body: unknown, opts?: { skipAuthRedirect?: boolean }) =>
+    apiFetch("/web/customer/bookings", { method: "POST", token, body, skipAuthRedirect: opts?.skipAuthRedirect }),
 
   brokerLogin: (brokerCode: string, password: string, email?: string) =>
     apiFetch<{ id: string; username: string; email: string; role: string; brokerCode: string; sessionId?: string; sessionToken?: string; token?: string }>(

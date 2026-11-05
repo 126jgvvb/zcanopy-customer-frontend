@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { webApi } from "@/lib/api";
+import { webApi, getAuthToken } from "@/lib/api";
 
 const EMPTY: ReadonlySet<string> = new Set<string>();
 const BOOKINGS_LIMIT = 100;
@@ -17,7 +17,7 @@ function loadBookedPropertyIds(): Promise<ReadonlySet<string>> {
     // Only a real customer JWT is accepted by this endpoint. An anonymous
     // session id would earn a 401, and apiFetch answers that by clearing the
     // session and redirecting, so never issue the request without a token.
-    const token = window.localStorage.getItem("zcanopy_token");
+    const token = getAuthToken();
     if (!token) return EMPTY;
 
     try {
