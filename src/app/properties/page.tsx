@@ -802,8 +802,8 @@ const deferredDateTo = useDeferredValue(dateTo);
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
-            onClick={openWizard}
-            className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-b from-[#bc8120] to-[var(--zcanopy-primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-150 hover:brightness-105"
+            onClick={() => setShowSearchWizard(true)}
+            className="guided-search-cta inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-[#bc8120] to-[var(--zcanopy-primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-150 hover:brightness-105"
           >
             <Sparkles size={16} />
             Guided search
@@ -826,9 +826,9 @@ const deferredDateTo = useDeferredValue(dateTo);
             className="relative inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)] lg:hidden"
           >
             <SlidersHorizontal size={16} />
-            <span className="hidden sm:inline">Filters</span>
+            <span>Filters</span>
             {activeChips.length > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--zcanopy-primary)] px-1.5 text-xs font-bold text-white">
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--zcanopy-primary)] px-1.5 text-[11px] font-bold text-white">
                 {activeChips.length}
               </span>
             )}

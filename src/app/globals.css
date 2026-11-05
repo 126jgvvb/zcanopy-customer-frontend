@@ -931,3 +931,16 @@ html.dark .btn-primary {
 @media (prefers-reduced-motion: reduce) {
   .booking-resume-toast, .booking-resume-toast.is-leaving, .booking-resume-toast__halo, .booking-resume-toast__sweep, .booking-resume-toast__progress { animation: none !important; }
 }
+\n.guided-search-cta{position:relative;isolation:isolate;animation:guidedSearchPulse 2.6s ease-in-out infinite}\n
+.guided-search-cta::before{content:'';position:absolute;inset:-2px;border-radius:inherit;padding:2px;background:conic-gradient(from 0deg,#f6d365,#fda085,#a18cd1,#5ee7df,#f6d365);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:guidedSearchBorderSpin 3s linear infinite;z-index:-1;pointer-events:none}
+.guided-search-cta::after{content:'';position:absolute;inset:-6px;border-radius:inherit;background:radial-gradient(circle,rgba(246,211,101,.25),transparent 70%);filter:blur(6px);opacity:.8;z-index:-2;pointer-events:none;animation:guidedSearchGlow 2.6s ease-in-out infinite}
+@keyframes guidedSearchPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+@keyframes guidedSearchBorderSpin{to{transform:rotate(360deg)}}
+@keyframes guidedSearchGlow{0%,100%{opacity:.45;transform:scale(.98)}50%{opacity:.9;transform:scale(1.05)}}
+@media (prefers-reduced-motion: reduce){.guided-search-cta,.guided-search-cta::before,.guided-search-cta::after{animation:none!important}}
+.guided-search-cta::before{content:'';position:absolute;inset:-2px;border-radius:inherit;padding:2px;background:conic-gradient(from 0deg,#f6d365,#fda085,#a18cd1,#5ee7df,#f6d365);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:guidedSearchBorderSpin 3s linear infinite;z-index:-1;pointer-events:none}
+.guided-search-cta::after{content:'';position:absolute;inset:-6px;border-radius:inherit;background:radial-gradient(circle,rgba(246,211,101,.25),transparent 70%);filter:blur(6px);opacity:.8;z-index:-2;pointer-events:none;animation:guidedSearchGlow 2.6s ease-in-out infinite}
+@keyframes guidedSearchPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+@keyframes guidedSearchBorderSpin{to{transform:rotate(360deg)}}
+@keyframes guidedSearchGlow{0%,100%{opacity:.45;transform:scale(.98)}50%{opacity:.9;transform:scale(1.05)}}
+@media (prefers-reduced-motion: reduce){.guided-search-cta,.guided-search-cta::before,.guided-search-cta::after{animation:none!important}}

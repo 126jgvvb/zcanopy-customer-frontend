@@ -84,8 +84,8 @@ export default function Header() {
 
         <button
           type="button"
-          onClick={openWizard}
-          className="hidden items-center gap-2 whitespace-nowrap rounded-full bg-gradient-to-b from-[#bc8120] to-[var(--zcanopy-primary)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-150 hover:brightness-105 md:inline-flex"
+          onClick={() => setShowWizard(true)}
+          className="guided-search-cta hidden items-center gap-1.5 rounded-full bg-[var(--zcanopy-primary)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-150 hover:brightness-105 md:inline-flex"
         >
           <Sparkles className="h-4 w-4" aria-hidden="true" />
           <span className="hidden lg:inline">Guided search</span>
