@@ -8,6 +8,7 @@ import { MapPin, MapPinOff, Calendar, Video, ArrowLeft, ChevronLeft, ChevronRigh
 import Link from "next/link";
 
 import AuthPromptModal from "@/components/AuthPromptModal";
+import BookingResumeToast from "@/components/BookingResumeToast";
 import AspectRatioVideo from "@/components/AspectRatioVideo";
 import { useBookingRedirect } from "@/hooks/useBookingRedirect";
 import { useBookedPropertyIds, invalidateBookedPropertyIds } from "@/hooks/useBookedPropertyIds";
@@ -99,6 +100,7 @@ export default function PropertyDetailPage() {
   const [paymentStatus, setPaymentStatus] = useState<string>("");
   const [favorited, setFavorited] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [showResumeToast, setShowResumeToast] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [averageRating, setAverageRating] = useState(0);
   const [commentForm, setCommentForm] = useState(emptyCommentForm);
@@ -181,6 +183,31 @@ export default function PropertyDetailPage() {
   // Reads the customer token from localStorage first, then the cookie set by
   // the Google OAuth callback. Both are valid customer sessions.
   const isAuthenticated = () => !!getAuthToken();
+
+  // Customers who sign in from the booking modal return here with this marker.
+  // Clean the URL immediately so a refresh does not replay the toast.
+  useEffect(() => {
+    if (searchParams.get("resumeBooking") !== "1") return;
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete("resumeBooking");
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`
+    );
+
+    if (getAuthToken()) setShowResumeToast(true);
+  }, [searchParams]);
+
+  const bookingAuthRedirect = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("resumeBooking");
+    if (url.searchParams.get("book") !== "1") {
+      url.searchParams.set("resumeBooking", "1");
+    }
+    return `${url.pathname}${url.search}${url.hash}`;
+  };
 
   const toggleFavorite = async () => {
     if (!isAuthenticated()) {
@@ -969,7 +996,7 @@ export default function PropertyDetailPage() {
           </div>
         </div>
       )}
-      <AuthPromptModal open={showAuthPrompt} onClose={() => setShowAuthPrompt(false)} />
+      <BookingResumeToast\n        open={showResumeToast}\n        onClose={() => setShowResumeToast(false)}\n        onRestart={() => {\n          setShowResumeToast(false);\n          setNeedsAuth(false);\n          openBooking();\n        }}\n      />\n      <AuthPromptModal open={showAuthPrompt} onClose={() => setShowAuthPrompt(false)} />
       {galleryOpen && images.length > 0 && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 backdrop-blur-sm"
