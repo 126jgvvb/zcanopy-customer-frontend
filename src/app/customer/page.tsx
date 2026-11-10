@@ -338,6 +338,9 @@ export default function CustomerPage() {
 <div className="mt-10 overflow-hidden rounded-2xl border border-[var(--zcanopy-border)] shadow-[var(--shadow-lift)]">
                   <video
                     className="aspect-video h-auto w-full object-cover"
+                    width={1920}
+                    height={1080}
+                    preload="metadata"
                     autoPlay
                     loop
                     muted

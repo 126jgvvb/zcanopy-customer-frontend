@@ -146,7 +146,7 @@ export default function PaymentsPage() {
                   key={c.name}
                   className="flex items-center gap-2 rounded-2xl bg-white/95 px-5 py-2.5 shadow-sm ring-1 ring-white/40"
                 >
-                  <img src={c.logo} alt={c.name} className="h-6 w-auto object-contain" />
+                  <img src={c.logo} alt={c.name} width={96} height={24} loading="lazy" decoding="async" className="h-6 w-auto object-contain" />
                 </span>
               ))}
             </div>

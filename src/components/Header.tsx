@@ -56,7 +56,7 @@ export default function Header() {
     <header className="site-header sticky top-0 z-40">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
         <Link href="/" aria-label="ZCanopy home" className="flex shrink-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--zcanopy-primary)]">
-          <img src="/logo.svg" alt="ZCanopy" className="site-logo h-9 w-9 object-contain" />
+          <img src="/logo.svg" alt="ZCanopy" width={36} height={36} className="site-logo h-9 w-9 object-contain" />
           <span className="font-display hidden text-xl tracking-tight text-[var(--zcanopy-card-brown)] sm:inline">
             ZCanopy
           </span>

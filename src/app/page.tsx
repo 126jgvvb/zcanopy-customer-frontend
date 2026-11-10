@@ -191,7 +191,7 @@ export default function Home() {
                 className="flex h-10 w-10 items-center justify-center rounded-full ring-2 ring-white/25"
                 style={{ background: `linear-gradient(135deg, ${COLORS.accentGold}, ${COLORS.primary})` }}
               >
-                <img src="/logo.svg" alt="" className="h-5 w-5 object-contain opacity-90" />
+                <img src="/logo.svg" alt="" width={20} height={20} className="h-5 w-5 object-contain opacity-90" />
               </span>
             ))}
           </div>
@@ -324,6 +324,9 @@ export default function Home() {
 <div className="group relative overflow-hidden shadow-[var(--shadow-lift)]">
                   <video
                     className="aspect-video h-auto w-full object-cover"
+                    width={1920}
+                    height={1080}
+                    preload="metadata"
                     autoPlay
                     loop
                     muted
@@ -486,6 +489,10 @@ export default function Home() {
           <img
             src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=2000&q=70"
             alt=""
+            width={2000}
+            height={1333}
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />

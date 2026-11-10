@@ -87,6 +87,9 @@ export default function HeroShowcase({ children }: { children: React.ReactNode }
       <div className="absolute inset-0 -z-20">
         <video
           className="h-full w-full object-cover"
+          width={1920}
+          height={1080}
+          preload="metadata"
           autoPlay
           loop
           muted

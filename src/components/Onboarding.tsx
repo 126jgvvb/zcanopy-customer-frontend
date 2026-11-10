@@ -46,6 +46,8 @@ export function BrandMark() {
       <img
         src="/logo.svg"
         alt="ZCanopy"
+        width={48}
+        height={48}
         className="site-logo h-12 w-12 object-contain"
       />
       <span className="font-display text-2xl tracking-tight" style={{ color: COLORS.cardBrown }}>

@@ -55,6 +55,8 @@ export default function LoginPage() {
               <img
                 src="/logo.svg"
                 alt="ZCanopy"
+                width={40}
+                height={40}
                 className="site-logo h-10 w-10 object-contain"
               />
             </Link>

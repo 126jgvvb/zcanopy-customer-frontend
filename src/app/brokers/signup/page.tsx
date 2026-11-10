@@ -26,7 +26,7 @@ function IdUpload({
         }`}
       >
         {preview ? (
-          <img src={preview} alt={label} className="h-full w-full object-contain" />
+          <img src={preview} alt={label} width={640} height={360} decoding="async" className="h-full w-full object-contain" />
         ) : (
           <div className="text-gray-400">
             <IdCard className="mx-auto h-8 w-8" />

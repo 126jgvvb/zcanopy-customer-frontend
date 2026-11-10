@@ -93,6 +93,8 @@ export default function VerifyOtpPage() {
               <img
                 src="/logo.svg"
                 alt="ZCanopy"
+                width={32}
+                height={32}
                 className="site-logo h-8 w-8 object-contain"
               />
             </Link>

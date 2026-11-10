@@ -63,7 +63,10 @@ function MosaicCard({
             <img
               src={src}
               alt={card.title}
+              width={900}
+              height={700}
               loading="lazy"
+              decoding="async"
               className="h-full w-full object-cover"
             />
           </div>
@@ -93,7 +96,7 @@ function MosaicCard({
 function PlaceholderCard({ className }: { className?: string }) {
   return (
     <div className={`relative overflow-hidden bg-gray-100 ${className ?? ""}`}>
-      <img src={PLACEHOLDER} alt="" className="h-full w-full object-cover" />
+      <img src={PLACEHOLDER} alt="" width={900} height={700} loading="lazy" decoding="async" className="h-full w-full object-cover" />
     </div>
   );
 }

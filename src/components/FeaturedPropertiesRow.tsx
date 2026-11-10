@@ -83,7 +83,10 @@ function PropertyCard({ listing }: { listing: Listing }) {
         <img
           src={listing.image}
           alt={listing.title}
+          width={1600}
+          height={1100}
           loading="lazy"
+          decoding="async"
           className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
@@ -285,7 +288,7 @@ export default function FeaturedPropertiesRow() {
         {[0, 1, 2, 3, 4].map((i) => (
           <div key={i} className={`surface-card shrink-0 overflow-hidden ${CARD_CLASS}`}>
             <div className="aspect-[16/11] w-full overflow-hidden bg-gray-100">
-              <img src={PLACEHOLDER} alt="" className="h-full w-full object-cover" />
+              <img src={PLACEHOLDER} alt="" width={1600} height={1100} loading="lazy" decoding="async" className="h-full w-full object-cover" />
             </div>
             <div className="p-6">
               <h3 className="font-display text-2xl" style={{ color: COLORS.cardBrown }}>

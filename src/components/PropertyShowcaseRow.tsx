@@ -69,12 +69,19 @@ export default function PropertyShowcaseRow({ property }: { property: ShowcasePr
         src={image}
         alt=""
         aria-hidden="true"
+        width={1600}
+        height={700}
+        loading="lazy"
+        decoding="async"
         className="absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-2xl"
       />
       <img
         src={image}
         alt={property.title}
+        width={1600}
+        height={700}
         loading="lazy"
+        decoding="async"
         className="showcase-photo absolute inset-0 h-full w-full object-contain"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/35 to-black/10" />

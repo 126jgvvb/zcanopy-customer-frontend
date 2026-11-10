@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { webApi, getSessionId, getAuthToken, getCustomerName, ensureAnonymousSession, ApiError } from "@/lib/api";
 import { SUPPORT_EMAIL } from "@/lib/navigation";
+import { toCdnUrl } from "@/lib/mediaUrl";
 import { MapPin, MapPinOff, Calendar, Video, ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, Heart, MessageSquare, Star, X, ZoomIn, ZoomOut, Minimize2 } from "lucide-react";
 import Link from "next/link";
 
@@ -478,8 +479,8 @@ export default function PropertyDetailPage() {
     );
   }
 
-  const images = property.imageUrl || [];
-  const videos = property.videoUrl || [];
+  const images = (property.imageUrl || []).map((url) => toCdnUrl(url) ?? url);
+  const videos = (property.videoUrl || []).map((url) => toCdnUrl(url) ?? url);
   const spatial = property.postgisSpatialField ? (() => { try { return JSON.parse(property.postgisSpatialField); } catch { return null; } })() : null;
   const lat = spatial?.lat;
   const lng = spatial?.lng;
@@ -499,6 +500,10 @@ export default function PropertyDetailPage() {
               <img
                 src={selectedImage || images[0] || "https://via.placeholder.com/400x200?text=No+Image"}
                 alt={property.title}
+                width={1600}
+                height={900}
+                decoding="async"
+                fetchPriority="high"
                 className="h-full w-full object-cover"
               />
             </div>
@@ -511,7 +516,15 @@ export default function PropertyDetailPage() {
                     className={`h-16 w-20 flex-shrink-0 overflow-hidden rounded-lg border-2 ${selectedImage === img ? "border-[var(--zcanopy-primary)]" : "border-transparent"}`}
                     aria-label={`View image ${idx + 1} of ${images.length}`}
                   >
-                    <img src={img} alt={`${property.title} ${idx + 1}`} className="h-full w-full object-cover" />
+                    <img
+                      src={img}
+                      alt={`${property.title} ${idx + 1}`}
+                      width={320}
+                      height={256}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover"
+                    />
                   </button>
                 ))}
               </div>
@@ -556,7 +569,16 @@ export default function PropertyDetailPage() {
                 </span>
               </h3>
               <div className="relative">
-                <AspectRatioVideo src={videos[videoIndex]} className="rounded-xl" />
+                <AspectRatioVideo
+                  src={videos[videoIndex]}
+                  poster={images[0]}
+                  aspectRatio="16 / 9"
+                  fit="contain"
+                  // Load only after intent; the poster reserves the box and
+                  // keeps large clips from competing with page images.
+                  preload="none"
+                  className="rounded-xl"
+                />
                 {videos.length > 1 && (
                   <>
                     <button
@@ -816,7 +838,10 @@ export default function PropertyDetailPage() {
                         : "https://via.placeholder.com/400x200?text=No+Image"
                     }
                     alt={r.title}
+                    width={1600}
+                    height={900}
                     loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
@@ -1061,6 +1086,9 @@ export default function PropertyDetailPage() {
             <img
               src={images[galleryIndex]}
               alt={`${property.title} ${galleryIndex + 1}`}
+              width={1600}
+              height={1200}
+              decoding="async"
               className="max-w-[90vw] max-h-[85vh] object-contain"
               draggable="false"
             />

@@ -522,7 +522,7 @@ export default function CustomerDashboardPage() {
                 {displayFavorites.slice(0, 4).map((favorite) => (
                   <Link key={favorite.id} href={`/properties/${favorite.propertyId}`} className="group overflow-hidden rounded-xl border border-[var(--zcanopy-border)] bg-[var(--zcanopy-background)] transition-all hover:-translate-y-0.5 hover:border-[var(--zcanopy-accent-gold)]/40">
                     <div className="h-24 overflow-hidden bg-[var(--zcanopy-border)]">
-                      {favorite.imageUrl ? <img src={favorite.imageUrl} alt={favorite.propertyTitle} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center" style={{ color: 'var(--zcanopy-muted)' }}><HomePlaceholder /></div>}
+                      {favorite.imageUrl ? <img src={favorite.imageUrl} alt={favorite.propertyTitle} width={480} height={288} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center" style={{ color: 'var(--zcanopy-muted)' }}><HomePlaceholder /></div>}
                     </div>
                     <div className="p-3">
                       <p className="truncate text-xs font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>{favorite.propertyTitle}</p>

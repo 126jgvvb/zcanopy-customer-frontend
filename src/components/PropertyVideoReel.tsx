@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { webApi, getSessionId } from "@/lib/api";
 import { fetchExploreProperties } from "@/lib/exploreProperties";
+import { toCdnUrl } from "@/lib/mediaUrl";
 import type { Property } from "@/app/properties/page";
 
 function formatUGX(n: number) {
@@ -156,19 +157,9 @@ export default function PropertyVideoReel({ initialProperties = [], onClose }: {
     });
   }, [index, properties, playingMap, muted, videoIndexMap]);
 
-  useEffect(() => {
-    const active = properties[index];
-    if (!active) return;
-    [index - 1, index + 1].forEach((i) => {
-      const property = properties[i];
-      if (!property) return;
-      const video = videoRefs.current[String(property.id)];
-      if (video && property.videoUrl?.[0]) {
-        video.preload = "auto";
-        video.load();
-      }
-    });
-  }, [index, properties]);
+  // NOTE: deliberately no neighbour "preload=auto". Phone clips are large, so
+  // warming the next reel would download several megabytes while the current
+  // video is playing and make it buffer. Only the active clip is buffered.
 
   const handleTimeUpdate = (property: Property) => (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
@@ -291,10 +282,16 @@ export default function PropertyVideoReel({ initialProperties = [], onClose }: {
           const isPlaying = playingMap[id] !== false;
           const favorited = favorites.has(id);
           const image =
-            Array.isArray(property.imageUrl) && property.imageUrl.length ? property.imageUrl[0] : null;
+            Array.isArray(property.imageUrl) && property.imageUrl.length
+              ? toCdnUrl(property.imageUrl[0])
+              : null;
           const price = property.price !== undefined ? formatUGX(property.price) : null;
-          const videos = property.videoUrl || [];
+          const videos = (property.videoUrl || []).map((v) => toCdnUrl(v) ?? v);
           const currentVideoIndex = Math.min(videoIndexMap[id] ?? 0, Math.max(videos.length - 1, 0));
+          // Mount the video only for the active slide and its immediate
+          // neighbours. Reels can contain dozens of properties; keeping every
+          // <video> mounted makes them all compete for bandwidth.
+          const shouldMountVideo = Math.abs(idx - index) <= 1;
 
           return (
             <section
@@ -303,29 +300,51 @@ export default function PropertyVideoReel({ initialProperties = [], onClose }: {
               className="relative flex h-full snap-start snap-always items-center justify-center"
             >
               <div className="relative h-full w-full overflow-hidden bg-black sm:aspect-[9/16] sm:w-auto sm:rounded-3xl">
-                {image && (
+                {shouldMountVideo ? (
+                  <>
+                    {image && (
+                      <img
+                        src={image}
+                        alt=""
+                        width={1080}
+                        height={1920}
+                        loading="lazy"
+                        decoding="async"
+                        className="absolute inset-0 h-full w-full scale-110 object-cover opacity-35 blur-2xl"
+                      />
+                    )}
+
+                    <video
+                      ref={(el) => {
+                        if (el) videoRefs.current[id] = el;
+                        else delete videoRefs.current[id];
+                      }}
+                      src={videos[currentVideoIndex]}
+                      poster={image || undefined}
+                      width={1080}
+                      height={1920}
+                      className="absolute left-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 object-cover"
+                      controls={false}
+                      playsInline
+                      muted={muted}
+                      loop={videos.length <= 1}
+                      onTimeUpdate={handleTimeUpdate(property)}
+                      onEnded={() => handleEnded(property)}
+                      preload={idx === index ? "auto" : "metadata"}
+                      onClick={() => togglePlay(property)}
+                    />
+                  </>
+                ) : image ? (
                   <img
                     src={image}
-                    alt=""
-                    className="absolute inset-0 h-full w-full scale-110 object-cover opacity-35 blur-2xl"
+                    alt={property.title}
+                    width={1080}
+                    height={1920}
+                    loading="lazy"
+                    decoding="async"
+                    className="absolute left-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 object-cover"
                   />
-                )}
-
-                <video
-                  ref={(el) => {
-                    videoRefs.current[id] = el;
-                  }}
-                  src={videos[currentVideoIndex]}
-                  className="absolute left-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 object-cover"
-                  controls={false}
-                  playsInline
-                  muted={muted}
-                  loop={videos.length <= 1}
-                  onTimeUpdate={handleTimeUpdate(property)}
-                  onEnded={() => handleEnded(property)}
-                  preload={idx === index ? "auto" : "metadata"}
-                  onClick={() => togglePlay(property)}
-                />
+                ) : null}
 
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-transparent to-ink/70" />
 
