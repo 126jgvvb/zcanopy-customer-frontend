@@ -2,7 +2,7 @@
 
 import useSWR from 'swr';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Eye, Hourglass, ShieldCheck, Undo2 } from 'lucide-react';
 import { webApi, getSessionId } from '@/lib/api';
 
@@ -23,6 +23,7 @@ interface Booking {
   transactionCode?: string;
   escrowEnabled?: boolean;
   escrowDays?: number;
+  escrowMinutes?: number;
   escrowEndsAt?: string;
   escrowAmount?: number;
   fundsReleased?: boolean;
@@ -122,6 +123,7 @@ function BookingCard({
   const countdownOn = !!booking.escrowEnabled && !!booking.escrowEndsAt;
 
   const [daysValue, setDaysValue] = useState(String(booking.escrowDays || 7));
+  const [minutesValue, setMinutesValue] = useState('2');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -129,7 +131,7 @@ function BookingCard({
     setDaysValue(String(booking.escrowDays || 7));
   }, [booking.escrowDays]);
 
-  async function updateEscrow(next: { escrowEnabled: boolean; escrowDays?: number }) {
+  async function updateEscrow(next: { escrowEnabled: boolean; escrowDays?: number; escrowMinutes?: number }) {
     if (!booking.bookingCode) return;
     setBusy(true);
     setNotice(null);
@@ -137,6 +139,7 @@ function BookingCard({
       const res = await webApi.customer.updateBookingEscrow(token, booking.bookingCode, {
         escrowEnabled: next.escrowEnabled,
         escrowDays: next.escrowDays ?? Math.max(1, Math.min(365, Number(daysValue) || 7)),
+        escrowMinutes: next.escrowMinutes ?? 0,
       });
       setNotice(res?.message || 'Escrow settings updated');
       onChanged();
@@ -263,6 +266,40 @@ function BookingCard({
                   Update timeframe
                 </button>
               </div>
+
+              {/* Testing helper: shrink the countdown to minutes so the expiry
+                  and the automatic refund can be exercised quickly. */}
+              <div
+                className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-[var(--zcanopy-accent-gold)]/60 bg-[var(--zcanopy-accent-gold)]/5 px-3 py-2 text-xs"
+                style={{ color: 'var(--zcanopy-muted)' }}
+              >
+                <label htmlFor={`escrow-minutes-${booking.id}`} className="font-medium">
+                  Testing — countdown (minutes):
+                </label>
+                <input
+                  id={`escrow-minutes-${booking.id}`}
+                  type="number"
+                  min={1}
+                  max={1440}
+                  value={minutesValue}
+                  onChange={(e) => setMinutesValue(e.target.value)}
+                  disabled={busy}
+                  className="w-20 rounded-lg border border-[var(--zcanopy-border)] bg-white px-2 py-1 text-xs text-[var(--zcanopy-card-brown)] dark:bg-[var(--zcanopy-surface)]"
+                />
+                <button
+                  type="button"
+                  onClick={() => updateEscrow({ escrowEnabled: true, escrowMinutes: Math.max(1, Math.min(1440, Number(minutesValue) || 1)) })}
+                  disabled={busy}
+                  className="rounded-lg border border-[var(--border-strong)] px-3 py-1 text-xs font-semibold text-[var(--zcanopy-card-brown)] transition-colors hover:border-[var(--zcanopy-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Set minutes
+                </button>
+                {booking.escrowMinutes ? (
+                  <span className="font-medium" style={{ color: 'var(--zcanopy-primary)' }}>
+                    Currently running on a {booking.escrowMinutes}-minute countdown.
+                  </span>
+                ) : null}
+              </div>
             </div>
           ) : null}
 
@@ -298,6 +335,27 @@ export default function CustomerBookingsContent({ token }: CustomerBookingsConte
   const refresh = () => {
     mutate();
   };
+
+  // Once a live countdown reaches zero the escrow is swept on the server and
+  // the funds are returned to the customer. Refetch so the list reflects the
+  // new state instead of a stale "refund in progress" label.
+  const expiredCountdownRef = useRef(false);
+  useEffect(() => {
+    const live = bookings.filter(
+      (b) =>
+        b.escrowEnabled &&
+        b.escrowEndsAt &&
+        !b.fundsReleased &&
+        !b.fundsReversed &&
+        new Date(b.escrowEndsAt).getTime() <= Date.now(),
+    );
+    if (live.length > 0 && !expiredCountdownRef.current) {
+      expiredCountdownRef.current = true;
+      mutate();
+    } else if (live.length === 0) {
+      expiredCountdownRef.current = false;
+    }
+  }, [bookings, mutate]);
 
   if (isLoading && !data) {
     return (

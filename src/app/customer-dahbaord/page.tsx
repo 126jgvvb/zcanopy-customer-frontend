@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -32,6 +32,7 @@ type Booking = {
   bookingCode?: string;
   escrowEnabled?: boolean;
   escrowEndsAt?: string;
+  escrowMinutes?: number;
   escrowAmount?: number;
   fundsReleased?: boolean;
   fundsReversed?: boolean;
@@ -187,6 +188,12 @@ export default function CustomerDashboardPage() {
   // first client render.
   const [now, setNow] = useState<number | null>(null);
 
+  // Testing helper: shorten an active escrow countdown to a number of minutes
+  // so the expiry (and the automatic refund) can be exercised quickly.
+  const [escrowMinutesValue, setEscrowMinutesValue] = useState('2');
+  const [escrowBusy, setEscrowBusy] = useState<string | null>(null);
+  const [escrowNotice, setEscrowNotice] = useState<string | null>(null);
+
   useEffect(() => {
     setNow(Date.now());
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -273,9 +280,29 @@ export default function CustomerDashboardPage() {
     }
   };
 
+  // Testing helper: shorten an active escrow countdown to a number of minutes
+  // so the expiry (and the automatic refund) can be exercised quickly.
+  const updateEscrowMinutes = async (booking: Booking) => {
+    if (!token || !booking.bookingCode) return;
+    const minutes = Math.max(1, Math.min(1440, Number(escrowMinutesValue) || 1));
+    setEscrowBusy(booking.bookingCode);
+    setEscrowNotice(null);
+    try {
+      const res = await webApi.customer.updateBookingEscrow(token, booking.bookingCode, {
+        escrowEnabled: true,
+        escrowMinutes: minutes,
+      });
+      setEscrowNotice(res?.message || 'Escrow countdown updated');
+      await loadDashboard(token);
+    } catch (err) {
+      setEscrowNotice(err instanceof Error ? err.message : 'Failed to update the escrow countdown');
+    } finally {
+      setEscrowBusy(null);
+    }
+  };
+
   const handleLogout = () => {
-    clearSession();
-    if (typeof window !== 'undefined') {
+    clearSession();    if (typeof window !== 'undefined') {
       window.localStorage.removeItem('zcanopy_token');
       window.localStorage.removeItem('zcanopy_customer_name');
     }
@@ -306,6 +333,28 @@ export default function CustomerDashboardPage() {
 
   const displayTransactions = transactions;
   const displayFavorites = favorites.slice(0, 3);
+
+  // Once a live countdown reaches zero the escrow is swept on the server and
+  // the funds are returned to the customer. Reload so the dashboard reflects
+  // the new state instead of showing a stale "refund in progress" label.
+  const expiredCountdownRef = useRef(false);
+  useEffect(() => {
+    if (!token) return;
+    const live = bookings.filter(
+      (b) =>
+        b.escrowEnabled &&
+        b.escrowEndsAt &&
+        !b.fundsReleased &&
+        !b.fundsReversed &&
+        new Date(b.escrowEndsAt).getTime() <= Date.now(),
+    );
+    if (live.length > 0 && !expiredCountdownRef.current) {
+      expiredCountdownRef.current = true;
+      loadDashboard(token);
+    } else if (live.length === 0) {
+      expiredCountdownRef.current = false;
+    }
+  }, [bookings, token]);
 
   if (loading) {
     return (
@@ -496,20 +545,66 @@ export default function CustomerDashboardPage() {
                   </div>
                 ) : bookings.slice(0, 4).map((booking) => {
                   const escrow = escrowCountdownLabel(booking, now);
+                  const escrowLive =
+                    !!booking.escrowEnabled &&
+                    !!booking.escrowEndsAt &&
+                    !booking.fundsReleased &&
+                    !booking.fundsReversed;
                   return (
-                    <div key={booking.id} className="flex items-center justify-between gap-4 rounded-xl border border-[var(--zcanopy-border)] p-4 transition-colors hover:border-[var(--zcanopy-accent-gold)]/40">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>{booking.propertyTitle}</p>
-                        <p className="mt-1 text-xs" style={{ color: 'var(--zcanopy-muted)' }}>{booking.location || 'Property viewing'} · {formatDate(booking.date)}</p>
+                    <div key={booking.id} className="rounded-xl border border-[var(--zcanopy-border)] p-4 transition-colors hover:border-[var(--zcanopy-accent-gold)]/40">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>{booking.propertyTitle}</p>
+                          <p className="mt-1 text-xs" style={{ color: 'var(--zcanopy-muted)' }}>{booking.location || 'Property viewing'} · {formatDate(booking.date)}</p>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-1">
+                          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${statusClass(booking.status)}`}>{booking.status || 'pending'}</span>
+                          <p className="text-xs font-medium" style={{ color: 'var(--zcanopy-card-brown)' }}>{formatCurrency(booking.amount)}</p>
+                          {escrow ? <p className={`text-[10px] font-medium tabular-nums ${escrow.className}`}>{escrow.text}</p> : null}
+                        </div>
                       </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1">
-                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${statusClass(booking.status)}`}>{booking.status || 'pending'}</span>
-                        <p className="text-xs font-medium" style={{ color: 'var(--zcanopy-card-brown)' }}>{formatCurrency(booking.amount)}</p>
-                        {escrow ? <p className={`text-[10px] font-medium tabular-nums ${escrow.className}`}>{escrow.text}</p> : null}
-                      </div>
+
+                      {/* Testing helper: run the escrow countdown down in minutes
+                          so the expiry and the automatic refund can be seen. */}
+                      {escrowLive && booking.bookingCode ? (
+                        <div
+                          className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-[var(--zcanopy-accent-gold)]/60 bg-[var(--zcanopy-accent-gold)]/5 px-3 py-2 text-[10px]"
+                          style={{ color: 'var(--zcanopy-muted)' }}
+                        >
+                          <label htmlFor={`dashboard-escrow-minutes-${booking.id}`} className="font-medium">
+                            Testing — countdown (minutes):
+                          </label>
+                          <input
+                            id={`dashboard-escrow-minutes-${booking.id}`}
+                            type="number"
+                            min={1}
+                            max={1440}
+                            value={escrowMinutesValue}
+                            onChange={(e) => setEscrowMinutesValue(e.target.value)}
+                            disabled={escrowBusy === booking.bookingCode}
+                            className="w-16 rounded-lg border border-[var(--zcanopy-border)] bg-white px-2 py-1 text-[10px] text-[var(--zcanopy-card-brown)] dark:bg-[var(--zcanopy-surface)]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => updateEscrowMinutes(booking)}
+                            disabled={escrowBusy === booking.bookingCode}
+                            className="rounded-lg border border-[var(--border-strong)] px-2.5 py-1 text-[10px] font-semibold text-[var(--zcanopy-card-brown)] transition-colors hover:border-[var(--zcanopy-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {escrowBusy === booking.bookingCode ? 'Setting…' : 'Set minutes'}
+                          </button>
+                          {booking.escrowMinutes ? (
+                            <span className="font-medium" style={{ color: 'var(--zcanopy-primary)' }}>
+                              Running on a {booking.escrowMinutes}-minute countdown.
+                            </span>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   );
                 })}
+                {escrowNotice ? (
+                  <p className="text-xs font-medium" style={{ color: 'var(--zcanopy-primary)' }}>{escrowNotice}</p>
+                ) : null}
               </div>
             </div>
 
