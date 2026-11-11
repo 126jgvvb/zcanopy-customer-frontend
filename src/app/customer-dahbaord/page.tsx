@@ -29,6 +29,12 @@ type Booking = {
   status?: string;
   amount?: number;
   location?: string;
+  bookingCode?: string;
+  escrowEnabled?: boolean;
+  escrowEndsAt?: string;
+  escrowAmount?: number;
+  fundsReleased?: boolean;
+  fundsReversed?: boolean;
 };
 
 type Transaction = {
@@ -126,6 +132,40 @@ function statusClass(status?: string) {
   return 'bg-[var(--zcanopy-accent-gold)]/15 text-[var(--zcanopy-primary)]';
 }
 
+/** Compact escrow state/countdown label for the recent bookings list. */
+function escrowCountdownLabel(booking: Booking, now: number | null) {
+  if (booking.fundsReversed || (booking.status || '').toLowerCase() === 'reversed') {
+    return { text: 'Funds returned to your phone', className: 'text-[var(--zcanopy-muted)]' };
+  }
+  if (booking.fundsReleased) {
+    return {
+      text: 'Funds released to broker',
+      className: 'text-[var(--zcanopy-primary)] dark:text-[var(--zcanopy-accent-gold)]',
+    };
+  }
+  if (!booking.escrowEnabled || !booking.escrowEndsAt || now === null) {
+    return null;
+  }
+  const remaining = new Date(booking.escrowEndsAt).getTime() - now;
+  if (Number.isNaN(remaining)) return null;
+  if (remaining <= 0) {
+    return {
+      text: 'Escrow expired — refund in progress',
+      className: 'text-[var(--zcanopy-muted)]',
+    };
+  }
+  const totalSeconds = Math.floor(remaining / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return {
+    text: `Escrow: ${days}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`,
+    className: 'text-[var(--zcanopy-primary)] dark:text-[var(--zcanopy-accent-gold)]',
+  };
+}
+
 export default function CustomerDashboardPage() {
   const router = useRouter();
   const pathname = usePathname();
@@ -141,6 +181,17 @@ export default function CustomerDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Ticking clock for the escrow countdowns in the recent bookings list.
+  // Null until mounted so the server-rendered HTML never disagrees with the
+  // first client render.
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const toggleMobileMenu = useCallback(() => {
     setMobileMenuOpen((open) => !open);
@@ -443,18 +494,22 @@ export default function CustomerDashboardPage() {
                     <p className="mt-3 text-sm" style={{ color: 'var(--zcanopy-muted)' }}>No bookings yet. Your upcoming property viewings will appear here.</p>
                     <Link href="/properties" className="btn-primary mt-4 inline-flex px-4 py-2 text-xs">Find a property</Link>
                   </div>
-                ) : bookings.slice(0, 4).map((booking) => (
-                  <div key={booking.id} className="flex items-center justify-between gap-4 rounded-xl border border-[var(--zcanopy-border)] p-4 transition-colors hover:border-[var(--zcanopy-accent-gold)]/40">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>{booking.propertyTitle}</p>
-                      <p className="mt-1 text-xs" style={{ color: 'var(--zcanopy-muted)' }}>{booking.location || 'Property viewing'} · {formatDate(booking.date)}</p>
+                ) : bookings.slice(0, 4).map((booking) => {
+                  const escrow = escrowCountdownLabel(booking, now);
+                  return (
+                    <div key={booking.id} className="flex items-center justify-between gap-4 rounded-xl border border-[var(--zcanopy-border)] p-4 transition-colors hover:border-[var(--zcanopy-accent-gold)]/40">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold" style={{ color: 'var(--zcanopy-card-brown)' }}>{booking.propertyTitle}</p>
+                        <p className="mt-1 text-xs" style={{ color: 'var(--zcanopy-muted)' }}>{booking.location || 'Property viewing'} · {formatDate(booking.date)}</p>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${statusClass(booking.status)}`}>{booking.status || 'pending'}</span>
+                        <p className="text-xs font-medium" style={{ color: 'var(--zcanopy-card-brown)' }}>{formatCurrency(booking.amount)}</p>
+                        {escrow ? <p className={`text-[10px] font-medium tabular-nums ${escrow.className}`}>{escrow.text}</p> : null}
+                      </div>
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${statusClass(booking.status)}`}>{booking.status || 'pending'}</span>
-                      <p className="text-xs font-medium" style={{ color: 'var(--zcanopy-card-brown)' }}>{formatCurrency(booking.amount)}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

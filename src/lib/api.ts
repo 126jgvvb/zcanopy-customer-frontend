@@ -710,6 +710,18 @@ customer: {
     initiateTransaction: (token: string, body: { phoneNumber: string; email: string; customerName?: string; propertyId?: string; reason?: string; amount?: number }) =>
       apiFetch<{ success: boolean; message: string; transactionCode?: string }>("/web/customer/transactions/initiate", { method: "POST", token, body }),
 
+    updateBookingEscrow: (token: string, bookingCode: string, body: { escrowDays?: number; escrowEnabled?: boolean; customerPhone?: string }) =>
+      apiFetch<{ success: boolean; message: string; bookingCode?: string; escrowEnabled?: boolean; escrowDays?: number; escrowEndsAt?: string }>(
+        `/web/customer/bookings/${encodeURIComponent(bookingCode)}/escrow`,
+        { method: "POST", token, body },
+      ),
+
+    releaseBookingFunds: (token: string, bookingCode: string, body?: { customerPhone?: string }) =>
+      apiFetch<{ success: boolean; message: string }>(
+        `/web/customer/bookings/${encodeURIComponent(bookingCode)}/release`,
+        { method: "POST", token, body: body ?? {} },
+      ),
+
     recordSearch: (token: string, body: { query?: string; location?: string; radius?: number; propertyType?: string; minPrice?: number; maxPrice?: number; subCounty?: string; district?: string; hadResults?: boolean; resultPropertyIds?: string[]; resultCount?: number }) =>
       apiFetch<{ success: boolean }>("/web/customer/search/record", { method: "POST", token, body }),
 
