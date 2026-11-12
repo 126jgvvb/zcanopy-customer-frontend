@@ -558,7 +558,7 @@ export default function PropertyDetailClient({
                 {new Date(property.createdAt).toLocaleDateString()}
               </div>
               {property.price !== undefined && (
-                <div className="flex items-center gap-2 font-display text-lg leading-tight text-[var(--zcanopy-primary)] sm:text-xl">
+                <div className="flex items-center gap-2 font-display text-xl leading-tight text-[var(--zcanopy-primary)] sm:text-2xl">
                   {formatUGX(property.price)}
                 </div>
               )}
