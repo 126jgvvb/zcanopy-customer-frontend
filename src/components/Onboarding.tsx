@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { COLORS } from "@/lib/theme";
 import ZLoadingIndicator from "@/components/ZLoadingIndicator";
 
@@ -43,8 +44,8 @@ export function OnboardingShell({
 export function BrandMark() {
   return (
     <div className="flex flex-col items-center gap-3">
-      <img
-        src="/logo.svg"
+      <Image
+        src="/logo-96.png"
         alt="ZCanopy"
         width={48}
         height={48}

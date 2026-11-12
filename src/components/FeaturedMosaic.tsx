@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { webApi } from "@/lib/api";
 
-type RawProperty = {
+export type RawProperty = {
   id?: string | number;
   title?: string;
   location?: string;
@@ -60,13 +61,11 @@ function MosaicCard({
             className="flip-face"
             style={{ transform: `${transform}(${i * 180}deg)` }}
           >
-            <img
+            <Image
               src={src}
               alt={card.title}
-              width={900}
-              height={700}
-              loading="lazy"
-              decoding="async"
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
               className="h-full w-full object-cover"
             />
           </div>
@@ -96,63 +95,78 @@ function MosaicCard({
 function PlaceholderCard({ className }: { className?: string }) {
   return (
     <div className={`relative overflow-hidden bg-gray-100 ${className ?? ""}`}>
-      <img src={PLACEHOLDER} alt="" width={900} height={700} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+      <Image src={PLACEHOLDER} alt="" fill sizes="(max-width: 768px) 100vw, 50vw" className="h-full w-full object-cover" />
     </div>
   );
 }
 
-export default function FeaturedMosaic() {
+export default function FeaturedMosaic({
+  initialProperties = [],
+}: {
+  /** Listings rendered on the server - avoids a duplicate fetch on hydration. */
+  initialProperties?: RawProperty[];
+}) {
   const [cards, setCards] = useState<Card[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let active = true;
 
+    const buildCards = (props: RawProperty[]) => {
+      const pool = Array.from(
+        new Set(props.flatMap((p) => (p.imageUrl ?? []).filter(Boolean))),
+      );
+
+      // One entry per (property, photo) pair, so a property with a gallery can
+      // fill more than one grid cell instead of leaving cells empty.
+      const entries = props.flatMap((p) =>
+        (p.imageUrl ?? []).filter(Boolean).map((lead) => ({ p, lead })),
+      );
+
+      if (!entries.length) {
+        setCards([]);
+        return;
+      }
+
+      // Always fill all four cells; cycle entries when there are fewer.
+      const cells = Array.from({ length: CELLS }, (_, i) => entries[i % entries.length]);
+
+      setCards(
+        cells.map(({ p, lead }, i) => {
+          const own = (p.imageUrl ?? []).filter(Boolean);
+          const images: string[] = [];
+          // Lead photo first, then the rest of this property's gallery, then
+          // the wider pool, so every card has enough faces to animate.
+          for (const src of [lead, ...own, ...pool]) {
+            if (!images.includes(src)) images.push(src);
+          }
+          // Fewer than four distinct photos in exist: repeat so the prism
+          // still has four faces and keeps turning.
+          while (images.length < FACES_PER_CARD) images.push(images[i % images.length]);
+
+          return {
+            key: `${p.id ?? i}-${lead}`,
+            id: String(p.id ?? i),
+            title: p.title ?? "Featured property",
+            location: p.location ?? "",
+            images: images.slice(0, FACES_PER_CARD),
+          };
+        }),
+      );
+    };
+
+    // The server already rendered these listings.
+    if (initialProperties.length > 0) {
+      buildCards(initialProperties);
+      setLoaded(true);
+      return;
+    }
+
     webApi
       .publicProperties({ page: 1, limit: FETCH_LIMIT })
       .then((res) => {
         if (!active) return;
-        const props: RawProperty[] = res?.properties ?? [];
-        const pool = Array.from(
-          new Set(props.flatMap((p) => (p.imageUrl ?? []).filter(Boolean))),
-        );
-
-        // One entry per (property, photo) pair, so a property with a gallery can
-        // fill more than one grid cell instead of leaving cells empty.
-        const entries = props.flatMap((p) =>
-          (p.imageUrl ?? []).filter(Boolean).map((lead) => ({ p, lead })),
-        );
-
-        if (!entries.length) {
-          setCards([]);
-          return;
-        }
-
-        // Always fill all four cells; cycle entries when there are fewer.
-        const cells = Array.from({ length: CELLS }, (_, i) => entries[i % entries.length]);
-
-        setCards(
-          cells.map(({ p, lead }, i) => {
-            const own = (p.imageUrl ?? []).filter(Boolean);
-            const images: string[] = [];
-            // Lead photo first, then the rest of this property's gallery, then
-            // the wider pool, so every card has enough faces to animate.
-            for (const src of [lead, ...own, ...pool]) {
-              if (!images.includes(src)) images.push(src);
-            }
-            // Fewer than four distinct photos in exist: repeat so the prism
-            // still has four faces and keeps turning.
-            while (images.length < FACES_PER_CARD) images.push(images[i % images.length]);
-
-            return {
-              key: `${p.id ?? i}-${lead}`,
-              id: String(p.id ?? i),
-              title: p.title ?? "Featured property",
-              location: p.location ?? "",
-              images: images.slice(0, FACES_PER_CARD),
-            };
-          }),
-        );
+        buildCards(res?.properties ?? []);
       })
       .catch(() => {})
       .finally(() => {
@@ -162,7 +176,7 @@ export default function FeaturedMosaic() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [initialProperties]);
 
   // Left and right columns run the same vertical flip out of phase.
   const layout = useMemo(

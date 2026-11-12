@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from "next/image";
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { webApi, ApiError } from '@/lib/api';
@@ -91,7 +92,7 @@ export default function VerifyOtpPage() {
           <div className="mb-6 text-center">
             <Link href="/" className="inline-flex items-center gap-2">
               <img
-                src="/logo.svg"
+                src="/logo-96.png"
                 alt="ZCanopy"
                 width={32}
                 height={32}

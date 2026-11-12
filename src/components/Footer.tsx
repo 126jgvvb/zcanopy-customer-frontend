@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { MapPin, Phone, Mail } from "lucide-react";
 import { COLORS } from "@/lib/theme";
 import { BROKER_LOGIN_URL, SUPPORT_EMAIL } from "@/lib/navigation";
@@ -88,7 +89,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-4">
             <Link href="/" className="flex items-center gap-2.5">
-              <img src="/logo.svg" alt="ZCanopy" width={36} height={36} className="site-logo h-9 w-9 object-contain" />
+              <Image src="/logo-96.png" alt="ZCanopy" width={36} height={36} className="site-logo h-9 w-9 object-contain" />
               <span className="font-display text-xl tracking-tight" style={{ color: "#f6d98e" }}>
                 ZCanopy
               </span>

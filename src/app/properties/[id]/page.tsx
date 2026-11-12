@@ -1,1173 +1,134 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
-import { webApi, getSessionId, getAuthToken, getCustomerName, ensureAnonymousSession, ApiError } from "@/lib/api";
-import { SUPPORT_EMAIL } from "@/lib/navigation";
-import { toCdnUrl } from "@/lib/mediaUrl";
-import { MapPin, MapPinOff, Calendar, Video, ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, Heart, MessageSquare, Star, X, ZoomIn, ZoomOut, Minimize2 } from "lucide-react";
-import Link from "next/link";
-
-import AuthPromptModal from "@/components/AuthPromptModal";
-import BookingResumeToast from "@/components/BookingResumeToast";
-import AspectRatioVideo from "@/components/AspectRatioVideo";
-import { useBookingRedirect } from "@/hooks/useBookingRedirect";
-import { useBookedPropertyIds, invalidateBookedPropertyIds } from "@/hooks/useBookedPropertyIds";
-
-function formatUGX(n: number) {
-  try {
-    return new Intl.NumberFormat("en-UG", { style: "currency", currency: "UGX", maximumFractionDigits: 0 }).format(n);
-  } catch {
-    return `UGX ${n.toLocaleString()}`;
-  }
-}
-
-interface Property {
-  id: string;
-  title: string;
-  description: string;
-  propertyType: string;
-  location: string;
-  isAvailable: boolean;
-  createdAt: string;
-  imageUrl?: string[];
-  videoUrl?: string[];
-  brokerBrandName?: string;
-  brokerCode?: string;
-  brokerPhone?: string;
-  price?: number;
-  postgisSpatialField?: string | null;
-  brokersUniqueCode?: string;
-  bookingState?: { isBooked: boolean; bookingCount: number };
-  photoCount?: number;
-  videoCount?: number;
-  brokerBookingFee?: number;
-  brokerName?: string;
-  amount?: number;
-  canBook?: boolean;
-  subCounty?: string;
-  district?: string;
-}
-
-interface BookingForm {
-  customerName: string;
-  customerPhone: string;
-  customerEmail: string;
-}
-
-interface Comment {
-  id: string;
-  customerName: string;
-  comment: string;
-  rating: number;
-  createdAt: string;
-}
-
-const emptyForm: BookingForm = {
-  customerName: "",
-  customerPhone: "",
-  customerEmail: "",
-};
-
-const emptyCommentForm = {
-  customerName: "",
-  customerPhone: "",
-  customerEmail: "",
-  comment: "",
-  rating: 0,
-};
-
-export default function PropertyDetailPage() {
-  const params = useParams();
-  const id = params.id as string;
-  const searchParams = useSearchParams();
-  const brokerCode = searchParams.get("brokerCode") || undefined;
-  const [property, setProperty] = useState<Property | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [galleryOpen, setGalleryOpen] = useState(false);
-  const [galleryIndex, setGalleryIndex] = useState(0);
-  const [galleryScale, setGalleryScale] = useState(1);
-  const [galleryTranslate, setGalleryTranslate] = useState({ x: 0, y: 0 });
-  const [galleryDragging, setGalleryDragging] = useState(false);
-  const [galleryDragStart, setGalleryDragStart] = useState({ x: 0, y: 0 });
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [form, setForm] = useState<BookingForm>(emptyForm);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [bookedProperty, setBookedProperty] = useState<Property | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<string>("");
-  const [favorited, setFavorited] = useState(false);
-  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-  const [showResumeToast, setShowResumeToast] = useState(false);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [averageRating, setAverageRating] = useState(0);
-  const [commentForm, setCommentForm] = useState(emptyCommentForm);
-  const [submittingComment, setSubmittingComment] = useState(false);
-  const [videoIndex, setVideoIndex] = useState(0);
-  const { ids: bookedPropertyIds } = useBookedPropertyIds();
-  const canViewMap = bookedPropertyIds.has(id);
-  const [related, setRelated] = useState<Property[]>([]);
-
-  useEffect(() => {
-    if (!property) return;
-    let cancelled = false;
-    const loadRelated = async () => {
-      const currentId = String(property.id);
-      const dedupe = new Set<string>([currentId]);
-      const out: any[] = [];
-      const push = (list: any[]) => {
-        for (const p of list ?? []) {
-          if (!p) continue;
-          const key = String(p.id);
-          if (dedupe.has(key)) continue;
-          dedupe.add(key);
-          out.push(p);
-        }
-      };
-
-      const sameType = (p: any) => property.propertyType && String(p.propertyType).toLowerCase() === String(property.propertyType).toLowerCase();
-
-      // Related listings are sourced purely from the public explorer endpoint,
-      // never from the current listing's detail payload. The type filter uses
-      // the current property's own type so only matching listings appear.
-      // If no same-type match is returned, show nothing at all.
-      try {
-        const matching = (await webApi.customer.explorer({
-          page: 1,
-          limit: 50,
-          propertyType: property.propertyType || undefined,
-        })) as { properties?: any[] };
-        push((matching?.properties || []).filter(sameType));
-      } catch {
-        /* ignore */
-      }
-
-      if (!cancelled) setRelated(out.slice(0, 8));
-    };
-    loadRelated();
-    return () => {
-      cancelled = true;
-    };
-  }, [property?.id]);
-
-  // After a successful booking the customer may review their bookings from
-  // the confirmation; no forced navigation away from the property page.
-  const { goToBookings } = useBookingRedirect();
-
-   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const data = await webApi.propertyDetails(id, brokerCode);
-        const prop = (data as any)?.property || (data as any) || null;
-        console.log('[PropertyDetail] Decrypted property payload', prop);
-        if (!prop) {
-          console.error('[PropertyDetail] Missing property payload for id=', id, data);
-          setError('Property not found');
-          return;
-        }
-        setProperty(prop);
-      } catch (error) {
-        console.error('[PropertyDetail] Property load failed', error);
-        setError("Failed to load property details");
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (id) load();
-  }, [id]);
-
-  // Reads the customer token from localStorage first, then the cookie set by
-  // the Google OAuth callback. Both are valid customer sessions.
-  const isAuthenticated = () => !!getAuthToken();
-
-  // Customers who sign in from the booking modal return here with this marker.
-  // Clean the URL immediately so a refresh does not replay the toast.
-  useEffect(() => {
-    if (searchParams.get("resumeBooking") !== "1") return;
-
-    const url = new URL(window.location.href);
-    url.searchParams.delete("resumeBooking");
-    window.history.replaceState(
-      window.history.state,
-      "",
-      `${url.pathname}${url.search}${url.hash}`
-    );
-
-    if (getAuthToken()) setShowResumeToast(true);
-  }, [searchParams]);
-
-  const bookingAuthRedirect = () => {
-    const url = new URL(window.location.href);
-    url.searchParams.delete("resumeBooking");
-    if (url.searchParams.get("book") !== "1") {
-      url.searchParams.set("resumeBooking", "1");
-    }
-    return `${url.pathname}${url.search}${url.hash}`;
-  };
-
-  const toggleFavorite = async () => {
-    if (!isAuthenticated()) {
-      setShowAuthPrompt(true);
-      return;
-    }
-
-    try {
-      let token = getSessionId();
-      if (!token) {
-        const newSession = await ensureAnonymousSession();
-        token = newSession || null;
-      }
-      if (!token) {
-        window.alert("Unable to start a customer session right now. Please refresh and try again.");
-        return;
-      }
-      const res = await webApi.toggleFavorite(token, {
-        propertyId: id,
-        propertyTitle: property?.title || "",
-        propertyLocation: property?.location || "",
-        imageUrl: property?.imageUrl?.[0] || "",
-        price: property?.price || 0,
-      });
-      setFavorited((res as any).favorited);
-    } catch {
-      // ignore
-    }
-  };
-
-  const openGallery = (index: number) => {
-    setGalleryIndex(index);
-    setGalleryOpen(true);
-    setGalleryScale(1);
-    setGalleryTranslate({ x: 0, y: 0 });
-  };
-
-  const closeGallery = () => {
-    setGalleryOpen(false);
-    setGalleryIndex(0);
-    setGalleryScale(1);
-    setGalleryTranslate({ x: 0, y: 0 });
-  };
-
-  const nextImage = () => {
-    setGalleryIndex((prev) => (prev + 1) % images.length);
-    setGalleryScale(1);
-    setGalleryTranslate({ x: 0, y: 0 });
-  };
-
-  const prevImage = () => {
-    setGalleryIndex((prev) => (prev - 1 + images.length) % images.length);
-    setGalleryScale(1);
-    setGalleryTranslate({ x: 0, y: 0 });
-  };
-
-  const zoomIn = () => setGalleryScale((prev) => Math.min(prev * 1.2, 5));
-  const zoomOut = () => setGalleryScale((prev) => Math.max(prev / 1.2, 0.5));
-  const resetZoom = () => {
-    setGalleryScale(1);
-    setGalleryTranslate({ x: 0, y: 0 });
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (galleryScale <= 1) return;
-    setGalleryDragging(true);
-    setGalleryDragStart({ x: e.clientX - galleryTranslate.x, y: e.clientY - galleryTranslate.y });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!galleryDragging || galleryScale <= 1) return;
-    setGalleryTranslate({
-      x: e.clientX - galleryDragStart.x,
-      y: e.clientY - galleryDragStart.y,
-    });
-  };
-
-  const handleMouseUp = () => {
-    setGalleryDragging(false);
-  };
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    if (e.ctrlKey || e.metaKey) {
-      if (e.deltaY < 0) zoomIn();
-      else zoomOut();
-    }
-  };
-
-  useEffect(() => {
-    if (!galleryOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        closeGallery();
-      } else if (e.key === 'ArrowLeft') {
-        prevImage();
-      } else if (e.key === 'ArrowRight') {
-        nextImage();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [galleryOpen]);
-
-  const handleCommentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!property) return;
-    const sessionId = getSessionId();
-    if (!sessionId) {
-      window.alert("Please continue as a customer to comment.");
-      return;
-    }
-    setSubmittingComment(true);
-    try {
-      const res = await webApi.addComment(sessionId, {
-        propertyId: property.id,
-        customerName: commentForm.customerName,
-        customerPhone: commentForm.customerPhone,
-        customerEmail: commentForm.customerEmail,
-        comment: commentForm.comment,
-        rating: commentForm.rating,
-      });
-      if ((res as any).success) {
-        setCommentForm(emptyCommentForm);
-        const commentsData = await webApi.getPropertyComments(property.id);
-        setComments((commentsData as any)?.comments || []);
-        setAverageRating((commentsData as any)?.averageRating || 0);
-      }
-    } catch {
-      // ignore
-    } finally {
-      setSubmittingComment(false);
-    }
-  };
-
-  const [submittedBookingPropertyId, setSubmittedBookingPropertyId] = useState<string | null>(null);
-  const [needsAuth, setNeedsAuth] = useState(false);
-
-  const openBooking = () => {
-    if (!property) return;
-
-    setSelectedProperty(property);
-    setBookedProperty(null);
-    setSubmitError("");
-    setSuccess("");
-    setPaymentStatus("");
-
-    if (!isAuthenticated()) {
-      setForm(emptyForm);
-      setNeedsAuth(true);
-      return;
-    }
-
-    // Pre-fill form with stored customer data (localStorage or cookie)
-    if (typeof window !== 'undefined') {
-      const storedName = getCustomerName() || '';
-      const storedEmail = localStorage.getItem('zcanopy_customer_email') || '';
-      const storedPhone = localStorage.getItem('zcanopy_customer_phone') || '';
-      setForm({
-        customerName: storedName,
-        customerEmail: storedEmail,
-        customerPhone: storedPhone,
-      });
-    }
-    setNeedsAuth(false);
-  };
-
-  const closeBooking = () => {
-    setSelectedProperty(null);
-    setNeedsAuth(false);
-    setBookedProperty(null);
-    setForm(emptyForm);
-    setSubmitError("");
-    setSuccess("");
-    setPaymentStatus("");
-  };
-
-  // Deep link from the reels "Book a viewing" button (?book=1): once the
-  // property has loaded, open the booking flow automatically.
-  const bookingAutoOpenedRef = useRef(false);
-  useEffect(() => {
-    if (bookingAutoOpenedRef.current) return;
-    if (loading || !property) return;
-    if (searchParams.get("book") !== "1") return;
-    bookingAutoOpenedRef.current = true;
-    openBooking();
-  }, [loading, property, searchParams]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedProperty) return;
-
-    setSubmitting(true);
-    setSubmitError("");
-    setSuccess("");
-    setPaymentStatus("");
-
-    const token = getAuthToken();
-    if (!token) {
-      setSubmitting(false);
-      setNeedsAuth(true);
-      setSubmitError("Please sign in to complete your booking.");
-      return;
-    }
-
-    try {
-      setPaymentStatus("Initiating payment...");
-      
-      const result = await webApi.createBooking(
-        token,
-        {
-          propertyId: selectedProperty.id,
-          customerName: form.customerName,
-          customerPhone: form.customerPhone,
-          customerEmail: form.customerEmail,
-          date: new Date().toISOString(),
-          amount: selectedProperty.brokerBookingFee || 0,
-          reason: "property_access",
-          status: "pending",
-        },
-        { skipAuthRedirect: true },
-      );
-
-      const paymentResult = result as { success?: boolean; message?: string; bookingId?: string; bookingCode?: string; brokerPhone?: string };
-
-      if (paymentResult.success) {
-        setPaymentStatus("Payment completed successfully!");
-        setSuccess("Booking confirmed! Check your email and SMS for the invoice code.");
-        setForm(emptyForm);
-        setBookedProperty({ ...selectedProperty, brokerPhone: paymentResult.brokerPhone });
-        invalidateBookedPropertyIds();
-      } else {
-        setPaymentStatus("");
-        setSubmitError(paymentResult.message || "Payment failed. Please try again.");
-      }
-    } catch (err) {
-      setPaymentStatus("");
-      if (err instanceof ApiError && err.status === 401) {
-        setNeedsAuth(true);
-        setSubmitError("Your session has expired. Please sign in again to complete your booking.");
-      } else {
-        setSubmitError("Failed to process payment. Please try again.");
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <p className="text-sm text-gray-500">Loading property details...</p>
-      </div>
-    );
-  }
-
-  if (error || !property) {
-    return (
-      <div className="space-y-4">
-        <Link href="/properties" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[var(--zcanopy-primary)]">
-          <ArrowLeft size={16} />
-          Back to properties
-        </Link>
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-          {error || "Property not found"}
-        </div>
-      </div>
-    );
-  }
-
-  const images = (property.imageUrl || []).map((url) => toCdnUrl(url) ?? url);
-  const videos = (property.videoUrl || []).map((url) => toCdnUrl(url) ?? url);
-  const spatial = property.postgisSpatialField ? (() => { try { return JSON.parse(property.postgisSpatialField); } catch { return null; } })() : null;
-  const lat = spatial?.lat;
-  const lng = spatial?.lng;
-  const bookingState = property.bookingState || { isBooked: false, bookingCount: 0 };
-
-  return (
-    <div className="mx-auto max-w-7xl space-y-8 px-6 py-10 md:px-10">
-      <Link href="/properties" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[var(--zcanopy-primary)]">
-        <ArrowLeft size={16} />
-        Back to properties
-      </Link>
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-8">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
-            <div className="aspect-video w-full overflow-hidden rounded-t-2xl bg-gray-100">
-              <img
-                src={selectedImage || images[0] || "https://via.placeholder.com/400x200?text=No+Image"}
-                alt={property.title}
-                width={1600}
-                height={900}
-                decoding="async"
-                fetchPriority="high"
-                className="h-full w-full object-cover"
-              />
-            </div>
-            {images.length > 1 && (
-              <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-                {images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => openGallery(idx)}
-                    className={`h-16 w-20 flex-shrink-0 overflow-hidden rounded-lg border-2 ${selectedImage === img ? "border-[var(--zcanopy-primary)]" : "border-transparent"}`}
-                    aria-label={`View image ${idx + 1} of ${images.length}`}
-                  >
-                    <img
-                      src={img}
-                      alt={`${property.title} ${idx + 1}`}
-                      width={320}
-                      height={256}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-full w-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
-            <h1 className="text-3xl">{property.title}</h1>
-            <p className="mt-2 text-gray-600">{property.description}</p>
-
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <MapPin size={16} />
-                {canViewMap ? property.location : "Location available after booking confirmation"}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Calendar size={16} />
-                {new Date(property.createdAt).toLocaleDateString()}
-              </div>
-              {property.price !== undefined && (
-                <div className="flex items-center gap-2 text-sm font-semibold text-[var(--zcanopy-card-brown)]">
-                  {formatUGX(property.price)}
-                </div>
-              )}
-              {property.brokerBrandName && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <span className="font-medium">Broker:</span> {property.brokerBrandName}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {videos.length > 0 && (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
-              <h3 className="mb-4 flex items-center justify-between text-lg font-semibold text-[var(--zcanopy-card-brown)]">
-                <span className="flex items-center gap-2">
-                  <Video size={18} />
-                  Videos
-                </span>
-                <span className="text-xs font-medium text-gray-500">
-                  {videoIndex + 1} / {videos.length}
-                </span>
-              </h3>
-              <div className="relative">
-                <AspectRatioVideo
-                  src={videos[videoIndex]}
-                  poster={images[0]}
-                  aspectRatio="16 / 9"
-                  fit="contain"
-                  // Load only after intent; the poster reserves the box and
-                  // keeps large clips from competing with page images.
-                  preload="none"
-                  className="rounded-xl"
-                />
-                {videos.length > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      aria-label="Previous video"
-                      onClick={() => setVideoIndex((prev) => Math.max(prev - 1, 0))}
-                      disabled={videoIndex === 0}
-                      className="absolute left-5 top-1/2 inline-flex h-14 w-14 shrink-0 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white p-0 text-[var(--zcanopy-card-brown)] shadow-[var(--shadow-lift)] transition hover:scale-105 hover:border-[var(--zcanopy-primary)] hover:bg-[var(--zcanopy-primary)] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-40 disabled:hover:scale-100 disabled:hover:border-[var(--border-strong)] disabled:hover:bg-white disabled:hover:text-[var(--zcanopy-card-brown)]"
-                    >
-                      <ChevronLeft className="h-7 w-7" strokeWidth={2.25} />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Next video"
-                      onClick={() => setVideoIndex((prev) => Math.min(prev + 1, videos.length - 1))}
-                      disabled={videoIndex === videos.length - 1}
-                      className="absolute right-5 top-1/2 inline-flex h-14 w-14 shrink-0 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white p-0 text-[var(--zcanopy-card-brown)] shadow-[var(--shadow-lift)] transition hover:scale-105 hover:border-[var(--zcanopy-primary)] hover:bg-[var(--zcanopy-primary)] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-40 disabled:hover:scale-100 disabled:hover:border-[var(--border-strong)] disabled:hover:bg-white disabled:hover:text-[var(--zcanopy-card-brown)]"
-                    >
-                      <ChevronRight className="h-7 w-7" strokeWidth={2.25} />
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {(lat != null && lng != null && lat !== 0 && lng !== 0) ? (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
-              <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--zcanopy-card-brown)]">
-                <MapPin size={18} />
-                Location
-              </h3>
-              {canViewMap ? (
-                <>
-                  <div className="h-80 w-full overflow-hidden rounded-xl">
-                    <iframe
-                      title={`Map of ${property.title}`}
-                      src={`https://www.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
-                      className="h-full w-full border-0"
-                      loading="lazy"
-                      allowFullScreen
-                    />
-                  </div>
-                  <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)]"
-                  >
-                    <ExternalLink size={16} />
-                    Open in Google Maps
-                  </a>
-                </>
-              ) : (
-                <div className="relative h-80 w-full overflow-hidden rounded-xl border border-[var(--border-strong)]">
-                  <iframe
-                    title=""
-                    aria-hidden="true"
-                    tabIndex={-1}
-                    src={`https://www.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
-                    className="pointer-events-none h-full w-full scale-110 border-0 blur-xl opacity-70"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--zcanopy-surface)_55%,transparent)] backdrop-blur-[2px]">
-                    <div className="flex max-w-xs flex-col items-center gap-3 px-6 text-center">
-                      <MapPinOff size={26} style={{ color: "var(--zcanopy-primary)" }} />
-                      <p className="text-base font-semibold" style={{ color: "var(--zcanopy-card-brown)" }}>
-                        Viewing the location is only available after booking
-                      </p>
-                      <p className="text-sm" style={{ color: "var(--zcanopy-muted)" }}>
-                        Book this property to reveal its exact position and directions.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
-              <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--zcanopy-card-brown)]">
-                <MapPin size={18} />
-                Location
-              </h3>
-              <div className="py-8 text-center text-sm text-gray-500">
-                <p>This property was not lively captured on site,please refer to the location text</p>
-                <p className="mt-1 text-xs text-gray-400">Location: {canViewMap ? property.location : "Location available after booking confirmation"}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-[var(--zcanopy-card-brown)]">Booking Info</h3>
-              </div>
-              <button
-                type="button"
-                onClick={toggleFavorite}
-                className="rounded-full p-2 text-gray-600 transition hover:bg-gray-100"
-              >
-                <Heart
-                  size={20}
-                  fill={favorited ? "#ef4444" : "none"}
-                  color={favorited ? "#ef4444" : "currentColor"}
-                />
-              </button>
-            </div>
-            <div className="mt-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Status</span>
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${property.isAvailable ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
-                  {property.isAvailable ? "Available" : "Booked"}
-                </span>
-              </div>
-              {property.price !== undefined && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Price</span>
-                  <span className="text-sm font-semibold text-[var(--zcanopy-card-brown)]">{formatUGX(property.price)}</span>
-                </div>
-              )}
-              {property.brokerBookingFee !== undefined && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Booking fee</span>
-                  <span className="text-sm font-semibold text-[var(--zcanopy-card-brown)]">{formatUGX(property.brokerBookingFee)}</span>
-                </div>
-              )}
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Type</span>
-                <span className="text-sm font-semibold text-[var(--zcanopy-card-brown)]">{property.propertyType}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Photos</span>
-                <span className="text-sm font-semibold text-[var(--zcanopy-card-brown)]">{images.length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Videos</span>
-                <span className="text-sm font-semibold text-[var(--zcanopy-card-brown)]">{videos.length}</span>
-              </div>
-            </div>
-            {property.isAvailable && (
-              <button
-                onClick={openBooking}
-                className="btn-primary mt-4 w-full px-4 py-2.5 text-sm"
-              >
-                Book Now
-              </button>
-            )}
-          </div>
-
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
-            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--zcanopy-card-brown)]">
-              <MessageSquare size={18} />
-              Reviews & Comments
-            </h3>
-            {averageRating > 0 && (
-              <div className="mb-4 text-sm text-gray-600">
-                Average rating: <span className="font-semibold">{averageRating.toFixed(1)}</span> / 5
-              </div>
-            )}
-            <div className="space-y-3">
-              {comments.map((c) => (
-                <div key={c.id} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-gray-800">{c.customerName}</p>
-                    <span className="text-xs text-gray-500">{new Date(c.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  <p className="mt-1 text-sm text-gray-600">{c.comment}</p>
-                  <p className="mt-1 text-xs text-gray-500">Rating: {c.rating}/5</p>
-                </div>
-              ))}
-              {comments.length === 0 && (
-                <p className="text-sm text-gray-500">No comments yet. Be the first to review this property.</p>
-              )}
-            </div>
-            <form onSubmit={handleCommentSubmit} className="mt-4 space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
-                <input
-                  type="text"
-                  required
-                  value={commentForm.customerName}
-                  onChange={(e) => setCommentForm({ ...commentForm, customerName: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-                  placeholder="Your name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Phone</label>
-                <input
-                  type="tel"
-                  required
-                  value={commentForm.customerPhone}
-                  onChange={(e) => setCommentForm({ ...commentForm, customerPhone: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-                  placeholder="+256 700 000000"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                  type="email"
-                  value={commentForm.customerEmail}
-                  onChange={(e) => setCommentForm({ ...commentForm, customerEmail: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-                  placeholder="you@example.com"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Rating</label>
-                <StarRating value={commentForm.rating} onChange={(rating) => setCommentForm({ ...commentForm, rating })} average={averageRating || undefined} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Comment</label>
-                <textarea
-                  required
-                  value={commentForm.comment}
-                  onChange={(e) => setCommentForm({ ...commentForm, comment: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-                  rows={3}
-                  placeholder="Share your experience..."
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={submittingComment}
-                className="btn-primary w-full px-4 py-2.5 text-sm disabled:opacity-50"
-              >
-                {submittingComment ? "Submitting..." : "Submit Review"}
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <section aria-labelledby="related-searches-heading" className="pt-4">
-        <h2 id="related-searches-heading" className="text-2xl font-semibold text-[var(--zcanopy-card-brown)]">
-          Related searches
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Other listings you might like, matched by property type.
-        </p>
-        {related.length > 0 ? (
-          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {related.map((r) => (
-              <Link
-                key={String(r.id)}
-                href={`/properties/${r.id}`}
-                className="group overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:border-[var(--zcanopy-primary)]"
-              >
-                <div className="aspect-video w-full overflow-hidden bg-gray-100">
-                  <img
-                    src={
-                      Array.isArray(r.imageUrl) && r.imageUrl.length
-                        ? r.imageUrl[0]
-                        : "https://via.placeholder.com/400x200?text=No+Image"
-                    }
-                    alt={r.title}
-                    width={1600}
-                    height={900}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                </div>
-                <div className="p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--zcanopy-primary)]">
-                    {r.propertyType}
-                  </p>
-                  <h3 className="mt-1 truncate font-semibold text-[var(--zcanopy-card-brown)]">{r.title}</h3>
-                  <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-gray-500">
-                    <MapPin size={13} className="shrink-0" />
-                    {r.location}
-                  </p>
-                  {r.price !== undefined && r.price !== null && (
-                    <p className="mt-2 font-semibold text-[var(--zcanopy-primary)]">{formatUGX(r.price)}</p>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <p className="mt-6 rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-8 text-center text-sm text-gray-500">
-            No items matched your selection
-          </p>
-        )}
-      </section>
-
-      {selectedProperty && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-lift)]">
-            {needsAuth ? (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-[var(--zcanopy-card-brown)]">Sign in to book</h3>
-                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
-                  <p>You need to be signed in to book a property. Please sign in or create an account to continue.</p>
-                </div>
-                {submitError && (
-                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                    {submitError}
-                  </div>
-                )}
-                <div className="flex flex-col gap-3">
-                  <Link
-                    href={`/customer/signup?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`}
-                    className="flex items-center justify-center rounded-xl bg-[var(--zcanopy-primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:opacity-90"
-                  >
-                    Create Account
-                  </Link>
-                  <Link
-                    href={`/customer?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`}
-                    className="flex items-center justify-center rounded-xl border border-[var(--zcanopy-border)] bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
-                  >
-                    Sign In
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={closeBooking}
-                    className="btn-ghost px-4 py-2 text-sm"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : bookedProperty ? (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-[var(--zcanopy-card-brown)]">Booking Confirmed</h3>
-                <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-                  Your booking request has been submitted successfully.
-                </div>
-                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
-                  <p className="font-semibold text-[var(--zcanopy-card-brown)]">Broker contact: {bookedProperty.brokerPhone || "Not provided"}</p>
-                  <p className="mt-2">You will receive a message having an invoice code on both email and SMS showing your invoice payment code.</p>
-                </div>
-                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
-                  <p className="font-semibold text-[var(--zcanopy-card-brown)]">Complaints or inquiries</p>
-                  <p className="mt-1">If you have successfully made a payment but have not received an SMS or email, please contact us:</p>
-                  <p className="mt-1">Email: <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[var(--zcanopy-primary)]">{SUPPORT_EMAIL}</a></p>
-                  <p>Phone: <a href="tel:+256741882818" className="text-[var(--zcanopy-primary)]">+256 741 882 818</a></p>
-                </div>
-                <div className="flex items-center justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={closeBooking}
-                    className="btn-ghost px-4 py-2 text-sm"
-                  >
-                    Stay here
-                  </button>
-                  <button
-                    type="button"
-                    onClick={goToBookings}
-                    className="btn-primary px-4 py-2 text-sm"
-                  >
-                    View my booking
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <h3 className="mb-4 text-lg font-semibold text-[var(--zcanopy-card-brown)]">Book: {selectedProperty.title}</h3>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
-                     <p className="font-semibold text-[var(--zcanopy-card-brown)]">Booking charge: {selectedProperty.brokerBookingFee !== undefined ? formatUGX(selectedProperty.brokerBookingFee) : "Not set"}</p>
-                    <p className="mt-2">You will receive a message having an invoice code on both email and SMS showing your invoice payment code.</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={form.customerName}
-                      onChange={(e) => setForm({ ...form, customerName: e.target.value })}
-                      className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-                      placeholder="Your full name"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Phone Number</label>
-                    <input
-                      type="tel"
-                      required
-                      value={form.customerPhone}
-                      onChange={(e) => setForm({ ...form, customerPhone: e.target.value })}
-                      className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-                      placeholder="+256 700 000000"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Email</label>
-                    <input
-                      type="email"
-                      required
-                      value={form.customerEmail}
-                      onChange={(e) => setForm({ ...form, customerEmail: e.target.value })}
-                      className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
-                      placeholder="you@example.com"
-                    />
-                  </div>
-
-                  {paymentStatus && !submitError && (
-                    <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-                      {paymentStatus}
-                    </div>
-                  )}
-
-                  {submitError && (
-                    <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                      {submitError}
-                    </div>
-                  )}
-                  {success && !submitError && (
-                    <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-                      {success}
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-end gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={closeBooking}
-                      disabled={submitting}
-                      className="btn-ghost px-4 py-2 text-sm disabled:opacity-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="btn-primary px-4 py-2 text-sm disabled:opacity-50"
-                    >
-                      {submitting ? "Processing payment..." : "Confirm Booking"}
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-      <BookingResumeToast
-        open={showResumeToast}
-        onClose={() => setShowResumeToast(false)}
-        onRestart={() => {
-          setShowResumeToast(false);
-          setNeedsAuth(false);
-          openBooking();
-        }}
-      />\n      <AuthPromptModal open={showAuthPrompt} onClose={() => setShowAuthPrompt(false)} />
-      {galleryOpen && images.length > 0 && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 backdrop-blur-sm"
-          onClick={closeGallery}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onMouseMove={handleMouseMove}
-          onMouseDown={handleMouseDown}
-          onWheel={handleWheel}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Image gallery"
-        >
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); closeGallery(); }}
-            className="absolute top-4 right-4 z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
-            aria-label="Close gallery"
-          >
-            <X size={24} />
-          </button>
-
-          {images.length > 1 && (
-            <>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); prevImage(); }}
-                className="absolute left-4 z-10 h-12 w-12 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 transition-colors disabled:opacity-40 disabled:hover:bg-white/10"
-                aria-label="Previous image"
-                disabled={images.length <= 1}
-              >
-                <ChevronLeft size={24} />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); nextImage(); }}
-                className="absolute right-4 z-10 h-12 w-12 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 transition-colors disabled:opacity-40 disabled:hover:bg-white/10"
-                aria-label="Next image"
-                disabled={images.length <= 1}
-              >
-                <ChevronRight size={24} />
-              </button>
-            </>
-          )}
-
-          <div
-            className="relative max-w-[90vw] max-h-[90vh]"
-            style={{
-              transform: `scale(${galleryScale}) translate(${galleryTranslate.x / galleryScale}px, ${galleryTranslate.y / galleryScale}px)`,
-              transformOrigin: 'center center',
-              transition: galleryDragging ? 'none' : 'transform 0.1s ease-out',
-            }}
-          >
-            <img
-              src={images[galleryIndex]}
-              alt={`${property.title} ${galleryIndex + 1}`}
-              width={1600}
-              height={1200}
-              decoding="async"
-              className="max-w-[90vw] max-h-[85vh] object-contain"
-              draggable="false"
-            />
-          </div>
-
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm">
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); zoomOut(); }}
-              className="p-1 text-white hover:text-gray-300"
-              aria-label="Zoom out"
-            >
-              <ZoomOut size={20} />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); resetZoom(); }}
-              className="p-1 text-white hover:text-gray-300"
-              aria-label="Reset zoom"
-            >
-              <Minimize2 size={20} />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); zoomIn(); }}
-              className="p-1 text-white hover:text-gray-300"
-              aria-label="Zoom in"
-            >
-              <ZoomIn size={20} />
-            </button>
-            <span className="text-white text-sm font-mono">
-              {galleryIndex + 1} / {images.length}
-            </span>
-          </div>
-        </div>
-      )}
-    </div>
+import type { Metadata } from "next";
+import PropertyDetailClient from "./property-detail";
+import { fetchPropertyForPage, toMetaDescription } from "@/lib/properties";
+import { serverFetch } from "@/lib/serverApi";
+import { buildMetadata, SITE_URL } from "@/lib/seo";
+import type { Property } from "@/app/properties/properties-browser";
+
+/** Listings are re-rendered at most every 5 minutes. */
+export const revalidate = 300;
+
+/**
+ * Prerenders the most recent listings at build time. Any other listing is
+ * rendered on demand and then cached (ISR).
+ */
+export async function generateStaticParams() {
+  const data = await serverFetch<{ properties?: Property[] }>(
+    "/web/public/explorer",
+    { query: { page: 1, limit: 50 }, revalidate: 3600, tags: ["listings"] },
   );
+
+  return (data?.properties || [])
+    .filter((property) => property?.id)
+    .slice(0, 50)
+    .map((property) => ({ id: String(property.id) }));
 }
 
-function StarRating({ value, onChange, average }: { value: number; onChange: (value: number) => void; average?: number }) {
-  const [hover, setHover] = useState(0);
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const property = await fetchPropertyForPage(id);
+
+  if (!property) {
+    return buildMetadata({
+      title: "Property not found",
+      description: "This property is no longer available on ZCanopy.",
+      path: `/properties/${id}`,
+      noIndex: true,
+    });
+  }
+
+  const location = property.location ? ` in ${property.location}` : "";
+  const description =
+    toMetaDescription(property.description) ||
+    `${property.propertyType || "Property"}${location} on ZCanopy. Verified listing with photos and video from a trusted broker.`;
+
+  return buildMetadata({
+    title: `${property.title}${location}`,
+    description,
+    path: `/properties/${property.id}`,
+    image: property.imageUrl?.[0],
+    type: "article",
+  });
+}
+
+export default async function PropertyDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const property = await fetchPropertyForPage(id);
+
+  const jsonLd = property
+    ? {
+        "@context": "https://schema.org",
+        "@type": "RealEstateListing",
+        name: property.title,
+        description: toMetaDescription(property.description, 300),
+        url: `${SITE_URL}/properties/${property.id}`,
+        image: property.imageUrl?.slice(0, 4) ?? [],
+        datePosted: property.createdAt,
+        offers: {
+          "@type": "Offer",
+          price: property.price ?? undefined,
+          priceCurrency: "UGX",
+          availability:
+            property.isAvailable === false
+              ? "https://schema.org/SoldOut"
+              : "https://schema.org/InStock",
+          url: `${SITE_URL}/properties/${property.id}`,
+        },
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: property.location,
+          addressRegion: property.district,
+          addressCountry: "UG",
+        },
+      }
+    : null;
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE_URL,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Properties",
+        item: `${SITE_URL}/properties`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: property?.title ?? "Property",
+        item: `${SITE_URL}/properties/${id}`,
+      },
+    ],
+  };
 
   return (
-    <div className="flex items-center gap-2">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          type="button"
-          onClick={() => onChange(star)}
-          onMouseEnter={() => setHover(star)}
-          onMouseLeave={() => setHover(0)}
-          className="relative transition-transform duration-200 hover:scale-110"
-        >
-          <Star
-            size={24}
-            fill={star <= (hover || value) ? "#facc15" : "none"}
-            color={star <= (hover || value) ? "#facc15" : "#9ca3af"}
-            className={star === value ? "animate-[starDust_0.6s_ease-out]" : ""}
-          />
-          {star === value && (
-            <>
-              <span className="absolute -top-1 left-1/2 h-1 w-1 rounded-full bg-yellow-400 opacity-0 animate-[starDust_0.7s_ease-out_0.05s_forwards]" />
-              <span className="absolute -top-2 left-1/2 h-1.5 w-1.5 rounded-full bg-yellow-300 opacity-0 animate-[starDust_0.8s_ease-out_0.1s_forwards]" />
-              <span className="absolute top-1/2 -right-2 h-1 w-1 rounded-full bg-yellow-400 opacity-0 animate-[starDust_0.7s_ease-out_0.15s_forwards]" />
-              <span className="absolute top-1/2 -left-2 h-1.5 w-1.5 rounded-full bg-yellow-300 opacity-0 animate-[starDust_0.8s_ease-out_0.2s_forwards]" />
-            </>
-          )}
-        </button>
-      ))}
-      {typeof average === "number" && (
-        <span className="ml-2 text-sm text-gray-600">{average.toFixed(1)} / 5</span>
-      )}
-      <style jsx>{`
-        @keyframes starDust {
-          0% { transform: translate(0, 0) scale(1); opacity: 0.9; }
-          100% { transform: translate(var(--dx, 8px), var(--dy, -12px)) scale(0); opacity: 0; }
-        }
-      `}</style>
-    </div>
+    <>
+      {jsonLd ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      ) : null}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <PropertyDetailClient initialProperty={property} />
+    </>
   );
 }

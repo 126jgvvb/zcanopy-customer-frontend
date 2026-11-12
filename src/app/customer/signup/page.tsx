@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Eye, EyeOff } from 'lucide-react';
 import { webApi, ApiError } from '@/lib/api';
 import { safeRedirectPath, withRedirect } from '@/lib/authRedirect';
@@ -81,7 +82,7 @@ export default function CustomerSignupPage() {
           <div className="mb-6 text-center">
             <Link href="/" className="inline-flex items-center gap-2">
               <img
-                src="/logo.svg"
+                src="/logo-96.png"
                 alt="ZCanopy"
                 width={32}
                 height={32}

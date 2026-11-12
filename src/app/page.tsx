@@ -1,9 +1,12 @@
 ﻿import Link from "next/link";
+import Image from "next/image";
 import { COLORS } from "@/lib/theme";
 import { BROKER_LOGIN_URL, BROKER_SIGNUP_URL } from "@/lib/navigation";
+import { buildMetadata, SITE_NAME, SITE_URL } from "@/lib/seo";
+import { serverFetch } from "@/lib/serverApi";
 import HeroShowcase from "@/components/HeroShowcase";
 import FeaturedPropertiesRow from "@/components/FeaturedPropertiesRow";
-import FeaturedMosaic from "@/components/FeaturedMosaic";
+import FeaturedMosaic, { type RawProperty as FeaturedProperty } from "@/components/FeaturedMosaic";
 import ScrollReveal from "@/components/ScrollReveal";
 import Footer from "@/components/Footer";
 import {
@@ -19,6 +22,15 @@ import {
   MessageSquare,
   Zap,
 } from "lucide-react";
+
+export const revalidate = 60;
+
+export const metadata = buildMetadata({
+  title: "ZCanopy - Browse & Book Verified Properties in Uganda",
+  description:
+    "Browse verified properties from trusted brokers across Uganda and book a viewing directly. Real homes, real brokers, verified listings.",
+  path: "/",
+});
 
 const VALUE_PROPS = [
   {
@@ -130,7 +142,15 @@ function CircleArrow({
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  // The featured listings are fetched once on the server and handed to both
+  // sections below, so the page does not repeat the request on hydration.
+  const featured = await serverFetch<{ properties?: FeaturedProperty[] }>(
+    "/web/public/explorer",
+    { query: { page: 1, limit: 12 }, revalidate: 60, tags: ["listings"] },
+  );
+  const featuredProperties = featured?.properties ?? [];
+
   return (
     <main className="tight-cards min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       {/* ---------------------------------------------------------------- Hero */}
@@ -191,7 +211,7 @@ export default function Home() {
                 className="flex h-10 w-10 items-center justify-center rounded-full ring-2 ring-white/25"
                 style={{ background: `linear-gradient(135deg, ${COLORS.accentGold}, ${COLORS.primary})` }}
               >
-                <img src="/logo.svg" alt="" width={20} height={20} className="h-5 w-5 object-contain opacity-90" />
+                <Image src="/logo-96.png" alt="" width={20} height={20} className="h-5 w-5 object-contain opacity-90" />
               </span>
             ))}
           </div>
@@ -246,7 +266,7 @@ export default function Home() {
           </div>
 
           <div className="lg:col-span-9">
-            <FeaturedMosaic />
+            <FeaturedMosaic initialProperties={featuredProperties} />
           </div>
         </div>
 
@@ -284,7 +304,7 @@ export default function Home() {
             </div>
           </div>
 
-          <FeaturedPropertiesRow />
+          <FeaturedPropertiesRow initialProperties={featuredProperties} />
         </div>
       </section>
 
@@ -486,13 +506,11 @@ export default function Home() {
       {/* CTA banner */}
       <section className="relative isolate overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <img
+          <Image
             src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=2000&q=70"
             alt=""
-            width={2000}
-            height={1333}
-            loading="lazy"
-            decoding="async"
+            fill
+            sizes="100vw"
             className="h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
@@ -544,6 +562,41 @@ export default function Home() {
 
       <Footer />
       <ScrollReveal />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "Organization",
+                "@id": `${SITE_URL}/#organization`,
+                name: SITE_NAME,
+                url: SITE_URL,
+                logo: `${SITE_URL}/logo-192.png`,
+                description:
+                  "ZCanopy connects buyers with verified brokers to view and book properties across Uganda.",
+                areaServed: { "@type": "Country", name: "Uganda" },
+              },
+              {
+                "@type": "WebSite",
+                "@id": `${SITE_URL}/#website`,
+                url: SITE_URL,
+                name: SITE_NAME,
+                publisher: { "@id": `${SITE_URL}/#organization` },
+                potentialAction: {
+                  "@type": "SearchAction",
+                  target: {
+                    "@type": "EntryPoint",
+                    urlTemplate: `${SITE_URL}/properties?q={search_term_string}`,
+                  },
+                  "query-input": "required name=search_term_string",
+                },
+              },
+            ],
+          }),
+        }}
+      />
     </main>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, ArrowRight, MapPin } from "lucide-react";
 import { COLORS } from "@/lib/theme";
 import { webApi } from "@/lib/api";
@@ -80,13 +81,11 @@ function PropertyCard({ listing }: { listing: Listing }) {
       className={`surface-card group block shrink-0 overflow-hidden ${CARD_CLASS}`}
     >
       <div className="relative aspect-[16/11] w-full overflow-hidden bg-gray-100">
-        <img
+        <Image
           src={listing.image}
           alt={listing.title}
-          width={1600}
-          height={1100}
-          loading="lazy"
-          decoding="async"
+          fill
+          sizes="(max-width: 768px) 85vw, 420px"
           className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
@@ -142,7 +141,12 @@ function SkeletonCard() {
   );
 }
 
-export default function FeaturedPropertiesRow() {
+export default function FeaturedPropertiesRow({
+  initialProperties = [],
+}: {
+  /** Listings rendered on the server - avoids a duplicate fetch on hydration. */
+  initialProperties?: RawProperty[];
+}) {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -155,6 +159,14 @@ export default function FeaturedPropertiesRow() {
 
   useEffect(() => {
     let active = true;
+
+    // The server already rendered these listings.
+    if (initialProperties.length > 0) {
+      const mapped = toListings(initialProperties);
+      if (mapped.length) setListings(mapped);
+      setLoaded(true);
+      return;
+    }
 
     webApi
       .publicProperties({ page: 1, limit: FETCH_LIMIT })
@@ -180,7 +192,7 @@ export default function FeaturedPropertiesRow() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [initialProperties]);
 
   // Repeat the base list if it is too short to fill the viewport.
   const cards = useMemo(() => {
@@ -288,7 +300,7 @@ export default function FeaturedPropertiesRow() {
         {[0, 1, 2, 3, 4].map((i) => (
           <div key={i} className={`surface-card shrink-0 overflow-hidden ${CARD_CLASS}`}>
             <div className="aspect-[16/11] w-full overflow-hidden bg-gray-100">
-              <img src={PLACEHOLDER} alt="" width={1600} height={1100} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+              <Image src={PLACEHOLDER} alt="" fill sizes="(max-width: 768px) 85vw, 420px" className="h-full w-full object-cover" />
             </div>
             <div className="p-6">
               <h3 className="font-display text-2xl" style={{ color: COLORS.cardBrown }}>

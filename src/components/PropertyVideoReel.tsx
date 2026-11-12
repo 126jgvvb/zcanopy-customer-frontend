@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import {
   Check,
   ChevronDown,
@@ -16,7 +17,7 @@ import {
 import { webApi, getSessionId } from "@/lib/api";
 import { fetchExploreProperties } from "@/lib/exploreProperties";
 import { toCdnUrl } from "@/lib/mediaUrl";
-import type { Property } from "@/app/properties/page";
+import type { Property } from "@/app/properties/properties-browser";
 
 function formatUGX(n: number) {
   try {
@@ -303,13 +304,11 @@ export default function PropertyVideoReel({ initialProperties = [], onClose }: {
                 {shouldMountVideo ? (
                   <>
                     {image && (
-                      <img
+                      <Image
                         src={image}
                         alt=""
-                        width={1080}
-                        height={1920}
-                        loading="lazy"
-                        decoding="async"
+                        fill
+                        sizes="(max-width: 640px) 100vw, 400px"
                         className="absolute inset-0 h-full w-full scale-110 object-cover opacity-35 blur-2xl"
                       />
                     )}
@@ -335,13 +334,11 @@ export default function PropertyVideoReel({ initialProperties = [], onClose }: {
                     />
                   </>
                 ) : image ? (
-                  <img
+                  <Image
                     src={image}
                     alt={property.title}
-                    width={1080}
-                    height={1920}
-                    loading="lazy"
-                    decoding="async"
+                    fill
+                    sizes="(max-width: 640px) 100vw, 400px"
                     className="absolute left-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 object-cover"
                   />
                 ) : null}

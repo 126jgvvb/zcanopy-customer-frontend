@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { MapPin, Building2, CheckCircle2, Store, ArrowUpRight } from "lucide-react";
 import { COLORS } from "@/lib/theme";
 
@@ -65,23 +66,19 @@ export default function PropertyShowcaseRow({ property }: { property: ShowcasePr
       className="showcase-row group relative block overflow-hidden"
     >
       {/* Blurred backdrop fills the letterbox left by object-contain. */}
-      <img
+      <Image
         src={image}
         alt=""
         aria-hidden="true"
-        width={1600}
-        height={700}
-        loading="lazy"
-        decoding="async"
+        fill
+        sizes="100vw"
         className="absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-2xl"
       />
-      <img
+      <Image
         src={image}
         alt={property.title}
-        width={1600}
-        height={700}
-        loading="lazy"
-        decoding="async"
+        fill
+        sizes="100vw"
         className="showcase-photo absolute inset-0 h-full w-full object-contain"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/35 to-black/10" />

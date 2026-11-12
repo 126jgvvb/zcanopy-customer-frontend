@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { MapPin, Calendar, Video, Heart, Trash2 } from "lucide-react";
 import { COLORS } from "@/lib/theme";
 import { useEffect, useState } from "react";
@@ -139,13 +140,11 @@ export default function PropertyCard({
   return (
     <Link href={`/properties/${id}${brokersUniqueCode ? `?brokerCode=${encodeURIComponent(brokersUniqueCode)}` : ''}`} className="group surface-card block overflow-hidden">
       <div className="property-media aspect-video w-full overflow-hidden bg-gray-100 relative">
-        <img
+        <Image
           src={mainImage}
           alt={title}
-          width={1600}
-          height={900}
-          loading="lazy"
-          decoding="async"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 640px"
           className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
@@ -221,13 +220,12 @@ export default function PropertyCard({
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
             {images.slice(0, 4).map((img, idx) => (
               <div key={idx} className="relative h-16 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
-                <img
+                <Image
                   src={img}
                   alt={`${title} ${idx + 1}`}
                   width={320}
                   height={256}
-                  loading="lazy"
-                  decoding="async"
+                  sizes="80px"
                   className="h-full w-full object-cover"
                 />
               </div>
