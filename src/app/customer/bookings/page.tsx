@@ -31,6 +31,9 @@ interface Booking {
 
 const PAST_STATUSES = ['released', 'declined', 'reversed'];
 
+/** Default escrow timeframe (in days) suggested on the customer's booking. */
+const DEFAULT_ESCROW_DAYS = 3;
+
 function normalizeStatus(status?: string) {
   return (status || 'pending').toLowerCase();
 }
@@ -121,12 +124,12 @@ function BookingCard({
   const escrowActive = hasEscrow && !isPast && !fundsReleased && !fundsReversed;
   const countdownOn = !!booking.escrowEnabled && !!booking.escrowEndsAt;
 
-  const [daysValue, setDaysValue] = useState(String(booking.escrowDays || 7));
+  const [daysValue, setDaysValue] = useState(String(booking.escrowDays || DEFAULT_ESCROW_DAYS));
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    setDaysValue(String(booking.escrowDays || 7));
+    setDaysValue(String(booking.escrowDays || DEFAULT_ESCROW_DAYS));
   }, [booking.escrowDays]);
 
   async function updateEscrow(next: { escrowEnabled: boolean; escrowDays?: number }) {
@@ -136,7 +139,7 @@ function BookingCard({
     try {
       const res = await webApi.customer.updateBookingEscrow(token, booking.bookingCode, {
         escrowEnabled: next.escrowEnabled,
-        escrowDays: next.escrowDays ?? Math.max(1, Math.min(365, Number(daysValue) || 7)),
+        escrowDays: next.escrowDays ?? Math.max(1, Math.min(365, Number(daysValue) || DEFAULT_ESCROW_DAYS)),
       });
       setNotice(res?.message || 'Escrow settings updated');
       onChanged();
@@ -256,7 +259,7 @@ function BookingCard({
                 />
                 <button
                   type="button"
-                  onClick={() => updateEscrow({ escrowEnabled: true, escrowDays: Math.max(1, Math.min(365, Number(daysValue) || 7)) })}
+                  onClick={() => updateEscrow({ escrowEnabled: true, escrowDays: Math.max(1, Math.min(365, Number(daysValue) || DEFAULT_ESCROW_DAYS)) })}
                   disabled={busy}
                   className="rounded-lg border border-[var(--border-strong)] px-3 py-1 text-xs font-semibold text-[var(--zcanopy-card-brown)] transition-colors hover:border-[var(--zcanopy-primary)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
