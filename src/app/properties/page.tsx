@@ -6,6 +6,7 @@ import PropertyCard from "@/components/PropertyCard";
 import { SlidersHorizontal, X, Sparkles } from "lucide-react";
 import { webApi, getSessionId, ensureAnonymousSession } from "@/lib/api";
 import { SUPPORT_EMAIL } from "@/lib/navigation";
+import { dedupeOptionValues, normalizeOptionKey, resolveOptionValue } from "@/lib/filterOptions";
 import Link from "next/link";
 import { usePlacePredictions } from "@/hooks/useGooglePlaces";
 
@@ -78,6 +79,12 @@ function GuidedQuerySync({ onApply }: { onApply: (p: { location: string; propert
   return null;
 }
 
+/**
+ * Normalises a filter option so the same value is not listed twice when it
+ * only differs by case or surrounding whitespace ("kito" vs "Kito"). The
+ * backend filters these fields case-insensitively (ILIKE), so collapsing them
+ * to one entry keeps every matching property reachable.
+ */
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -362,12 +369,12 @@ const deferredDateTo = useDeferredValue(dateTo);
         const seenLoc = new Set<string>();
         const seenType = new Set<string>();
         for (const row of locationsRes.value?.locations || []) {
-          if (row.location && !seenLoc.has(row.location)) {
-            seenLoc.add(row.location);
+          if (row.location && !seenLoc.has(normalizeOptionKey(row.location))) {
+            seenLoc.add(normalizeOptionKey(row.location));
             locations.push(row.location);
           }
-          if (row.propertyType && !seenType.has(row.propertyType)) {
-            seenType.add(row.propertyType);
+          if (row.propertyType && !seenType.has(normalizeOptionKey(row.propertyType))) {
+            seenType.add(normalizeOptionKey(row.propertyType));
             propertyTypes.push(row.propertyType);
           }
           if (row.brokerCode) brokerCodes.add(row.brokerCode);
@@ -377,12 +384,18 @@ const deferredDateTo = useDeferredValue(dateTo);
       const brokers: Array<{ code: string; name: string }> = [];
       if (brokersRes.status === "fulfilled") {
         const seenBroker = new Set<string>();
+        const seenBrokerName = new Set<string>();
         for (const b of brokersRes.value?.brokers || []) {
           if (!b.brokerCode || seenBroker.has(b.brokerCode)) continue;
           // Only offer brokers that actually have listings.
           if (brokerCodes.size > 0 && !brokerCodes.has(b.brokerCode)) continue;
           seenBroker.add(b.brokerCode);
-          brokers.push({ code: b.brokerCode, name: b.brokerBrandName || b.brandName || b.brokerCode });
+          const name = b.brokerBrandName || b.brandName || b.brokerCode;
+          // Two broker codes can share a brand name — only list it once.
+          const nameKey = normalizeOptionKey(name);
+          if (seenBrokerName.has(nameKey)) continue;
+          seenBrokerName.add(nameKey);
+          brokers.push({ code: b.brokerCode, name });
         }
       }
 
@@ -401,12 +414,12 @@ const deferredDateTo = useDeferredValue(dateTo);
   // Fall back to the loaded page's values while the option request is in flight,
   // so the dropdowns are never empty on first paint.
   const uniqueLocations = useMemo(
-    () => (filterOptions.locations.length > 0 ? filterOptions.locations : Array.from(new Set(properties.map((p) => p.location).filter(Boolean) as string[])).sort()),
+    () => (filterOptions.locations.length > 0 ? filterOptions.locations : dedupeOptionValues(properties.map((p) => p.location))),
     [filterOptions.locations, properties],
   );
 
   const uniquePropertyTypes = useMemo(
-    () => (filterOptions.propertyTypes.length > 0 ? filterOptions.propertyTypes : Array.from(new Set(properties.map((p) => p.propertyType).filter(Boolean) as string[])).sort()),
+    () => (filterOptions.propertyTypes.length > 0 ? filterOptions.propertyTypes : dedupeOptionValues(properties.map((p) => p.propertyType))),
     [filterOptions.propertyTypes, properties],
   );
 
@@ -418,8 +431,26 @@ const deferredDateTo = useDeferredValue(dateTo);
         brokers.set(p.brokerCode, p.brokerBrandName);
       }
     });
-    return Array.from(brokers.entries()).map(([code, name]) => ({ code, name }));
+    // Distinct broker codes can still resolve to the same brand name.
+    const seenNames = new Set<string>();
+    const result: Array<{ code: string; name: string }> = [];
+    for (const [code, name] of brokers) {
+      const nameKey = normalizeOptionKey(name);
+      if (seenNames.has(nameKey)) continue;
+      seenNames.add(nameKey);
+      result.push({ code, name });
+    }
+    return result;
   }, [filterOptions.brokers, properties]);
+
+  // A selected value may differ in case from the listed option (e.g. "Kito"
+  // vs "kito"). Resolve it so the dropdown keeps showing the selection.
+  const selectedLocation = resolveOptionValue(locationFilter, uniqueLocations);
+  const selectedPropertyType = resolveOptionValue(propertyTypeFilter, uniquePropertyTypes);
+  const selectedBroker = resolveOptionValue(
+    brokerFilter,
+    uniqueBrokers.map((b) => b.name),
+  );
 
   const filteredProperties = properties;
 
@@ -624,7 +655,7 @@ const deferredDateTo = useDeferredValue(dateTo);
         <div>
           <label className="block text-sm font-medium text-gray-700">Location</label>
           <select
-            value={locationFilter}
+            value={selectedLocation}
             onChange={(e) => setLocationFilter(e.target.value)}
             className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
           >
@@ -639,7 +670,7 @@ const deferredDateTo = useDeferredValue(dateTo);
         <div>
           <label className="block text-sm font-medium text-gray-700">Broker</label>
           <select
-            value={brokerFilter}
+            value={selectedBroker}
             onChange={(e) => setBrokerFilter(e.target.value)}
             className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
           >
@@ -654,7 +685,7 @@ const deferredDateTo = useDeferredValue(dateTo);
         <div>
           <label className="block text-sm font-medium text-gray-700">Property Type</label>
           <select
-            value={propertyTypeFilter}
+            value={selectedPropertyType}
             onChange={(e) => setPropertyTypeFilter(e.target.value)}
             className="mt-1 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-2.5 shadow-sm"
           >

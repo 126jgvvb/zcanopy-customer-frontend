@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, X } from "lucide-react";
 import { WizardStep } from "./WizardStep";
 import { webApi } from "@/lib/api";
+import { dedupeOptionValues } from "@/lib/filterOptions";
 import { emptyGuidedDraft, guidedSteps, type GuidedDraft, type GuidedStepId } from "@/data/wizardOptions";
 
 const SPARKLES: { top: number; left: number; dx: number; dy: number; s: number; c: string; d: number }[] = [
@@ -52,22 +53,14 @@ export default function SearchWizard({ open, onClose }: SearchWizardProps) {
           locations?: Array<{ location?: string; propertyType?: string }>;
         };
         if (cancelled) return;
-        const seenLoc = new Set<string>();
-        const seenType = new Set<string>();
         const locs: string[] = [];
         const typs: string[] = [];
         for (const row of res?.locations || []) {
-          if (row.location && !seenLoc.has(row.location)) {
-            seenLoc.add(row.location);
-            locs.push(row.location);
-          }
-          if (row.propertyType && !seenType.has(row.propertyType)) {
-            seenType.add(row.propertyType);
-            typs.push(row.propertyType);
-          }
+          if (row.location) locs.push(row.location);
+          if (row.propertyType) typs.push(row.propertyType);
         }
-        setLocations(locs.sort((a, b) => a.localeCompare(b)));
-        setTypes(typs.sort((a, b) => a.localeCompare(b)));
+        setLocations(dedupeOptionValues(locs));
+        setTypes(dedupeOptionValues(typs));
       } catch {
         /* options unavailable */
       } finally {
