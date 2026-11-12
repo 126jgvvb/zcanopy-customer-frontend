@@ -547,7 +547,10 @@ export default function PropertyDetailClient({
 
             <div className="mt-4 grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <MapPin size={16} />
+                {/* The location hint is long and sits in a narrow column on
+                    mobile, so the pin is scaled down there to stay out of the
+                    way of the text. It matches the other icons from `sm` up. */}
+                <MapPin size={16} className="h-3 w-3 shrink-0 sm:h-4 sm:w-4" />
                 {canViewMap ? property.location : "Location available after booking confirmation"}
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -555,7 +558,7 @@ export default function PropertyDetailClient({
                 {new Date(property.createdAt).toLocaleDateString()}
               </div>
               {property.price !== undefined && (
-                <div className="flex items-center gap-2 text-sm font-semibold text-[var(--zcanopy-card-brown)]">
+                <div className="flex items-center gap-2 font-display text-lg leading-tight text-[var(--zcanopy-primary)] sm:text-xl">
                   {formatUGX(property.price)}
                 </div>
               )}
