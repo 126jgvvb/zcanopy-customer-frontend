@@ -32,7 +32,7 @@ interface Booking {
 const PAST_STATUSES = ['released', 'declined', 'reversed'];
 
 /** Default escrow timeframe (in days) suggested on the customer's booking. */
-const DEFAULT_ESCROW_DAYS = 3;
+const DEFAULT_ESCROW_DAYS = 1;
 
 function normalizeStatus(status?: string) {
   return (status || 'pending').toLowerCase();
