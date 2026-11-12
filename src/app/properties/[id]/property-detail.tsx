@@ -507,7 +507,7 @@ export default function PropertyDetailClient({
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-8">
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
-            <div className="aspect-video w-full overflow-hidden rounded-t-2xl bg-gray-100">
+            <div className="relative aspect-video w-full overflow-hidden rounded-t-2xl bg-gray-100">
               <Image
                 src={selectedImage || images[0] || "https://via.placeholder.com/400x200?text=No+Image"}
                 alt={property.title}
@@ -840,7 +840,7 @@ export default function PropertyDetailClient({
                 href={`/properties/${r.id}`}
                 className="group overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:border-[var(--zcanopy-primary)]"
               >
-                <div className="aspect-video w-full overflow-hidden bg-gray-100">
+                <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
                   <Image
                     src={
                       Array.isArray(r.imageUrl) && r.imageUrl.length
