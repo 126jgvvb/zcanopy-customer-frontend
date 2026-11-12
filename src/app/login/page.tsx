@@ -1,14 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import { webApi, authErrorMessage, setSession } from '@/lib/api';
+import { BROKER_LOGIN_URL } from '@/lib/navigation';
 import Footer from '@/components/Footer';
 
 export default function LoginPage() {
-  const router = useRouter();
   const [brokerCode, setBrokerCode] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -37,7 +36,9 @@ export default function LoginPage() {
       setSession(sessionId, result, 'broker');
       localStorage.setItem('zcanopy_token', token || '');
 
-      router.push('/customer');
+      // Brokers work in the broker dashboard, which lives on its own domain.
+      // A full page navigation is needed because it is a different origin.
+      window.location.href = BROKER_LOGIN_URL;
     } catch (err) {
       setError(authErrorMessage(err, 'broker code or password'));
     } finally {
