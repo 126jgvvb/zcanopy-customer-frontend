@@ -8,7 +8,6 @@ const PUBLIC_PATHS = new Set(['/', '/login', '/customer', '/customer/signup', '/
 
 const CUSTOMER_PATHS = new Set([
   '/customer/transactions',
-  '/customer/invoices',
   '/customer/messages',
   '/customer/notifications',
   '/customer/profile',

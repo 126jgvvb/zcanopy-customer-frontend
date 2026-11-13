@@ -8,7 +8,6 @@ import {
   Bell,
   CalendarCheck,
   ChevronRight,
-  FileText,
   Heart,
   LayoutGrid,
   LogOut,
@@ -97,14 +96,16 @@ type ActivityItem = {
 
 const navItems = [
   { href: '/customer-dahbaord', label: 'Overview', icon: LayoutGrid },
-  { href: '/customer/favorites', label: 'My Favorites', icon: Heart },
-  { href: '/customer/bookings', label: 'My Bookings', icon: CalendarCheck },
+  // The customer portal is a single page that switches views, so these have to
+  // deep-link into it. Linking straight to /customer/messages and friends
+  // renders the bare content component with no token, no sidebar and no data.
+  { href: '/customer?view=favorites', label: 'My Favorites', icon: Heart },
+  { href: '/customer?view=bookings', label: 'My Bookings', icon: CalendarCheck },
   { href: '/bookings/find', label: 'Find Booking', icon: Search },
-  { href: '/customer/transactions', label: 'My Transactions', icon: Receipt },
-  { href: '/customer/invoices', label: 'My Invoices', icon: FileText },
-  { href: '/customer/messages', label: 'Messages', icon: MessageCircle },
-  { href: '/customer/notifications', label: 'Notifications', icon: Bell },
-  { href: '/customer/profile', label: 'My Profile', icon: User },
+  { href: '/customer?view=transactions', label: 'My Transactions', icon: Receipt },
+  { href: '/customer?view=messages', label: 'Messages', icon: MessageCircle },
+  { href: '/customer?view=notifications', label: 'Notifications', icon: Bell },
+  { href: '/customer?view=profile', label: 'My Profile', icon: User },
 ];
 
 
@@ -509,7 +510,7 @@ export default function CustomerDashboardPage() {
                   <p className="text-xs uppercase tracking-[0.14em]" style={{ color: 'var(--zcanopy-primary)' }}>Recent bookings</p>
                   <h2 className="mt-1 font-display text-2xl" style={{ color: 'var(--zcanopy-card-brown)' }}>Your activity</h2>
                 </div>
-                <Link href="/customer/bookings" className="flex items-center gap-1 text-xs font-semibold hover:underline" style={{ color: 'var(--zcanopy-primary)' }}>View all<ChevronRight className="h-3.5 w-3.5" /></Link>
+                <Link href="/customer?view=bookings" className="flex items-center gap-1 text-xs font-semibold hover:underline" style={{ color: 'var(--zcanopy-primary)' }}>View all<ChevronRight className="h-3.5 w-3.5" /></Link>
               </div>
               <div className="mt-5 space-y-3">
                 {bookings.length === 0 ? (
@@ -561,7 +562,7 @@ export default function CustomerDashboardPage() {
                   </div>
                 ))}
               </div>
-              <Link href="/customer/notifications" className="btn-ghost mt-5 flex w-full items-center justify-center gap-2 px-4 py-2.5 text-xs">Open notifications<ChevronRight className="h-3.5 w-3.5" /></Link>
+              <Link href="/customer?view=notifications" className="btn-ghost mt-5 flex w-full items-center justify-center gap-2 px-4 py-2.5 text-xs">Open notifications<ChevronRight className="h-3.5 w-3.5" /></Link>
             </div>
           </section>
 
@@ -588,7 +589,7 @@ export default function CustomerDashboardPage() {
                   </div>
                 ))}
               </div>
-              <Link href="/customer/transactions" className="btn-ghost mt-5 flex w-full items-center justify-center gap-2 px-4 py-2.5 text-xs">View transactions<ChevronRight className="h-3.5 w-3.5" /></Link>
+              <Link href="/customer?view=transactions" className="btn-ghost mt-5 flex w-full items-center justify-center gap-2 px-4 py-2.5 text-xs">View transactions<ChevronRight className="h-3.5 w-3.5" /></Link>
             </div>
 
             <div className="rounded-2xl border border-[var(--zcanopy-border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--zcanopy-shadow)]">
@@ -615,7 +616,7 @@ export default function CustomerDashboardPage() {
                   </Link>
                 ))}
               </div>
-              <Link href="/customer/favorites" className="btn-ghost mt-5 flex w-full items-center justify-center gap-2 px-4 py-2.5 text-xs">View favorites<ChevronRight className="h-3.5 w-3.5" /></Link>
+              <Link href="/customer?view=favorites" className="btn-ghost mt-5 flex w-full items-center justify-center gap-2 px-4 py-2.5 text-xs">View favorites<ChevronRight className="h-3.5 w-3.5" /></Link>
             </div>
           </section>
 

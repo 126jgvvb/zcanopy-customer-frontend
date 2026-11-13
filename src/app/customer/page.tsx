@@ -5,21 +5,20 @@
   import Link from 'next/link';
   import { useSearchParams, useRouter } from 'next/navigation';
   import { webApi, authErrorMessage, clearSession } from '@/lib/api';
-  import { Heart, CalendarCheck, Search, Receipt, MessageCircle, Bell, User, LayoutDashboard, Eye, EyeOff, Menu, X, LifeBuoy, FileText } from 'lucide-react';
+  import { Heart, CalendarCheck, Search, Receipt, MessageCircle, Bell, User, LayoutDashboard, Eye, EyeOff, Menu, X, LifeBuoy } from 'lucide-react';
   import CustomerTransactionsContent from './transactions/page';
   import CustomerMessagesContent from './messages/page';
   import CustomerNotificationsContent from './notifications/page';
   import CustomerProfileContent from './profile/page';
   import CustomerFavoritesContent from './favorites/page';
   import CustomerBookingsContent from './bookings/page';
-import CustomerInvoicesContent from './invoices/page';
   import FindBookingContent from './find-booking/page';
 import CustomerHelpSupport from '@/components/CustomerHelpSupport';
   import { safeRedirectPath, withRedirect } from '@/lib/authRedirect';
 
-type ActiveView = 'dashboard' | 'favorites' | 'bookings' | 'find-booking' | 'transactions' | 'invoices' | 'messages' | 'notifications' | 'profile' | 'help';
+type ActiveView = 'dashboard' | 'favorites' | 'bookings' | 'find-booking' | 'transactions' | 'messages' | 'notifications' | 'profile' | 'help';
 
-const VALID_VIEWS: ActiveView[] = ['dashboard', 'favorites', 'bookings', 'find-booking', 'transactions', 'invoices', 'messages', 'notifications', 'profile', 'help'];
+const VALID_VIEWS: ActiveView[] = ['dashboard', 'favorites', 'bookings', 'find-booking', 'transactions', 'messages', 'notifications', 'profile', 'help'];
 
 async function fetchSummary(key: [string, string]) {
   const t = key[1];
@@ -277,7 +276,6 @@ export default function CustomerPage() {
     { name: 'My Bookings', icon: CalendarCheck, view: 'bookings', badge: bookingCount },
     { name: 'Find Booking', icon: Search, view: 'find-booking' },
     { name: 'My Transactions', icon: Receipt, view: 'transactions', badge: transactionCount },
-    { name: 'My Invoices', icon: FileText, view: 'invoices' },
     { name: 'Messages', icon: MessageCircle, view: 'messages' },
     { name: 'Notifications', icon: Bell, view: 'notifications', badge: notificationCount },
     { name: 'Help & Support', icon: LifeBuoy, view: 'help' },
@@ -305,8 +303,6 @@ export default function CustomerPage() {
     switch (activeView) {
       case 'transactions':
         return <CustomerTransactionsContent token={token} />;
-      case 'invoices':
-        return <CustomerInvoicesContent token={token} />;
       case 'messages':
         return <CustomerMessagesContent token={token} />;
       case 'notifications':
