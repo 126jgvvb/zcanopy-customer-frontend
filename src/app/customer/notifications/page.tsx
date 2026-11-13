@@ -59,7 +59,7 @@
         {!notifications.length ? (
           <p className="mt-4 text-sm" style={{ color: 'var(--zcanopy-muted)' }}>No notifications found.</p>
         ) : (
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 max-h-[32rem] space-y-4 overflow-y-auto pr-1">
             {notifications.map((notification) => (
               <div key={notification.id} className={`rounded-2xl border p-5 shadow-sm ${notification.isRead ? 'border-[var(--zcanopy-border)] bg-white dark:bg-[var(--zcanopy-surface)]' : 'border-[var(--zcanopy-primary)] bg-[var(--zcanopy-primary)]/5'}`}>
                 <p className="text-sm font-medium" style={{ color: 'var(--zcanopy-card-brown)' }}>{notification.title}</p>

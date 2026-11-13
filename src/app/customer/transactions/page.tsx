@@ -48,7 +48,7 @@
         {!transactions.length ? (
           <p className="mt-4 text-sm" style={{ color: 'var(--zcanopy-muted)' }}>No transactions found.</p>
         ) : (
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 max-h-[32rem] space-y-4 overflow-y-auto pr-1">
             {transactions.map((txn) => (
               <div key={txn.id} className="rounded-2xl border border-[var(--zcanopy-border)] bg-white p-5 shadow-sm dark:bg-[var(--zcanopy-surface)]">
                 <div className="flex items-center justify-between">

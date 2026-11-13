@@ -116,7 +116,7 @@
             </div>
           </div>
         ) : (
-          <div ref={ref} className="mt-6 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div ref={ref} className="mt-6 max-h-[32rem] grid grid-cols-1 gap-8 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
             {properties.map((property, idx) => {
               const fav = favorites[idx];
               return (

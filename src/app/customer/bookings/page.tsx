@@ -371,7 +371,7 @@ export default function CustomerBookingsContent({ token }: CustomerBookingsConte
           {activeBookings.length > 0 && (
             <section>
               <h3 className="text-sm font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--zcanopy-primary)' }}>Active bookings</h3>
-              <div className="mt-3 space-y-4">
+              <div className="mt-3 max-h-[32rem] space-y-4 overflow-y-auto pr-1">
                 {activeBookings.map((booking) => (
                   <BookingCard key={booking.id} booking={booking} now={now} token={effectiveToken} onChanged={refresh} />
                 ))}
@@ -389,7 +389,7 @@ export default function CustomerBookingsContent({ token }: CustomerBookingsConte
                 Bookings that are no longer active — revoked by the broker after an unsuccessful negotiation, or reversed
                 with the funds sent back to you after the escrow countdown expired.
               </p>
-              <div className="mt-3 space-y-4">
+              <div className="mt-3 max-h-[32rem] space-y-4 overflow-y-auto pr-1">
                 {pastBookings.map((booking) => (
                   <BookingCard key={booking.id} booking={booking} now={now} token={effectiveToken} onChanged={refresh} />
                 ))}
