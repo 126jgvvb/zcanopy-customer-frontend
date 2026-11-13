@@ -5,7 +5,7 @@
   import Link from 'next/link';
   import { useSearchParams, useRouter } from 'next/navigation';
   import { webApi, authErrorMessage, clearSession } from '@/lib/api';
-  import { Heart, CalendarCheck, Search, Receipt, MessageCircle, Bell, User, LayoutDashboard, Eye, EyeOff, Menu, X } from 'lucide-react';
+  import { Heart, CalendarCheck, Search, Receipt, MessageCircle, Bell, User, LayoutDashboard, Eye, EyeOff, Menu, X, LifeBuoy } from 'lucide-react';
   import CustomerTransactionsContent from './transactions/page';
   import CustomerMessagesContent from './messages/page';
   import CustomerNotificationsContent from './notifications/page';
@@ -13,11 +13,12 @@
   import CustomerFavoritesContent from './favorites/page';
   import CustomerBookingsContent from './bookings/page';
   import FindBookingContent from './find-booking/page';
+import CustomerHelpSupport from '@/components/CustomerHelpSupport';
   import { safeRedirectPath, withRedirect } from '@/lib/authRedirect';
 
-type ActiveView = 'dashboard' | 'favorites' | 'bookings' | 'find-booking' | 'transactions' | 'messages' | 'notifications' | 'profile';
+type ActiveView = 'dashboard' | 'favorites' | 'bookings' | 'find-booking' | 'transactions' | 'messages' | 'notifications' | 'profile' | 'help';
 
-const VALID_VIEWS: ActiveView[] = ['dashboard', 'favorites', 'bookings', 'find-booking', 'transactions', 'messages', 'notifications', 'profile'];
+const VALID_VIEWS: ActiveView[] = ['dashboard', 'favorites', 'bookings', 'find-booking', 'transactions', 'messages', 'notifications', 'profile', 'help'];
 
 async function fetchSummary(key: [string, string]) {
   const t = key[1];
@@ -277,6 +278,7 @@ export default function CustomerPage() {
     { name: 'My Transactions', icon: Receipt, view: 'transactions', badge: transactionCount },
     { name: 'Messages', icon: MessageCircle, view: 'messages' },
     { name: 'Notifications', icon: Bell, view: 'notifications', badge: notificationCount },
+    { name: 'Help & Support', icon: LifeBuoy, view: 'help' },
     { name: 'My Profile', icon: User, view: 'profile' },
   ];
 
@@ -307,6 +309,8 @@ export default function CustomerPage() {
         return <CustomerNotificationsContent token={token} />;
       case 'profile':
         return <CustomerProfileContent token={token} customerName={customerName} onProfileUpdate={() => {}} />;
+      case 'help':
+        return <CustomerHelpSupport token={token} />;
       case 'favorites':
         return <CustomerFavoritesContent token={token} />;
       case 'bookings':
@@ -352,6 +356,10 @@ export default function CustomerPage() {
                     />
                   </video>
                 </div>
+
+            <div className="mt-6">
+              <CustomerHelpSupport token={token} />
+            </div>
             </div>
           );
         }
