@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { trackEvent, AnalyticsEvents } from '@/lib/analytics';
 import { BookOpen, ChevronDown, Send } from 'lucide-react';
 import { webApi } from '@/lib/api';
 
@@ -78,6 +79,7 @@ export default function CustomerHelpSupport({
         body: body.trim(),
       });
       if (res?.success) {
+        trackEvent(AnalyticsEvents.ContactAdminSent, { source: 'help_section' });
         setFeedback({ ok: true, text: res.message || 'Your message has been sent to the ZCanopy team.' });
         setSubject('');
         setBody('');
@@ -134,7 +136,10 @@ export default function CustomerHelpSupport({
             <div key={article.id} className="rounded-xl border border-[var(--zcanopy-border)]">
               <button
                 type="button"
-                onClick={() => setOpenArticle(expanded ? null : article.id)}
+                onClick={() => {
+                  trackEvent(AnalyticsEvents.HelpGuideOpened, { article: article.id });
+                  setOpenArticle(expanded ? null : article.id);
+                }}
                 aria-expanded={expanded}
                 className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
               >

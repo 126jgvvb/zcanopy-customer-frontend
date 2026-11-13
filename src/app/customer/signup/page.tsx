@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { Eye, EyeOff } from 'lucide-react';
 import { webApi, ApiError } from '@/lib/api';
 import { safeRedirectPath, withRedirect } from '@/lib/authRedirect';
+import { trackEvent, AnalyticsEvents } from '@/lib/analytics';
 
 export default function CustomerSignupPage() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function CustomerSignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    trackEvent(AnalyticsEvents.SignupStarted);
     setError('');
     setLoading(true);
     try {
@@ -41,6 +43,7 @@ export default function CustomerSignupPage() {
         phoneNumber: phone.trim(),
       });
       if (result.success) {
+        trackEvent(AnalyticsEvents.SignupCompleted);
         const verifyUrl = `/customer/verify?email=${encodeURIComponent(email.trim())}`;
         router.push(redirectTarget ? `${verifyUrl}&redirect=${encodeURIComponent(redirectTarget)}` : verifyUrl);
       } else {

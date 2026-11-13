@@ -11,6 +11,7 @@ import Link from "next/link";
 
 import AuthPromptModal from "@/components/AuthPromptModal";
 import BookingResumeToast from "@/components/BookingResumeToast";
+import TrackClick from "@/components/TrackClick";
 import AspectRatioVideo from "@/components/AspectRatioVideo";
 import { useBookingRedirect } from "@/hooks/useBookingRedirect";
 import { useBookedPropertyIds, invalidateBookedPropertyIds } from "@/hooks/useBookedPropertyIds";
@@ -731,12 +732,17 @@ export default function PropertyDetailClient({
               </div>
             </div>
             {property.isAvailable && (
-              <button
-                onClick={openBooking}
-                className="btn-primary mt-4 w-full px-4 py-2.5 text-sm"
+              <TrackClick
+                event="checkout_initiated"
+                data={{ propertyType: property.propertyType || "unknown" }}
               >
-                Book Now
-              </button>
+                <button
+                  onClick={openBooking}
+                  className="btn-primary mt-4 w-full px-4 py-2.5 text-sm"
+                >
+                  Book Now
+                </button>
+              </TrackClick>
             )}
           </div>
 

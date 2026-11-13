@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -77,6 +78,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </SessionGate>
           <CookieBanner />
         </ClientLayout>
+        {/*
+          Privacy-first analytics. The script only loads when a website ID is
+          configured, and our tracker respects DNT and stays silent in dev.
+          Umami automatically records pageviews including client-side route
+          transitions via its own history handling.
+        */}
+        {process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ? (
+          <Script
+            src={process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL}
+            data-website-id={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID}
+            strategy="afterInteractive"
+          />
+        ) : null}
       </body>
     </html>
   );
