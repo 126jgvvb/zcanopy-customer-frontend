@@ -175,15 +175,12 @@ export default function PropertyDetailClient({
       try {
         const data = await webApi.propertyDetails(id, brokerCode);
         const prop = (data as any)?.property || (data as any) || null;
-        console.log('[PropertyDetail] Decrypted property payload', prop);
         if (!prop) {
-          console.error('[PropertyDetail] Missing property payload for id=', id, data);
           setError('Property not found');
           return;
         }
         setProperty(prop);
-      } catch (error) {
-        console.error('[PropertyDetail] Property load failed', error);
+      } catch {
         setError("Failed to load property details");
       } finally {
         setLoading(false);

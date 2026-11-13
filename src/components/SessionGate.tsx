@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { validateSession, getSessionId, clearSession, ensureAnonymousSession } from '@/lib/api';
+import { devLog } from '@/lib/devLog';
 
 const PUBLIC_PATHS = new Set(['/', '/login', '/customer', '/customer/signup', '/customer/verify', '/brokers/signup', '/brokers/verify', '/brokers/welcome', '/about', '/help', '/terms', '/refund-policy', '/payments', '/properties', '/properties/[id]', '/reels']);
 
@@ -33,13 +34,13 @@ export default function SessionGate({ children }: SessionGateProps) {
     const isPublic = PUBLIC_PATHS.has(pathname) || pathname.startsWith('/properties') || pathname.startsWith('/api/');
     const isCustomerPath = CUSTOMER_PATHS.has(pathname);
 
-    console.log('[SessionGate] pathname:', pathname, 'isPublic:', isPublic, 'isCustomerPath:', isCustomerPath, 'hasSessionId:', !!getSessionId());
+    devLog('[SessionGate] pathname:', pathname, 'isPublic:', isPublic, 'isCustomerPath:', isCustomerPath, 'hasSessionId:', !!getSessionId());
 
     let cancelled = false;
     (async () => {
       // For public paths, set valid immediately regardless of session
       if (isPublic) {
-        console.log('[SessionGate] Public path, setting valid=true immediately');
+        devLog('[SessionGate] Public path, setting valid=true immediately');
         setValid(true);
         setReady(true);
         return;
@@ -47,14 +48,14 @@ export default function SessionGate({ children }: SessionGateProps) {
 
       // Only try to get session for non-public paths
       if (!getSessionId()) {
-        console.log('[SessionGate] No session ID, calling ensureAnonymousSession...');
+        devLog('[SessionGate] No session ID, calling ensureAnonymousSession...');
         try {
           await ensureAnonymousSession();
         } catch (e) {
-          console.log('[SessionGate] ensureAnonymousSession failed:', e);
+          devLog('[SessionGate] ensureAnonymousSession failed:', e);
         }
         if (cancelled) return;
-        console.log('[SessionGate] ensureAnonymousSession done, sessionId:', getSessionId());
+        devLog('[SessionGate] ensureAnonymousSession done, sessionId:', getSessionId());
       }
 
       // Validate session for customer paths
@@ -93,10 +94,10 @@ export default function SessionGate({ children }: SessionGateProps) {
       // Only redirect for actual customer-only paths, not public pages like /properties
       if (isCustomerPath) {
         const redirectTo = '/customer';
-        console.log('[SessionGate] Redirecting to customer login from:', pathname);
+        devLog('[SessionGate] Redirecting to customer login from:', pathname);
         router.replace(`${redirectTo}?from=${encodeURIComponent(pathname)}`);
       } else {
-        console.log('[SessionGate] Not redirecting for public path:', pathname);
+        devLog('[SessionGate] Not redirecting for public path:', pathname);
       }
     }
   }, [ready, valid, pathname, router]);

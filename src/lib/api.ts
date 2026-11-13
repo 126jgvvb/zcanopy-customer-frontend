@@ -1,5 +1,6 @@
 import { decryptResponse } from "@/lib/crypto";
 import { optimizeImageFile } from "@/lib/mediaOptimization";
+import { devLog } from "@/lib/devLog";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000/api";
 
@@ -115,7 +116,7 @@ export interface RequestOptions {
 
 function buildUrl(path: string, query?: RequestOptions["query"]): string {
   const url = new URL(`${API_BASE}${path}`);
-  console.log('[apiFetch] Building URL:', url.toString());
+  devLog('[apiFetch] Building URL:', url.toString());
   if (query) {
     for (const [key, value] of Object.entries(query)) {
       if (value !== undefined && value !== "") {
@@ -270,16 +271,16 @@ export async function apiFetch<T = unknown>(
 
     let data: Record<string, unknown> | string | null = null;
     const text = await res.text();
-    console.log('[apiFetch] Raw response text', text);
+    devLog('[apiFetch] Raw response text', text);
     if (text) {
       try {
         const parsed = JSON.parse(text) as Record<string, unknown>;
-        console.log('[apiFetch] Parsed response', parsed);
+        devLog('[apiFetch] Parsed response', parsed);
         data = parsed.encrypted ? await decryptResponse(parsed) : parsed;
-        console.log('[apiFetch] Final data after decrypt/parse', data);
+        devLog('[apiFetch] Final data after decrypt/parse', data);
       } catch {
         data = text;
-        console.log('[apiFetch] Non-JSON response', data);
+        devLog('[apiFetch] Non-JSON response', data);
       }
     }
 
@@ -314,11 +315,9 @@ export async function apiFetch<T = unknown>(
     return data as T;
   } catch (err) {
     if (fallback !== undefined && shouldUseFallback(err)) {
-      if (typeof console !== "undefined") {
-        console.warn(
-          `[api] Server request to "${path}" failed (${err instanceof ApiError ? err.status : "network error"}). Falling back to mock data.`,
-        );
-      }
+      devLog(
+        `[api] Server request to "${path}" failed (${err instanceof ApiError ? err.status : "network error"}). Falling back to mock data.`,
+      );
       return fallback as T;
     }
     throw err;
@@ -347,7 +346,7 @@ export async function ensureAnonymousSession(): Promise<string | null> {
   if (existing) return existing;
 
   const deviceId = getOrCreateDeviceId();
-  console.log('[ensureAnonymousSession] Creating session for device:', deviceId);
+  devLog('[ensureAnonymousSession] Creating session for device:', deviceId);
   try {
     const res = await fetch(`${API_BASE}/customer/session`, {
       method: "POST",
@@ -355,12 +354,12 @@ export async function ensureAnonymousSession(): Promise<string | null> {
       body: JSON.stringify({ deviceId, ttlSeconds: 60 * 60 * 24 * 7 }),
       cache: "no-store",
     });
-    console.log('[ensureAnonymousSession] Response status:', res.status);
+    devLog('[ensureAnonymousSession] Response status:', res.status);
     if (!res.ok) return null;
     const raw = await res.json().catch(() => null);
-    console.log('[ensureAnonymousSession] Raw response:', raw);
+    devLog('[ensureAnonymousSession] Raw response:', raw);
     const data = raw?.encrypted ? await decryptResponse(raw) : raw;
-    console.log('[ensureAnonymousSession] Decrypted data:', data);
+    devLog('[ensureAnonymousSession] Decrypted data:', data);
     const sessionId =
       data?.sessionId ||
       data?.sessionToken ||

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { safeRedirectPath } from '@/lib/authRedirect';
+import { devLog } from '@/lib/devLog';
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code');
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
   const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000/api';
   const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google/callback`;
 
-  console.log('[GoogleCallback] apiBase=', apiBase, 'redirectUri=', redirectUri, 'origin=', request.headers.get('origin'));
+  devLog('[GoogleCallback] apiBase=', apiBase, 'redirectUri=', redirectUri, 'origin=', request.headers.get('origin'));
 
   if (!googleClientId || !googleClientSecret) {
     return NextResponse.redirect(new URL('/customer?error=google_not_configured', request.url));
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
     });
 
     const loginData = await loginRes.json();
-    console.log('[GoogleCallback] login response status=', loginRes.status, 'ok=', loginRes.ok, 'data=', JSON.stringify(loginData));
+    devLog('[GoogleCallback] login response status=', loginRes.status, 'ok=', loginRes.ok);
 
     if (!loginRes.ok || !loginData.success) {
       return NextResponse.redirect(new URL('/customer?error=google_login_failed', request.url));

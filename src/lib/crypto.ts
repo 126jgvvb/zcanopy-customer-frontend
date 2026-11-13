@@ -1,9 +1,11 @@
+import { devLog } from './devLog';
+
 const ENCRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'sBXZBcqwKPmzNv+ifnUFdgVkh01jgTqDgGALrBgMIRLmQbcwJtc6Vb4W+axZRe+w';
 
 if (process.env.NEXT_PUBLIC_ENCRYPTION_KEY) {
-  console.log('[crypto] Using NEXT_PUBLIC_ENCRYPTION_KEY from environment');
+  devLog('[crypto] Using NEXT_PUBLIC_ENCRYPTION_KEY from environment');
 } else {
-  console.log('[crypto] NEXT_PUBLIC_ENCRYPTION_KEY not set, using fallback key');
+  devLog('[crypto] NEXT_PUBLIC_ENCRYPTION_KEY not set, using fallback key');
 }
 
 function hexToBytes(hex: string): Uint8Array {
@@ -75,7 +77,6 @@ export async function decryptResponse(data: any): Promise<any> {
       combined,
     );
     const text = arrayBufferToString(decrypted);
-    console.log('[decryptResponse] Decrypted payload', text);
     return JSON.parse(text);
   } catch {
     return data;
