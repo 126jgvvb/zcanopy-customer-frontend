@@ -704,6 +704,9 @@ customer: {
     getMessages: (token: string, page = 1, limit = 10) =>
       apiFetch<{ messages: any[]; total: number }>(`/web/customer/messages?page=${page}&limit=${limit}`, { token }),
 
+    sendMessage: (token: string, body: { subject: string; body: string }) =>
+      apiFetch<{ success: boolean; message: string }>("/web/customer/messages", { method: "POST", token, body }),
+
     getNotifications: (token: string, page = 1, limit = 20) =>
       apiFetch<{ notifications: any[]; total: number; unreadCount: number }>(`/web/customer/notifications?page=${page}&limit=${limit}`, { token }),
 
