@@ -1040,7 +1040,8 @@ export default function PropertyDetailClient({
           setNeedsAuth(false);
           openBooking();
         }}
-      />\n      <AuthPromptModal open={showAuthPrompt} onClose={() => setShowAuthPrompt(false)} />
+      />
+      <AuthPromptModal open={showAuthPrompt} onClose={() => setShowAuthPrompt(false)} />
       {galleryOpen && images.length > 0 && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 backdrop-blur-sm"
