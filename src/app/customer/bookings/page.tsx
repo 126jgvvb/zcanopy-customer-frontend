@@ -122,7 +122,11 @@ function BookingCard({
     booking.bookingCode &&
     (booking.escrowEndsAt || (booking.escrowAmount || 0) > 0 || fundsReleased || fundsReversed)
   );
-  const escrowActive = hasEscrow && !isPast && !fundsReleased && !fundsReversed;
+  // A booking that still holds escrow money is releasable even if its status
+  // was closed (e.g. the broker re-listed the property): the customer never
+  // approved, so the funds have not moved and the customer must be able to
+  // release them here.
+  const escrowActive = hasEscrow && !fundsReleased && !fundsReversed;
   const countdownOn = !!booking.escrowEnabled && !!booking.escrowEndsAt;
 
   const [daysValue, setDaysValue] = useState(String(booking.escrowDays || DEFAULT_ESCROW_DAYS));
@@ -304,8 +308,21 @@ export default function CustomerBookingsContent({ token }: CustomerBookingsConte
   });
 
   const bookings = data?.bookings || [];
-  const activeBookings = bookings.filter((booking) => !PAST_STATUSES.includes(normalizeStatus(booking.status)));
-  const pastBookings = bookings.filter((booking) => PAST_STATUSES.includes(normalizeStatus(booking.status)));
+  // A past-status booking that still holds escrow money is not really past:
+  // the customer has not released the funds, so keep it in the active list
+  // where the release action lives.
+  const holdsEscrow = (booking: Booking) =>
+    !!booking.bookingCode &&
+    (booking.escrowAmount || 0) > 0 &&
+    !booking.fundsReleased &&
+    !booking.fundsReversed;
+  const activeBookings = bookings.filter(
+    (booking) => !PAST_STATUSES.includes(normalizeStatus(booking.status)) || holdsEscrow(booking),
+  );
+  const pastBookings = bookings.filter(
+    (booking) =>
+      PAST_STATUSES.includes(normalizeStatus(booking.status)) && !holdsEscrow(booking),
+  );
   const refresh = () => {
     mutate();
   };
