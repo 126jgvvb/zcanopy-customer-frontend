@@ -231,7 +231,7 @@ function BookingCard({
                   type="button"
                   onClick={releaseFunds}
                   disabled={busy}
-                  className="rounded-xl bg-[var(--zcanopy-primary)] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl bg-[var(--zcanopy-primary)] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Approve &amp; release funds
                 </button>
@@ -239,7 +239,7 @@ function BookingCard({
                   type="button"
                   onClick={() => updateEscrow({ escrowEnabled: !countdownOn })}
                   disabled={busy}
-                  className="rounded-xl border border-[var(--border-strong)] px-4 py-2 text-xs font-semibold text-[var(--zcanopy-card-brown)] transition-colors hover:border-[var(--zcanopy-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl border border-[var(--border-strong)] px-4 py-2.5 text-sm font-semibold text-[var(--zcanopy-card-brown)] transition-colors hover:border-[var(--zcanopy-primary)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {countdownOn ? 'Turn countdown off' : 'Turn countdown on'}
                 </button>
