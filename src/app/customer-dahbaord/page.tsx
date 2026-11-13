@@ -512,7 +512,7 @@ export default function CustomerDashboardPage() {
                 </div>
                 <Link href="/customer?view=bookings" className="flex items-center gap-1 text-xs font-semibold hover:underline" style={{ color: 'var(--zcanopy-primary)' }}>View all<ChevronRight className="h-3.5 w-3.5" /></Link>
               </div>
-              <div className="mt-5 space-y-3">
+              <div className="mt-5 max-h-80 space-y-3 overflow-y-auto pr-1">
                 {bookings.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-[var(--zcanopy-border)] p-8 text-center">
                     <CalendarCheck className="mx-auto h-7 w-7" style={{ color: 'var(--zcanopy-accent-gold)' }} />
@@ -548,7 +548,7 @@ export default function CustomerDashboardPage() {
                 </div>
                 <Bell className="h-5 w-5" style={{ color: 'var(--zcanopy-accent-gold)' }} />
               </div>
-              <div className="mt-5 space-y-4">
+              <div className="mt-5 max-h-80 space-y-4 overflow-y-auto pr-1">
                 {recentActivity.length === 0 ? (
                   <p className="rounded-xl border border-dashed border-[var(--zcanopy-border)] p-6 text-center text-sm" style={{ color: 'var(--zcanopy-muted)' }}>No recent activity.</p>
                 ) : recentActivity.map((activity) => (
@@ -575,7 +575,7 @@ export default function CustomerDashboardPage() {
                 </div>
                 <Receipt className="h-5 w-5" style={{ color: 'var(--zcanopy-accent-gold)' }} />
               </div>
-              <div className="mt-5 space-y-3">
+              <div className="mt-5 max-h-80 space-y-3 overflow-y-auto pr-1">
                 {displayTransactions.slice(0, 4).map((transaction) => (
                   <div key={transaction.id} className="flex items-center justify-between gap-3 rounded-xl border border-[var(--zcanopy-border)] p-4">
                     <div className="min-w-0">
@@ -600,7 +600,7 @@ export default function CustomerDashboardPage() {
                 </div>
                 <Heart className="h-5 w-5" style={{ color: 'var(--zcanopy-accent-gold)' }} />
               </div>
-              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="mt-5 grid max-h-80 grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
                 {displayFavorites.slice(0, 4).map((favorite) => (
                   <Link key={favorite.id} href={`/properties/${favorite.propertyId}`} className="group overflow-hidden rounded-xl border border-[var(--zcanopy-border)] bg-[var(--zcanopy-background)] transition-all hover:-translate-y-0.5 hover:border-[var(--zcanopy-accent-gold)]/40">
                     <div className="h-24 overflow-hidden bg-[var(--zcanopy-border)]">
