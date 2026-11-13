@@ -1,11 +1,13 @@
 'use client';
 
   import { useState } from 'react';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
   import useSWR from 'swr';
   import { webApi } from '@/lib/api';
 
   interface CustomerProfileContentProps {
-    token: string;
+    token?: string;
     customerName: string;
     onProfileUpdate?: () => void;
   }
@@ -16,6 +18,13 @@
   }
 
   export default function CustomerProfileContent({ token, customerName, onProfileUpdate }: CustomerProfileContentProps) {
+
+    const router = useRouter();
+    useEffect(() => {
+      // Opened directly as a route there is no token, so the content cannot
+      // load. Send the customer into the portal, which resolves the session.
+      if (!token) router.replace('/customer?view=profile');
+    }, [token, router]);
     const key = token ? ['customer-profile', token] : null;
 
     const { data: profile, error, isLoading, mutate } = useSWR(key, fetchProfile, {

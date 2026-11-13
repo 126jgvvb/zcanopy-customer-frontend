@@ -1,21 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { webApi } from '@/lib/api';
 
 interface CustomerInvoicesContentProps {
-  token: string;
+  token?: string;
 }
 
 export default function CustomerInvoicesContent({ token }: CustomerInvoicesContentProps) {
+  const router = useRouter();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    loadInvoices(token);
-  }, [token]);
 
   const loadInvoices = async (token: string) => {
     try {
@@ -28,6 +26,16 @@ export default function CustomerInvoicesContent({ token }: CustomerInvoicesConte
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Opened directly as a route there is no token, so the content cannot
+    // load. Send the customer into the portal, which resolves the session.
+    if (!token) {
+      router.replace('/customer?view=invoices');
+      return;
+    }
+    loadInvoices(token);
+  }, [token, router]);
 
   if (loading) {
     return (

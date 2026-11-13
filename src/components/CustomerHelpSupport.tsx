@@ -193,7 +193,7 @@ export default function CustomerHelpSupport({
               <Send className="h-4 w-4" />
               {busy ? 'Sending…' : 'Send message'}
             </button>
-            <Link href="/customer/messages" className="text-xs font-semibold hover:underline" style={{ color: 'var(--zcanopy-primary)' }}>
+            <Link href="/customer?view=messages" className="text-xs font-semibold hover:underline" style={{ color: 'var(--zcanopy-primary)' }}>
               Read my messages
             </Link>
           </div>

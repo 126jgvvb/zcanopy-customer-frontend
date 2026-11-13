@@ -1,6 +1,8 @@
 'use client';
 
   import useSWR from 'swr';
+  import { useRouter } from 'next/navigation';
+  import { useEffect } from 'react';
   import PropertyCard from '@/components/PropertyCard';
   import { webApi } from '@/lib/api';
   import { useScrollReveal } from '@/hooks/useScrollReveal';
@@ -23,7 +25,7 @@
   }
 
   interface CustomerFavoritesContentProps {
-    token: string;
+    token?: string;
   }
 
   async function fetchFavorites(key: [string, string]) {
@@ -33,6 +35,13 @@
   }
 
   export default function CustomerFavoritesContent({ token }: CustomerFavoritesContentProps) {
+
+    const router = useRouter();
+    useEffect(() => {
+      // Opened directly as a route there is no token, so the content cannot
+      // load. Send the customer into the portal, which resolves the session.
+      if (!token) router.replace('/customer?view=favorites');
+    }, [token, router]);
     const key = token ? ['customer-favorites', token] : null;
 
     const { data, error, isLoading, mutate } = useSWR(key, fetchFavorites, {

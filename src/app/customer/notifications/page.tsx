@@ -1,10 +1,12 @@
 'use client';
 
   import useSWR from 'swr';
+  import { useRouter } from 'next/navigation';
+  import { useEffect } from 'react';
   import { webApi } from '@/lib/api';
 
   interface CustomerNotificationsContentProps {
-    token: string;
+    token?: string;
     onRead?: (count: number) => void;
   }
 
@@ -14,6 +16,13 @@
   }
 
   export default function CustomerNotificationsContent({ token, onRead }: CustomerNotificationsContentProps) {
+
+    const router = useRouter();
+    useEffect(() => {
+      // Opened directly as a route there is no token, so the content cannot
+      // load. Send the customer into the portal, which resolves the session.
+      if (!token) router.replace('/customer?view=notifications');
+    }, [token, router]);
     const key = token ? ['customer-notifications', token] : null;
 
     const { data, error, isLoading } = useSWR(key, fetchNotifications, {

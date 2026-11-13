@@ -3,6 +3,7 @@
 import useSWR from 'swr';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Eye, Hourglass, ShieldCheck, Undo2 } from 'lucide-react';
 import { webApi, getSessionId } from '@/lib/api';
 
@@ -284,6 +285,13 @@ async function fetchBookings(key: [string, string]) {
 }
 
 export default function CustomerBookingsContent({ token }: CustomerBookingsContentProps) {
+
+    const router = useRouter();
+    useEffect(() => {
+      // Opened directly as a route there is no token, so the content cannot
+      // load. Send the customer into the portal, which resolves the session.
+      if (!token) router.replace('/customer?view=bookings');
+    }, [token, router]);
   const effectiveToken = token || getSessionId() || '';
   const key = effectiveToken ? ['customer-bookings', effectiveToken] : null;
   const now = useNow();
