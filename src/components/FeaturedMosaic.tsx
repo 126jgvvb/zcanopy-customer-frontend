@@ -100,73 +100,66 @@ function PlaceholderCard({ className }: { className?: string }) {
   );
 }
 
+type MosaicProperty = RawProperty;
+
+/** Pure card builder — shared by the lazy state initializer and the async fetch. */
+function buildCardsFrom(props: MosaicProperty[]): Card[] {
+  const withPhotos = props.filter(
+    (p) => Array.isArray(p.imageUrl) && p.imageUrl.some((u) => Boolean(u)),
+  );
+
+  const pool = Array.from(
+    new Set(withPhotos.flatMap((p) => (p.imageUrl ?? []).filter(Boolean))),
+  );
+
+  if (!withPhotos.length) return [];
+
+  // One cell per property, cycling through them, so the mosaic always
+  // shows DIFFERENT properties instead of four cells from the first one.
+  // A property with a gallery still fills each cell with its own photos.
+  return Array.from({ length: CELLS }, (_, i) => {
+    const p = withPhotos[i % withPhotos.length];
+    const own = (p.imageUrl ?? []).filter(Boolean);
+    const lead = own[i % own.length];
+    const images: string[] = [];
+    // Lead photo first, then the rest of this property's gallery, then
+    // the wider pool, so every card has enough faces to animate.
+    for (const src of [lead, ...own, ...pool]) {
+      if (!images.includes(src)) images.push(src);
+    }
+    // Fewer than four distinct photos in exist: repeat so the prism
+    // still has four faces and keeps turning.
+    while (images.length < FACES_PER_CARD) images.push(images[images.length - 1]);
+
+    return {
+      key: `${p.id ?? i}-${lead}`,
+      id: String(p.id ?? i),
+      title: p.title ?? "Featured property",
+      location: p.location ?? "",
+      images: images.slice(0, FACES_PER_CARD),
+    };
+  });
+}
+
 export default function FeaturedMosaic({
   initialProperties = [],
 }: {
   /** Listings rendered on the server - avoids a duplicate fetch on hydration. */
   initialProperties?: RawProperty[];
 }) {
-  const [cards, setCards] = useState<Card[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [cards, setCards] = useState<Card[]>(() => buildCardsFrom(initialProperties));
+  const [loaded, setLoaded] = useState(() => initialProperties.length > 0);
 
   useEffect(() => {
+    if (initialProperties.length > 0) return; // handled by the lazy initializer
+
     let active = true;
-
-    const buildCards = (props: RawProperty[]) => {
-      const pool = Array.from(
-        new Set(props.flatMap((p) => (p.imageUrl ?? []).filter(Boolean))),
-      );
-
-      // One entry per (property, photo) pair, so a property with a gallery can
-      // fill more than one grid cell instead of leaving cells empty.
-      const entries = props.flatMap((p) =>
-        (p.imageUrl ?? []).filter(Boolean).map((lead) => ({ p, lead })),
-      );
-
-      if (!entries.length) {
-        setCards([]);
-        return;
-      }
-
-      // Always fill all four cells; cycle entries when there are fewer.
-      const cells = Array.from({ length: CELLS }, (_, i) => entries[i % entries.length]);
-
-      setCards(
-        cells.map(({ p, lead }, i) => {
-          const own = (p.imageUrl ?? []).filter(Boolean);
-          const images: string[] = [];
-          // Lead photo first, then the rest of this property's gallery, then
-          // the wider pool, so every card has enough faces to animate.
-          for (const src of [lead, ...own, ...pool]) {
-            if (!images.includes(src)) images.push(src);
-          }
-          // Fewer than four distinct photos in exist: repeat so the prism
-          // still has four faces and keeps turning.
-          while (images.length < FACES_PER_CARD) images.push(images[i % images.length]);
-
-          return {
-            key: `${p.id ?? i}-${lead}`,
-            id: String(p.id ?? i),
-            title: p.title ?? "Featured property",
-            location: p.location ?? "",
-            images: images.slice(0, FACES_PER_CARD),
-          };
-        }),
-      );
-    };
-
-    // The server already rendered these listings.
-    if (initialProperties.length > 0) {
-      buildCards(initialProperties);
-      setLoaded(true);
-      return;
-    }
 
     webApi
       .publicProperties({ page: 1, limit: FETCH_LIMIT })
       .then((res) => {
         if (!active) return;
-        buildCards(res?.properties ?? []);
+        setCards(buildCardsFrom(res?.properties ?? []));
       })
       .catch(() => {})
       .finally(() => {

@@ -36,7 +36,7 @@ const FETCH_LIMIT = 12;
 const CARD_CLASS = "w-[300px] sm:w-[360px] lg:w-[420px]";
 const SETS = 4; // identical copies rendered so the loop can wrap forever
 const SPEED_PX_PER_SEC = 80; // auto-scroll speed
-const HOLD_INTERVAL = 40; // ms between set-jumps while an arrow is held
+const HOLD_INTERVAL = 500; // ms between single-card steps while an arrow is held
 
 function formatUGX(n?: number): string | null {
   if (n === undefined || n === null || Number.isNaN(n)) return null;
@@ -147,26 +147,21 @@ export default function FeaturedPropertiesRow({
   /** Listings rendered on the server - avoids a duplicate fetch on hydration. */
   initialProperties?: RawProperty[];
 }) {
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [listings, setListings] = useState<Listing[]>(() => toListings(initialProperties));
+  const [loaded, setLoaded] = useState(() => initialProperties.length > 0);
 
   const runnerRef = useRef<HTMLDivElement>(null);
   const setRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef(0);
   const setWidthRef = useRef(0);
+  const cardStepRef = useRef(0);
   const pausedRef = useRef(false);
   const holdRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    let active = true;
+    if (initialProperties.length > 0) return; // handled by the lazy initializer
 
-    // The server already rendered these listings.
-    if (initialProperties.length > 0) {
-      const mapped = toListings(initialProperties);
-      if (mapped.length) setListings(mapped);
-      setLoaded(true);
-      return;
-    }
+    let active = true;
 
     webApi
       .publicProperties({ page: 1, limit: FETCH_LIMIT })
@@ -200,12 +195,16 @@ export default function FeaturedPropertiesRow({
     return listings.length >= 4 ? listings : [...listings, ...listings];
   }, [listings]);
 
-  // Measure a single set so the loop can wrap on an exact content boundary.
+  // Measure a single set so the loop can wrap on an exact content boundary,
+  // and the card step (card width + gap) so the arrows advance one card.
   useEffect(() => {
     if (!loaded || !cards.length) return;
     const el = setRef.current;
     if (el) {
       setWidthRef.current = el.offsetWidth;
+      const first = el.children[0] as HTMLElement | undefined;
+      const gap = parseFloat(getComputedStyle(el).columnGap || "24") || 24;
+      cardStepRef.current = first ? first.offsetWidth + gap : el.offsetWidth / cards.length;
       offsetRef.current = 0;
       if (runnerRef.current) runnerRef.current.style.transform = "translate3d(0,0,0)";
     }
@@ -244,14 +243,19 @@ export default function FeaturedPropertiesRow({
     return () => cancelAnimationFrame(frame);
   }, [loaded, cards.length, paint]);
 
-  /** Jump a whole set at a time; repeats are identical so wrapping is seamless. */
-  const jumpSets = useCallback((direction: 1 | -1) => {
+  /**
+   * Advance the marquee by one card. Stepping by whole sets made the arrows
+   * invisible — every set is an identical copy, so a whole-set jump looked
+   * like nothing happened. Wraps on the set boundary so it stays seamless.
+   */
+  const jumpSteps = useCallback((direction: 1 | -1) => {
     const setWidth = setWidthRef.current;
-    if (setWidth <= 0) return;
-    offsetRef.current = (offsetRef.current + direction * setWidth) % setWidth;
-    if (offsetRef.current < 0) offsetRef.current += setWidth;
+    const step = cardStepRef.current || setWidth / Math.max(cards.length, 1);
+    if (setWidth <= 0 || step <= 0) return;
+    offsetRef.current += direction * step;
+    offsetRef.current = ((offsetRef.current % setWidth) + setWidth) % setWidth;
     paint();
-  }, [paint]);
+  }, [cards.length, paint]);
 
   const stopHold = useCallback(() => {
     if (holdRef.current !== null) {
@@ -262,12 +266,11 @@ export default function FeaturedPropertiesRow({
 
   const startHold = useCallback(
     (direction: 1 | -1) => {
-      jumpSets(direction);
+      jumpSteps(direction);
       stopHold();
-      // One whole set every 40ms tears through the list very fast.
-      holdRef.current = setInterval(() => jumpSets(direction), HOLD_INTERVAL);
+      holdRef.current = setInterval(() => jumpSteps(direction), HOLD_INTERVAL);
     },
-    [jumpSets, stopHold],
+    [jumpSteps, stopHold],
   );
 
   useEffect(() => () => stopHold(), [stopHold]);
@@ -357,6 +360,12 @@ export default function FeaturedPropertiesRow({
         onPointerUp={stopHold}
         onPointerLeave={stopHold}
         onPointerCancel={stopHold}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            jumpSteps(-1);
+          }
+        }}
       >
         <ArrowLeft size={18} />
       </button>
@@ -372,6 +381,12 @@ export default function FeaturedPropertiesRow({
         onPointerUp={stopHold}
         onPointerLeave={stopHold}
         onPointerCancel={stopHold}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            jumpSteps(1);
+          }
+        }}
       >
         <ArrowRight size={18} />
       </button>
