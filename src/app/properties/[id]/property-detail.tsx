@@ -490,13 +490,16 @@ export default function PropertyDetailClient({
 
   const images = (property.imageUrl || []).map((url) => toCdnUrl(url) ?? url);
   const videos = (property.videoUrl || []).map((url) => toCdnUrl(url) ?? url);
+  const currentImageIndex = selectedImage ? images.indexOf(selectedImage) : 0;
+  const currentImage = images[currentImageIndex] || images[0] || "https://via.placeholder.com/400x200?text=No+Image";
+  const showImageArrows = images.length > 1;
   const spatial = property.postgisSpatialField ? (() => { try { return JSON.parse(property.postgisSpatialField); } catch { return null; } })() : null;
   const lat = spatial?.lat;
   const lng = spatial?.lng;
   const bookingState = property.bookingState || { isBooked: false, bookingCount: 0 };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 px-6 py-10 md:px-10">
+    <div className="mx-auto max-w-7xl space-y-6 sm:space-y-8 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
       <Link href="/properties" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[var(--zcanopy-primary)]">
         <ArrowLeft size={16} />
         Back to properties
@@ -504,26 +507,54 @@ export default function PropertyDetailClient({
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-8">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-4 sm:p-6 shadow-[var(--shadow-soft)]">
             <div className="relative aspect-video w-full overflow-hidden rounded-t-2xl bg-gray-100">
               <Image
-                src={selectedImage || images[0] || "https://via.placeholder.com/400x200?text=No+Image"}
+                src={currentImage}
                 alt={property.title}
                 fill
                 priority
                 fetchPriority="high"
                 sizes="(max-width: 1024px) 100vw, 860px"
-                className="h-full w-full object-cover"
+                className="h-full w-full cursor-zoom-in object-cover"
+                onClick={() => openGallery(currentImageIndex)}
               />
+              {showImageArrows && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Previous image"
+                    onClick={() => setSelectedImage(images[(currentImageIndex - 1 + images.length) % images.length])}
+                    className="absolute left-3 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white/90 shadow-[var(--shadow-lift)] transition hover:scale-105 hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)] active:scale-95 sm:left-4 sm:h-12 sm:w-12"
+                  >
+                    <ChevronLeft className="h-6 w-6" strokeWidth={2.25} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next image"
+                    onClick={() => setSelectedImage(images[(currentImageIndex + 1) % images.length])}
+                    className="absolute right-3 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white/90 shadow-[var(--shadow-lift)] transition hover:scale-105 hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)] active:scale-95 sm:right-4 sm:h-12 sm:w-12"
+                  >
+                    <ChevronRight className="h-6 w-6" strokeWidth={2.25} />
+                  </button>
+                  <span
+                    className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-white"
+                    aria-live="polite"
+                  >
+                    {currentImageIndex + 1} / {images.length}
+                  </span>
+                </>
+              )}
             </div>
             {images.length > 1 && (
               <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
                 {images.map((img, idx) => (
                   <button
                     key={idx}
-                    onClick={() => openGallery(idx)}
-                    className={`h-16 w-20 flex-shrink-0 overflow-hidden rounded-lg border-2 ${selectedImage === img ? "border-[var(--zcanopy-primary)]" : "border-transparent"}`}
-                    aria-label={`View image ${idx + 1} of ${images.length}`}
+                    onClick={() => setSelectedImage(img)}
+                    className={`h-16 w-20 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-colors ${idx === currentImageIndex ? "border-[var(--zcanopy-primary)]" : "border-transparent"}`}
+                    aria-label={`Show image ${idx + 1} of ${images.length}`}
+                    aria-pressed={idx === currentImageIndex}
                   >
                     <Image
                       src={img}
@@ -539,7 +570,7 @@ export default function PropertyDetailClient({
             )}
           </div>
 
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-4 sm:p-6 shadow-[var(--shadow-soft)]">
             <h1 className="text-3xl">{property.title}</h1>
             <p className="mt-2 text-gray-600">{property.description}</p>
 
@@ -569,7 +600,7 @@ export default function PropertyDetailClient({
           </div>
 
           {videos.length > 0 && (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-4 sm:p-6 shadow-[var(--shadow-soft)]">
               <h3 className="mb-4 flex items-center justify-between text-lg font-semibold text-[var(--zcanopy-card-brown)]">
                 <span className="flex items-center gap-2">
                   <Video size={18} />
@@ -617,7 +648,7 @@ export default function PropertyDetailClient({
           )}
 
           {(lat != null && lng != null && lat !== 0 && lng !== 0) ? (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-4 sm:p-6 shadow-[var(--shadow-soft)]">
               <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--zcanopy-card-brown)]">
                 <MapPin size={18} />
                 Location
@@ -668,7 +699,7 @@ export default function PropertyDetailClient({
               )}
             </div>
           ) : (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-4 sm:p-6 shadow-[var(--shadow-soft)]">
               <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--zcanopy-card-brown)]">
                 <MapPin size={18} />
                 Location
@@ -682,7 +713,7 @@ export default function PropertyDetailClient({
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-4 sm:p-6 shadow-[var(--shadow-soft)]">
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-[var(--zcanopy-card-brown)]">Booking Info</h3>
@@ -746,7 +777,7 @@ export default function PropertyDetailClient({
             )}
           </div>
 
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-6 shadow-[var(--shadow-soft)]">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-4 sm:p-6 shadow-[var(--shadow-soft)]">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--zcanopy-card-brown)]">
               <MessageSquare size={18} />
               Reviews & Comments
