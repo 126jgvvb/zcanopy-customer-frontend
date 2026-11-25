@@ -127,9 +127,8 @@ const SECTIONS: Section[] = [
           </>,
           <>
             <strong>Device &amp; Diagnostic Data:</strong> Device model, operating
-            system version, app version, crash logs, performance telemetry, and
-            basic network/IP information used to keep the Platform reliable and
-            secure.
+            system version, app version, and basic network/IP information used to
+            keep the Platform reliable and secure.
           </>,
         ],
       },
@@ -192,8 +191,9 @@ const SECTIONS: Section[] = [
             or law enforcement authorities.
           </>,
           <>
-            <strong>Improve the app and user experience:</strong> Fix crashes,
-            optimize performance, and understand how features are used.
+            <strong>Improve the app and user experience:</strong> Diagnose errors
+            users report, optimize performance, and understand how features are
+            used.
           </>,
           <>
             <strong>Show advertising:</strong> Where ads are displayed, serve and
@@ -230,8 +230,8 @@ const SECTIONS: Section[] = [
             Google (Sign-In and Maps/geocoding), Amazon Web Services (S3 object
             storage for property media), Pesapal (payments and mobile money),
             Resend (email delivery), UgaText (SMS delivery), Google Firebase
-            (push notifications and crash reporting), Google AdMob (advertising,
-            including device advertising identifiers), and Vercel (web hosting).
+            (push notifications), Google AdMob (advertising, including device
+            advertising identifiers), and Vercel (web hosting).
           </>,
           <>
             <strong>Transaction &amp; Verification Counterparties:</strong> Where
