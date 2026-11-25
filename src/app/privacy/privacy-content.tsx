@@ -140,6 +140,24 @@ const SECTIONS: Section[] = [
           "Messages, support tickets, verification inquiries, and reports you send to ZCanopy support or through Platform workflows.",
         ],
       },
+      { kind: "h3", content: "F. Advertising & Device Identifiers" },
+      {
+        kind: "p",
+        content:
+          "Some versions of the app display advertising through Google AdMob. When ads are shown, Google and its partners may collect:",
+      },
+      {
+        kind: "ul",
+        items: [
+          "Device advertising identifiers (such as the Android Advertising ID), IP address, and general device/app information.",
+          "Approximate location derived from your IP address, and your interactions with an ad (such as views, clicks, and the ad's performance).",
+        ],
+      },
+      {
+        kind: "p",
+        content:
+          "This data is used to serve and measure ads and to prevent ad fraud. You can reset or delete your advertising ID, or opt out of personalised advertising, in your device settings (Android: Settings → Google → Ads).",
+      },
     ],
   },
   {
@@ -177,6 +195,11 @@ const SECTIONS: Section[] = [
             <strong>Improve the app and user experience:</strong> Fix crashes,
             optimize performance, and understand how features are used.
           </>,
+          <>
+            <strong>Show advertising:</strong> Where ads are displayed, serve and
+            measure them, which keeps the free parts of the Platform running.
+            Advertising identifiers are handled as described in Section 2F.
+          </>,
         ],
       },
     ],
@@ -207,7 +230,8 @@ const SECTIONS: Section[] = [
             Google (Sign-In and Maps/geocoding), Amazon Web Services (S3 object
             storage for property media), Pesapal (payments and mobile money),
             Resend (email delivery), UgaText (SMS delivery), Google Firebase
-            (push notifications and crash reporting), and Vercel (web hosting).
+            (push notifications and crash reporting), Google AdMob (advertising,
+            including device advertising identifiers), and Vercel (web hosting).
           </>,
           <>
             <strong>Transaction &amp; Verification Counterparties:</strong> Where
@@ -296,7 +320,14 @@ const SECTIONS: Section[] = [
         items: [
           <>
             Using the in-app account/privacy deletion option (if available in your
-            app settings), <strong>or</strong>
+            app settings),
+          </>,
+          <>
+            Using our{" "}
+            <Link href="/account-deletion" className="underline underline-offset-2">
+              account deletion page
+            </Link>
+            , <strong>or</strong>
           </>,
           <>
             Emailing{" "}
@@ -461,6 +492,10 @@ export default function PrivacyContent() {
               +256741882818
             </a>
             . See also our{" "}
+            <Link href="/account-deletion" className="underline underline-offset-2">
+              Account Deletion
+            </Link>{" "}
+            page, our{" "}
             <Link href="/terms" className="underline underline-offset-2">
               Terms of Agreement
             </Link>{" "}

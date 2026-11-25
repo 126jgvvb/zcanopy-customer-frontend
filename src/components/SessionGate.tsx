@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { validateSession, getSessionId, clearSession, ensureAnonymousSession } from '@/lib/api';
 import { devLog } from '@/lib/devLog';
 
-const PUBLIC_PATHS = new Set(['/', '/login', '/customer', '/customer/signup', '/customer/verify', '/brokers/signup', '/brokers/verify', '/brokers/welcome', '/about', '/help', '/privacy', '/terms', '/refund-policy', '/payments', '/properties', '/properties/[id]', '/reels']);
+const PUBLIC_PATHS = new Set(['/', '/login', '/customer', '/customer/signup', '/customer/verify', '/brokers/signup', '/brokers/verify', '/brokers/welcome', '/about', '/help', '/privacy', '/account-deletion', '/terms', '/refund-policy', '/payments', '/properties', '/properties/[id]', '/reels']);
 
 const CUSTOMER_PATHS = new Set([
   '/customer/transactions',
@@ -39,7 +39,7 @@ function isPublicPath(pathname: string) {
  * crawlers and app-store reviewers that do not run JavaScript still see it.
  * Other public pages keep the previous client-only behaviour.
  */
-const SERVER_RENDERED_PATHS = new Set(['/privacy', '/terms', '/refund-policy']);
+const SERVER_RENDERED_PATHS = new Set(['/privacy', '/account-deletion', '/terms', '/refund-policy']);
 
 export default function SessionGate({ children }: SessionGateProps) {
   const router = useRouter();
