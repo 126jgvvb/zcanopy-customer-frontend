@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { validateSession, getSessionId, clearSession, ensureAnonymousSession } from '@/lib/api';
 import { devLog } from '@/lib/devLog';
 
-const PUBLIC_PATHS = new Set(['/', '/login', '/customer', '/customer/signup', '/customer/verify', '/brokers/signup', '/brokers/verify', '/brokers/welcome', '/about', '/help', '/terms', '/refund-policy', '/payments', '/properties', '/properties/[id]', '/reels']);
+const PUBLIC_PATHS = new Set(['/', '/login', '/customer', '/customer/signup', '/customer/verify', '/brokers/signup', '/brokers/verify', '/brokers/welcome', '/about', '/help', '/privacy', '/terms', '/refund-policy', '/payments', '/properties', '/properties/[id]', '/reels']);
 
 const CUSTOMER_PATHS = new Set([
   '/customer/transactions',
@@ -24,14 +24,32 @@ interface SessionGateProps {
   children: React.ReactNode;
 }
 
+/** Public pages are known from the URL alone — no session lookup needed. */
+function isPublicPath(pathname: string) {
+  return (
+    PUBLIC_PATHS.has(pathname) ||
+    pathname.startsWith('/properties') ||
+    pathname.startsWith('/api/')
+  );
+}
+
+/**
+ * Public pages that are safe to render on the server (no browser-only hooks).
+ * Legal pages are included so their text is part of the prerendered HTML —
+ * crawlers and app-store reviewers that do not run JavaScript still see it.
+ * Other public pages keep the previous client-only behaviour.
+ */
+const SERVER_RENDERED_PATHS = new Set(['/privacy', '/terms', '/refund-policy']);
+
 export default function SessionGate({ children }: SessionGateProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [ready, setReady] = useState(false);
-  const [valid, setValid] = useState<boolean | null>(null);
+  const renderOnServer = SERVER_RENDERED_PATHS.has(pathname);
+  const [ready, setReady] = useState(renderOnServer);
+  const [valid, setValid] = useState<boolean | null>(renderOnServer ? true : null);
 
   useEffect(() => {
-    const isPublic = PUBLIC_PATHS.has(pathname) || pathname.startsWith('/properties') || pathname.startsWith('/api/');
+    const isPublic = isPublicPath(pathname);
     const isCustomerPath = CUSTOMER_PATHS.has(pathname);
 
     devLog('[SessionGate] pathname:', pathname, 'isPublic:', isPublic, 'isCustomerPath:', isCustomerPath, 'hasSessionId:', !!getSessionId());
