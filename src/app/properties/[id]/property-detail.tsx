@@ -113,6 +113,9 @@ export default function PropertyDetailClient({
   const [averageRating, setAverageRating] = useState(0);
   const [commentForm, setCommentForm] = useState(emptyCommentForm);
   const [submittingComment, setSubmittingComment] = useState(false);
+  // The review form is tall, so on phones the card stays compact until the
+  // customer asks for it. On `sm` and up the form is always open.
+  const [reviewsExpanded, setReviewsExpanded] = useState(false);
   const [videoIndex, setVideoIndex] = useState(0);
   const { ids: bookedPropertyIds } = useBookedPropertyIds();
   const canViewMap = bookedPropertyIds.has(id);
@@ -499,15 +502,15 @@ export default function PropertyDetailClient({
   const bookingState = property.bookingState || { isBooked: false, bookingCount: 0 };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 sm:space-y-8 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
+    <div className="mx-auto max-w-7xl space-y-5 px-2 pt-4 pb-28 sm:space-y-8 sm:px-6 sm:py-10 sm:pb-10 lg:px-10">
       <Link href="/properties" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[var(--zcanopy-primary)]">
         <ArrowLeft size={16} />
         Back to properties
       </Link>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-8">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-4 sm:p-6 shadow-[var(--shadow-soft)]">
+      <div className="grid grid-cols-1 gap-4 sm:gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-8">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-3 sm:p-6 shadow-[var(--shadow-soft)]">
             <div className="relative aspect-video w-full overflow-hidden rounded-t-2xl bg-gray-100">
               <Image
                 src={currentImage}
@@ -570,7 +573,7 @@ export default function PropertyDetailClient({
             )}
           </div>
 
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-4 sm:p-6 shadow-[var(--shadow-soft)]">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-3 sm:p-6 shadow-[var(--shadow-soft)]">
             <h1 className="text-3xl">{property.title}</h1>
             <p className="mt-2 text-gray-600">{property.description}</p>
 
@@ -600,7 +603,7 @@ export default function PropertyDetailClient({
           </div>
 
           {videos.length > 0 && (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-4 sm:p-6 shadow-[var(--shadow-soft)]">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-3 sm:p-6 shadow-[var(--shadow-soft)]">
               <h3 className="mb-4 flex items-center justify-between text-lg font-semibold text-[var(--zcanopy-card-brown)]">
                 <span className="flex items-center gap-2">
                   <Video size={18} />
@@ -648,7 +651,7 @@ export default function PropertyDetailClient({
           )}
 
           {(lat != null && lng != null && lat !== 0 && lng !== 0) ? (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-4 sm:p-6 shadow-[var(--shadow-soft)]">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-3 sm:p-6 shadow-[var(--shadow-soft)]">
               <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--zcanopy-card-brown)]">
                 <MapPin size={18} />
                 Location
@@ -699,7 +702,7 @@ export default function PropertyDetailClient({
               )}
             </div>
           ) : (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-4 sm:p-6 shadow-[var(--shadow-soft)]">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-3 sm:p-6 shadow-[var(--shadow-soft)]">
               <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--zcanopy-card-brown)]">
                 <MapPin size={18} />
                 Location
@@ -712,8 +715,8 @@ export default function PropertyDetailClient({
           )}
         </div>
 
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-4 sm:p-6 shadow-[var(--shadow-soft)]">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-3 sm:p-6 shadow-[var(--shadow-soft)]">
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-[var(--zcanopy-card-brown)]">Booking Info</h3>
@@ -745,7 +748,7 @@ export default function PropertyDetailClient({
               )}
               {property.brokerBookingFee !== undefined && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Booking fee</span>
+                  <span className="text-sm text-gray-600">Inspection fee</span>
                   <span className="text-sm font-semibold text-[var(--zcanopy-card-brown)]">{formatUGX(property.brokerBookingFee)}</span>
                 </div>
               )}
@@ -769,15 +772,15 @@ export default function PropertyDetailClient({
               >
                 <button
                   onClick={openBooking}
-                  className="btn-primary mt-4 w-full px-4 py-2.5 text-sm"
+                  className="btn-primary mt-4 w-full px-4 py-3 text-sm sm:py-2.5"
                 >
-                  Book Now
+                  Book &middot; Pay inspection fee
                 </button>
               </TrackClick>
             )}
           </div>
 
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-4 sm:p-6 shadow-[var(--shadow-soft)]">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--zcanopy-surface)] p-3 sm:p-6 shadow-[var(--shadow-soft)]">
             <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--zcanopy-card-brown)]">
               <MessageSquare size={18} />
               Reviews & Comments
@@ -802,7 +805,18 @@ export default function PropertyDetailClient({
                 <p className="text-sm text-gray-500">No comments yet. Be the first to review this property.</p>
               )}
             </div>
-            <form onSubmit={handleCommentSubmit} className="mt-4 space-y-3">
+            <button
+              type="button"
+              aria-expanded={reviewsExpanded}
+              aria-controls="review-form"
+              onClick={() => setReviewsExpanded((open) => !open)}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] px-4 py-3 text-sm font-semibold text-[var(--zcanopy-card-brown)] transition hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)] sm:hidden"
+            >
+              <Star size={16} />
+              {reviewsExpanded ? "Hide review form" : "Write a review"}
+            </button>
+            <div id="review-form" className={`${reviewsExpanded ? "block" : "hidden"} sm:block`}>
+              <form onSubmit={handleCommentSubmit} className="mt-4 space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Name</label>
                 <input
@@ -858,6 +872,7 @@ export default function PropertyDetailClient({
                 {submittingComment ? "Submitting..." : "Submit Review"}
               </button>
             </form>
+            </div>
           </div>
         </div>
       </div>
@@ -912,6 +927,32 @@ export default function PropertyDetailClient({
           </p>
         )}
       </section>
+
+      {/* Phones get a persistent booking action: the button names the fee it
+          pays for, so "book" and "pay inspection fee" are the same action. */}
+      {property.isAvailable && !selectedProperty && !galleryOpen && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[var(--zcanopy-surface)] px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.10)] sm:hidden">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+                Inspection fee
+              </p>
+              <p className="truncate font-display text-lg leading-tight text-[var(--zcanopy-card-brown)]">
+                {property.brokerBookingFee !== undefined
+                  ? formatUGX(property.brokerBookingFee)
+                  : "Pay the broker"}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={openBooking}
+              className="btn-primary flex-[1.5] px-4 py-3 text-sm font-semibold"
+            >
+              Book &middot; Pay inspection fee
+            </button>
+          </div>
+        </div>
+      )}
 
       {selectedProperty && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">
@@ -984,11 +1025,11 @@ export default function PropertyDetailClient({
               </div>
             ) : (
               <>
-                <h3 className="mb-4 text-lg font-semibold text-[var(--zcanopy-card-brown)]">Book: {selectedProperty.title}</h3>
+                <h3 className="mb-4 text-lg font-semibold text-[var(--zcanopy-card-brown)]">Book &amp; pay inspection fee: {selectedProperty.title}</h3>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
-                     <p className="font-semibold text-[var(--zcanopy-card-brown)]">Booking charge: {selectedProperty.brokerBookingFee !== undefined ? formatUGX(selectedProperty.brokerBookingFee) : "Not set"}</p>
-                    <p className="mt-2">You will receive a message having an invoice code on both email and SMS showing your invoice payment code.</p>
+                     <p className="font-semibold text-[var(--zcanopy-card-brown)]">Inspection fee: {selectedProperty.brokerBookingFee !== undefined ? formatUGX(selectedProperty.brokerBookingFee) : "Not set"}</p>
+                    <p className="mt-2">Paying it books your inspection. You will receive a message having an invoice code on both email and SMS showing your invoice payment code.</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Full Name</label>
@@ -1057,7 +1098,7 @@ export default function PropertyDetailClient({
                       disabled={submitting}
                       className="btn-primary px-4 py-2 text-sm disabled:opacity-50"
                     >
-                      {submitting ? "Processing payment..." : "Confirm Booking"}
+                      {submitting ? "Processing payment..." : "Pay inspection fee & book"}
                     </button>
                   </div>
                 </form>
