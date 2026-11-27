@@ -528,7 +528,7 @@ export default function PropertyDetailClient({
                     type="button"
                     aria-label="Previous image"
                     onClick={() => setSelectedImage(images[(currentImageIndex - 1 + images.length) % images.length])}
-                    className="absolute left-3 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white/90 shadow-[var(--shadow-lift)] transition hover:scale-105 hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)] active:scale-95 sm:left-4 sm:h-12 sm:w-12"
+                    className="absolute left-3 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] text-[var(--zcanopy-card-brown)] shadow-[var(--shadow-lift)] transition hover:scale-105 hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)] active:scale-95 sm:left-4 sm:h-12 sm:w-12"
                   >
                     <ChevronLeft className="h-6 w-6" strokeWidth={2.25} />
                   </button>
@@ -536,7 +536,7 @@ export default function PropertyDetailClient({
                     type="button"
                     aria-label="Next image"
                     onClick={() => setSelectedImage(images[(currentImageIndex + 1) % images.length])}
-                    className="absolute right-3 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white/90 shadow-[var(--shadow-lift)] transition hover:scale-105 hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)] active:scale-95 sm:right-4 sm:h-12 sm:w-12"
+                    className="absolute right-3 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] text-[var(--zcanopy-card-brown)] shadow-[var(--shadow-lift)] transition hover:scale-105 hover:border-[var(--zcanopy-primary)] hover:text-[var(--zcanopy-primary)] active:scale-95 sm:right-4 sm:h-12 sm:w-12"
                   >
                     <ChevronRight className="h-6 w-6" strokeWidth={2.25} />
                   </button>
@@ -631,7 +631,7 @@ export default function PropertyDetailClient({
                       aria-label="Previous video"
                       onClick={() => setVideoIndex((prev) => Math.max(prev - 1, 0))}
                       disabled={videoIndex === 0}
-                      className="absolute left-5 top-1/2 inline-flex h-14 w-14 shrink-0 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white p-0 text-[var(--zcanopy-card-brown)] shadow-[var(--shadow-lift)] transition hover:scale-105 hover:border-[var(--zcanopy-primary)] hover:bg-[var(--zcanopy-primary)] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-40 disabled:hover:scale-100 disabled:hover:border-[var(--border-strong)] disabled:hover:bg-white disabled:hover:text-[var(--zcanopy-card-brown)]"
+                      className="absolute left-5 top-1/2 inline-flex h-14 w-14 shrink-0 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] p-0 text-[var(--zcanopy-card-brown)] shadow-[var(--shadow-lift)] transition hover:scale-105 hover:border-[var(--zcanopy-primary)] hover:bg-[var(--zcanopy-primary)] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-40 disabled:hover:scale-100 disabled:hover:border-[var(--border-strong)] disabled:hover:bg-[var(--zcanopy-surface)] disabled:hover:text-[var(--zcanopy-card-brown)]"
                     >
                       <ChevronLeft className="h-7 w-7" strokeWidth={2.25} />
                     </button>
@@ -640,7 +640,7 @@ export default function PropertyDetailClient({
                       aria-label="Next video"
                       onClick={() => setVideoIndex((prev) => Math.min(prev + 1, videos.length - 1))}
                       disabled={videoIndex === videos.length - 1}
-                      className="absolute right-5 top-1/2 inline-flex h-14 w-14 shrink-0 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white p-0 text-[var(--zcanopy-card-brown)] shadow-[var(--shadow-lift)] transition hover:scale-105 hover:border-[var(--zcanopy-primary)] hover:bg-[var(--zcanopy-primary)] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-40 disabled:hover:scale-100 disabled:hover:border-[var(--border-strong)] disabled:hover:bg-white disabled:hover:text-[var(--zcanopy-card-brown)]"
+                      className="absolute right-5 top-1/2 inline-flex h-14 w-14 shrink-0 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--zcanopy-surface)] p-0 text-[var(--zcanopy-card-brown)] shadow-[var(--shadow-lift)] transition hover:scale-105 hover:border-[var(--zcanopy-primary)] hover:bg-[var(--zcanopy-primary)] hover:text-white active:scale-95 disabled:pointer-events-none disabled:opacity-40 disabled:hover:scale-100 disabled:hover:border-[var(--border-strong)] disabled:hover:bg-[var(--zcanopy-surface)] disabled:hover:text-[var(--zcanopy-card-brown)]"
                     >
                       <ChevronRight className="h-7 w-7" strokeWidth={2.25} />
                     </button>
